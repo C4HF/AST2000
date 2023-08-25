@@ -37,6 +37,7 @@ def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code fo
         vel[0][x2] = -vel[0][x2]
         vel[1][y1] = -vel[1][y1]
         vel[1][y2] = -vel[1][y2]
+        print('lol')
 
     #return tbp #thrust per box
 simulate_engine_performance(N)
