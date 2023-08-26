@@ -3,8 +3,21 @@ import matplotlib.pyplot as plt
 import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
+seed = utils.get_seed('axlhk')
+from ast2000tools.solar_system import SolarSystem
+system = SolarSystem(seed)
 utils.check_for_newer_version()
 #@jit(nopython = True) #speed(?)
+
+print('My system has a {:g} solar mass star with a radius of {:g} kilometers.'
+      .format(system.star_mass, system.star_radius))
+
+for planet_idx in range(system.number_of_planets):
+    print('Planet {:d} is a {} planet with a semi-major axis of {:g} AU.'
+          .format(planet_idx, system.types[planet_idx], system.semi_major_axes[planet_idx]))
+
+times, planet_positions = ... # Your own orbit simulation code
+system.generate_orbit_video(times, planet_positions, filename='orbit_video.xml')
 
 L = 10e-6 #Bredde på boksen i meter
 T = 3000 #Gassens temperatur i kelvin
@@ -37,8 +50,8 @@ def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code fo
         vel[0][x2] = -vel[0][x2]
         vel[1][y1] = -vel[1][y1]
         vel[1][y2] = -vel[1][y2]
-        print('lol')
 
+        #Gjennomsnittlig energi per molekyl
+        #Trykk
     #return tbp #thrust per box
-simulate_engine_performance(N)
-plt.show()
+x = simulate_engine_performance(N)
