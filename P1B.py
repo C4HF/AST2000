@@ -18,7 +18,7 @@ N = 100  # Antall partikler
 t_c = 10e-9  # Tid
 dt = 10e-12  # Tids intervall i s'
 t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
-L = 10e-6  # Bredde på boksen i meter
+
 
 fig = plt.figure()
 ax = plt.axes(projection="3d")  # For 3d plotting av rakettmotoren
@@ -44,25 +44,27 @@ ax.plot3D([0.75 * L, 0.75 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
 # times, planet_positions = ... # Your own orbit simulation code
 # system.generate_orbit_video(times, planet_positions, filename='orbit_video.xml')
 
+"""Kode for 1B and 1C."""
+
 
 def simulate_engine_performance(
     npb,
-):  # npb = number_of_particles_in_box. Code for 1 B and C
-    """Function that simulates the performance of one engine in the rocket.
-    Takes variablses N(amount of particles in a box)"""
+):
+    """Funksjon som simulerer effekten av en boks i rakettmotoren.
+    Tar verdier npb (antall partikler i hver boks)."""
     a = []  # Skal telle hvilke partikler som slipper ut
     nr = []  # Bare til plotting underveis
     rows = 3  # For vectors
     cols = npb
 
-    pos = L * np.random.rand(rows, cols)  # Particle positions
-    loc = 0
-    scale = np.sqrt(
+    pos = L * np.random.rand(rows, cols)  # Partiklene blir tilfeldig uniformt fordelt.
+    loc = 0  # mean
+    scale = np.sqrt(  # standard deviation
         const.k_B * T / const.m_H2
-    )  # Må bruke for vektorer. Stden stod i boka.
-    vel = np.random.normal(
+    )  # Må bruke for vektorer. Siden det stod i boka.
+    vel = np.random.normal(  # hvorfor ikke brukt gauss??
         loc=loc, scale=scale, size=(rows, cols)
-    )  # loc = mean, scale = standard deviation(std)
+    )
     for m in range(len(t)):  # tidssteg
         pos += dt * vel  # Euler cromer
 
