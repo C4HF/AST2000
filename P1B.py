@@ -49,7 +49,7 @@ L = 10e-6 #Bredde på boksen i meter
 
 def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code for 1 B and C
     a = []  #Skal telle hvilke partikler som slipper ut
-    nr = [] #Bare til plotting underveis
+    # nr = [] #Bare til plotting underveis
     rows = 3 #For vectors
     cols = npb
 
@@ -72,36 +72,34 @@ def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code fo
                 if L/4 < pos[1][z2[m]] < (3/4)*L:
                     a.append([pos[0][z2[m]], pos[1][z2[m]], pos[2][z2[m]]]) #Lagrer partiklene som forsvinner ut. Kan brukes til beregninger
                             #Fjerner partikkelen fra pos, og legger til en ny, uniformt fordelt partikkel, med en vel.
-                    if z2[m] not in nr:    #Brukes til plotting
-                       nr.append(z2[m])    
-        z2 = list(z2)
-        x1 = list(x1)
-        x2 = list(x2)
-        y1 = list(y1)
-        y2 = list(y2)
-        for i in range(len(nr)):   #For plotting
-            if nr[i] in z2:
-               z2.remove(nr[i])
-            if nr[i] in x1:
-               x1.remove(nr[i])
-            if nr[i] in x2:
-               x2.remove(nr[i])
-            if nr[i] in y1:
-               y1.remove(nr[i])
-            if nr[i] in y2:
-               y2.remove(nr[i])
+                    # if z2[m] not in nr:    #Brukes til plotting
+                    #    nr.append(z2[m])    
+        # z2 = list(z2)
+        # x1 = list(x1)
+        # x2 = list(x2) #For plotting
+        # y1 = list(y1)
+        # y2 = list(y2)
+        # for i in range(len(nr)):   #For plotting
+        #     if nr[i] in z2:
+        #        z2.remove(nr[i])
+        #     if nr[i] in x1:
+        #        x1.remove(nr[i])
+        #     if nr[i] in x2:
+        #        x2.remove(nr[i])
+        #     if nr[i] in y1:
+        #        y1.remove(nr[i])
+        #     if nr[i] in y2:
+        #        y2.remove(nr[i])
             
 
-        vel[0][x1] = -vel[0][x1]
-        vel[0][x2] = -vel[0][
-            x2
-        ]  # Elastisk støt ved å snu farten til det motsatte i en gitt retning
-        vel[1][y1] = -vel[1][y1]
-        vel[1][y2] = -vel[1][y2]
-        vel[2][z1] = -vel[2][z1]
-        vel[2][z2] = -vel[2][z2]
+        # vel[0][x1] = -vel[0][x1]
+        # vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu farten til det motsatte i en gitt retning
+        # vel[1][y1] = -vel[1][y1]
+        # vel[1][y2] = -vel[1][y2]
+        # vel[2][z1] = -vel[2][z1]
+        # vel[2][z2] = -vel[2][z2]
 
-        ax.scatter(pos[0], pos[1], pos[2]) #Plotter rakettmotoren
+        # ax.scatter(pos[0], pos[1], pos[2]) #Plotter rakettmotoren
         
         #Gjennomsnittlig energi per molekyl
         #Trykk
