@@ -3,16 +3,12 @@ import matplotlib.pyplot as plt
 import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
-
 seed = 57063
 from ast2000tools.solar_system import SolarSystem
-
 system = SolarSystem(seed)
 utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
 from mpl_toolkits import mplot3d  # Plotting
-
-from mpl_toolkits import mplot3d    #Plotting
 
 L = 10e-6 #Bredde på boksen i meter
 T = 3000 #Gassens temperatur i kelvin
@@ -45,7 +41,6 @@ L = 10e-6 #Bredde på boksen i meter
 # system.generate_orbit_video(times, planet_positions, filename='orbit_video.xml')
 
 """Kode for 1B and 1C."""
-
 
 def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code for 1 B and C
     a = []  #Skal telle hvilke partikler som slipper ut
