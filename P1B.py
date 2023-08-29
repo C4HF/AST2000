@@ -9,27 +9,27 @@ system = SolarSystem(seed)
 utils.check_for_newer_version()
 #@jit(nopython = True) #Optimalisering(?)
 
-from mpl_toolkits import mplot3d    #Plotting
+# from mpl_toolkits import mplot3d    #Plotting
 
 L = 10e-6 #Bredde på boksen i meter
 T = 3000 #Gassens temperatur i kelvin
-N = 100 #Antall partikler
+N = 10000 #Antall partikler
 t_c = 10e-9 #Tid
 dt = 10e-12 #Tids intervall i s'
 t = np.arange(0,t_c,dt) #Tidsarray definert vha Tid og tidssteg
 L = 10e-6 #Bredde på boksen i meter
 
-fig = plt.figure()
-ax = plt.axes(projection='3d')  #For 3d plotting av rakettmotoren
-ax.plot3D([0,L], [0,0], [0,0], 'green')    #Lager en yttre firkant på xy-planet
-ax.plot3D([L,L], [0,L], [0,0], 'green')
-ax.plot3D([0,0], [0,L], [0,0], 'green')
-ax.plot3D([0,L], [L,L], [0,0], 'green')
+# fig = plt.figure()
+# ax = plt.axes(projection='3d')  #For 3d plotting av rakettmotoren
+# ax.plot3D([0,L], [0,0], [0,0], 'green')    #Lager en yttre firkant på xy-planet
+# ax.plot3D([L,L], [0,L], [0,0], 'green')
+# ax.plot3D([0,0], [0,L], [0,0], 'green')
+# ax.plot3D([0,L], [L,L], [0,0], 'green')
 
-ax.plot3D([0.25*L,0.75*L], [0.25*L,0.25*L], [0,0], 'green')    #Lager en indre firkant på xy-planet (utgangshull)
-ax.plot3D([0.25*L,0.75*L], [0.75*L,0.75*L], [0,0], 'green')
-ax.plot3D([0.25*L,0.25*L], [0.25*L,0.75*L], [0,0], 'green')
-ax.plot3D([0.75*L,0.75*L], [0.25*L,0.75*L], [0,0], 'green')
+# ax.plot3D([0.25*L,0.75*L], [0.25*L,0.25*L], [0,0], 'green')    #Lager en indre firkant på xy-planet (utgangshull)
+# ax.plot3D([0.25*L,0.75*L], [0.75*L,0.75*L], [0,0], 'green')
+# ax.plot3D([0.25*L,0.25*L], [0.25*L,0.75*L], [0,0], 'green')
+# ax.plot3D([0.75*L,0.75*L], [0.25*L,0.75*L], [0,0], 'green')
 
 #print('My system has a {:g} solar mass star with a radius of {:g} kilometers.'  
 #      .format(system.star_mass, system.star_radius))
@@ -43,7 +43,7 @@ ax.plot3D([0.75*L,0.75*L], [0.25*L,0.75*L], [0,0], 'green')
 
 def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code for 1 B and C
     a = []  #Skal telle hvilke partikler som slipper ut
-    nr = [] #Bare til plotting underveis
+    # nr = [] #Bare til plotting underveis
     rows = 3 #For vectors
     cols = npb
 
@@ -51,7 +51,11 @@ def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code fo
     loc = 0
     scale = np.sqrt(const.k_B * T / const.m_H2) #Må bruke for vektorer. Stden stod i boka.
     vel = np.random.normal(loc = loc, scale = scale, size=(rows, cols)) #loc = mean, scale = standard deviation(std)
-    for m in range(750): #tidssteg
+    for i in range(len(vel)):   #Passer på at ingen av hastighetene er 0, og setter den heller lik en annen retnings fart (veldig sjelden feil)
+        vel_0 = np.where(vel[i] == 0)
+        vel[i][vel_0] = vel[i - 1][vel_0]
+
+    for m in range(len(t)): #tidssteg
         pos += dt * vel #Euler cromer
 
         x1 = np.where(pos[0] >= L)[0] #Ser etter kollisjoner for x
@@ -65,25 +69,25 @@ def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code fo
             if L/4 < pos[0][z2[m]] < (3/4)*L:      #Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
                 if L/4 < pos[1][z2[m]] < (3/4)*L:
                     a.append([pos[0][z2[m]], pos[1][z2[m]], pos[2][z2[m]]]) #Lagrer partiklene som forsvinner ut. Kan brukes til beregninger
-                            #Fjerner partikkelen fra pos, og legger til en ny, uniformt fordelt partikkel, med en vel.
-                    if z2[m] not in nr:    #Brukes til plotting
-                       nr.append(z2[m])    
-        z2 = list(z2)
-        x1 = list(x1)
-        x2 = list(x2)
-        y1 = list(y1)
-        y2 = list(y2)
-        for i in range(len(nr)):   #For plotting
-            if nr[i] in z2:
-               z2.remove(nr[i])
-            if nr[i] in x1:
-               x1.remove(nr[i])
-            if nr[i] in x2:
-               x2.remove(nr[i])
-            if nr[i] in y1:
-               y1.remove(nr[i])
-            if nr[i] in y2:
-               y2.remove(nr[i])
+                            #Endrer pos til en ny, uniformt fordelt pos i toppen, med en vel som er rettet med en normalfordelt vinkel nedover (z<0)
+                    # if z2[m] not in nr:    #Brukes til plotting
+                    #    nr.append(z2[m])    
+        # z2 = list(z2)
+        # x1 = list(x1)   #For plotting
+        # x2 = list(x2)
+        # y1 = list(y1)
+        # y2 = list(y2)
+        # for i in range(len(nr)):   #For plotting
+        #     if nr[i] in z2:
+        #        z2.remove(nr[i])
+        #     if nr[i] in x1:
+        #        x1.remove(nr[i])
+        #     if nr[i] in x2:
+        #        x2.remove(nr[i])
+        #     if nr[i] in y1:
+        #        y1.remove(nr[i])
+        #     if nr[i] in y2:
+        #        y2.remove(nr[i])
             
 
         vel[0][x1] = -vel[0][x1]
@@ -93,10 +97,10 @@ def simulate_engine_performance(npb): #npb = number_of_particles_in_box. Code fo
         vel[2][z1] = -vel[2][z1]
         vel[2][z2] = -vel[2][z2]
 
-        ax.scatter(pos[0], pos[1], pos[2]) #Plotter rakettmotoren
+        # ax.scatter(pos[0], pos[1], pos[2]) #Plotter rakettmotoren
         
         #Gjennomsnittlig energi per molekyl
         #Trykk
     #return tbp #thrust per box
-x = simulate_engine_performance(200)
+x = simulate_engine_performance(N)
 plt.show()
