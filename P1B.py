@@ -10,9 +10,7 @@ from ast2000tools.solar_system import SolarSystem
 system = SolarSystem(seed)
 utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
-from mpl_toolkits import mplot3d  # Plotting
-
-from mpl_toolkits import mplot3d  # Plotting
+# from mpl_toolkits import mplot3d  # Plotting
 
 L = 10e-6  # Bredde på boksen i meter
 T = 3000  # Gassens temperatur i kelvin
@@ -83,31 +81,31 @@ def simulate_engine_performance(
                         [pos[0][z2[m]], pos[1][z2[m]], pos[2][z2[m]]]
                     )  # Lagrer partiklene som forsvinner ut. Kan brukes til beregninger
                     # Fjerner partikkelen fra pos, og legger til en ny, uniformt fordelt partikkel, med en vel.
-                    # if z2[m] not in nr:  # Brukes til plotting
-                    # nr.append(z2[m])
+        #             if z2[m] not in nr:  # Brukes til plotting
+        #                 nr.append(z2[m])
         # z2 = list(z2)
         # x1 = list(x1)
         # x2 = list(x2)
         # y1 = list(y1)
         # y2 = list(y2)
         # for i in range(len(nr)):  # For plotting
-        # if nr[i] in z2:
-        # z2.remove(nr[i])
-        # if nr[i] in x1:
-        #     x1.remove(nr[i])
-        # if nr[i] in x2:
-        #     x2.remove(nr[i])
-        # if nr[i] in y1:
-        #     y1.remove(nr[i])
-        # if nr[i] in y2:
-        #     y2.remove(nr[i])
+        #     if nr[i] in z2:
+        #         z2.remove(nr[i])
+        #     if nr[i] in x1:
+        #         x1.remove(nr[i])
+        #     if nr[i] in x2:
+        #         x2.remove(nr[i])
+        #     if nr[i] in y1:
+        #         y1.remove(nr[i])
+        #     if nr[i] in y2:
+        #         y2.remove(nr[i])
 
-        # vel[0][x1] = -vel[0][x1]
-        # vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu farten til det motsatte i en gitt retning
-        # vel[1][y1] = -vel[1][y1]
-        # vel[1][y2] = -vel[1][y2]
-        # vel[2][z1] = -vel[2][z1]
-        # vel[2][z2] = -vel[2][z2]
+        vel[0][x1] = -vel[0][x1]
+        vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu farten til det motsatte i en gitt retning
+        vel[1][y1] = -vel[1][y1]
+        vel[1][y2] = -vel[1][y2]
+        vel[2][z1] = -vel[2][z1]
+        vel[2][z2] = -vel[2][z2]
 
         # ax.scatter(pos[0], pos[1], pos[2])  # Plotter rakettmotoren
 
