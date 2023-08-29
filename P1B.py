@@ -49,19 +49,18 @@ k_B = const.k_B
 def simulate_engine_performance(
     npb,
 ):  # npb = number_of_particles_in_box. Code for 1 B and C
-    a = []  # Skal telle hvilke partikler som slipper ut
+    a = []  # Skal telle farten til partiklene som slipper ut
     # nr = []  # Bare til plotting underveis
     rows = 3  # For vectors
     cols = npb
 
     pos = L * np.random.rand(rows, cols)  # Particle positions
     loc = 0
-    scale = np.sqrt(
-        const.k_B * T / const.m_H2
-    )  # Må bruke for vektorer. Stden stod i boka.
-    vel = np.random.normal(
-        loc=loc, scale=scale, size=(rows, cols)
-    )  # loc = mean, scale = standard deviation(std)
+    scale = np.sqrt(const.k_B * T / const.m_H2)  # Må bruke for vektorer. Stden stod i boka.
+    vel = np.random.normal(loc=loc, scale=scale, size=(rows, cols))  # loc = mean, scale = standard deviation(std)
+    for i in range(len(vel)):   #Sørger for at ingen hastigheter er negative(Sjelden feil)
+        vel_0 = np.where(vel[i] == 0)[0]
+        vel[i][vel_0] = vel[i-1][vel_0]
     for m in range(len(t)):  # tidssteg
         pos += dt * vel  # Euler cromer
 
@@ -73,14 +72,13 @@ def simulate_engine_performance(
         z2 = np.where(pos[2] <= 0)[0]
 
         for m in range(len(z2)):
-            if (
-                L / 4 < pos[0][z2[m]] < (3 / 4) * L
-            ):  # Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
+            if (L / 4 < pos[0][z2[m]] < (3 / 4) * L):  # Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
                 if L / 4 < pos[1][z2[m]] < (3 / 4) * L:
-                    a.append(
-                        [pos[0][z2[m]], pos[1][z2[m]], pos[2][z2[m]]]
-                    )  # Lagrer partiklene som forsvinner ut. Kan brukes til beregninger
-                    # Fjerner partikkelen fra pos, og legger til en ny, uniformt fordelt partikkel, med en vel.
+                    a.append([vel[0][z2[m]], vel[1][z2[m]], vel[2][z2[m]]])  # Lagrer partiklene som forsvinner ut. Kan brukes til beregninger
+                    for i in range(2):   #Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
+                        pos[i][m] = L * np.random.rand()
+                    pos[2][m] = L
+
         #             if z2[m] not in nr:  # Brukes til plotting
         #                 nr.append(z2[m])
         # z2 = list(z2)
@@ -114,11 +112,20 @@ def simulate_engine_performance(
     numerical_total_energy = np.sum(numerical_kinetic_energy)
     numerical_average_energy = numerical_total_energy / N
     analytical_average_energy = (3 / 2) * k_B * T
+    #Trykk 
 
+    #Fuel consumption
+    tot_fuel = m_H2 * len(a)
+    fuel_cons = tot_fuel / t_c
 
-# Trykk
-# return tbp #thrust per box
-
+    #Fremdrift
+    P = 0
+    for i in range(len(a)):
+        P += m_H2 * a[i][2] #P = mv, bruker bare v_z da de andre blir 0 totalt.
+    tpb = P / t_c    #F = mv / dt
+    
+    return tpb, fuel_cons #thrust per box og fuel consumption
 
 x = simulate_engine_performance(N)
+print(x)
 # plt.show()
