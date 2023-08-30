@@ -4,6 +4,8 @@ import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 import math
+from scipy.stats import norm
+
 
 seed = 57063
 from ast2000tools.solar_system import SolarSystem
@@ -72,6 +74,7 @@ def simulate_engine_performance(
         vel[i][vel_0] = vel[i - 1][vel_0]
 
     pressure_list = []
+
     for m in range(len(t)):  # tidssteg
         pos += dt * vel  # Euler cromer
 
@@ -134,6 +137,20 @@ def simulate_engine_performance(
         dp = df / (L * L)
         pressure_list.append(dp)
 
+    ########## Plotting av velocity-fordeling vs Boltzmann ##############
+    x_axis = np.linspace(-4 * scale, 4 * scale, 1000)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+
+    ax1.hist(vel[0], histtype="step", alpha=0.6)
+    ax1.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
+
+    ax2.hist(vel[1], density=True, alpha=0.6)
+    ax2.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
+
+    ax3.hist(vel[2], histtype="step", alpha=0.6)
+    ax3.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
+    plt.show()
+
     # Gjennomsnittlig energi per molekyl
     numerical_kinetic_energy = 1 / 2 * m_H2 * vel**2
     numerical_total_energy = np.sum(numerical_kinetic_energy)
@@ -142,23 +159,24 @@ def simulate_engine_performance(
 
     # Average trykk
     average_trykk = sum(pressure_list) / len(pressure_list)
-    print(average_trykk)
+    # print(average_trykk)
 
     n = N / (L * L * L)
     analytical_pressure = n * k_B * T
-    print(analytical_pressure)
+    # print(analytical_pressure)
 
     # Fuel consumption
     tot_fuel = m_H2 * len(a)
     fuel_cons = tot_fuel / t_c
 
-    #Fremdrift
-    P = sum(a) * m_H2 #P = mv, bruker bare v_z da de andre blir 0 totalt.
-    tpb = - P / t_c    #F = mv / dt
-    return tpb, fuel_cons #thrust per box og fuel consumption
+    # Fremdrift
+    P = sum(a) * m_H2  # P = mv, bruker bare v_z da de andre blir 0 totalt.
+    tpb = -P / t_c  # F = mv / dt
+    return tpb, fuel_cons  # thrust per box og fuel consumption
+
 
 x = simulate_engine_performance(N)
-print(mission.spacecraft_mass, mission.spacecraft_area)
+# print(mission.spacecraft_mass, mission.spacecraft_area)
 
 
 # plt.show()
