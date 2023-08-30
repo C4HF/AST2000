@@ -74,7 +74,7 @@ def simulate_engine_performance(
         for m in range(len(z2)):
             if (L / 4 < pos[0][z2[m]] < (3 / 4) * L):  # Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
                 if L / 4 < pos[1][z2[m]] < (3 / 4) * L:
-                    a.append([vel[0][z2[m]], vel[1][z2[m]], vel[2][z2[m]]])  # Lagrer partiklene som forsvinner ut. Kan brukes til beregninger
+                    a.append(vel[2][z2[m]])  # Lagrer farten til partiklene som forsvinner ut. Kan brukes til beregninger
                     for i in range(2):   #Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
                         pos[i][m] = L * np.random.rand()
                     pos[2][m] = L
@@ -121,8 +121,8 @@ def simulate_engine_performance(
     #Fremdrift
     P = 0
     for i in range(len(a)):
-        P += m_H2 * a[i][2] #P = mv, bruker bare v_z da de andre blir 0 totalt.
-    tpb = P / t_c    #F = mv / dt
+        P += m_H2 * a[i] #P = mv, bruker bare v_z da de andre blir 0 totalt.
+    tpb = - P / t_c    #F = mv / dt
     
     return tpb, fuel_cons #thrust per box og fuel consumption
 
