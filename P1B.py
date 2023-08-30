@@ -119,11 +119,8 @@ def simulate_engine_performance(
     fuel_cons = tot_fuel / t_c
 
     #Fremdrift
-    P = 0
-    for i in range(len(a)):
-        P += m_H2 * a[i] #P = mv, bruker bare v_z da de andre blir 0 totalt.
+    P = sum(a) * m_H2 #P = mv, bruker bare v_z da de andre blir 0 totalt.
     tpb = - P / t_c    #F = mv / dt
-    
     return tpb, fuel_cons #thrust per box og fuel consumption
 
 x = simulate_engine_performance(N)
