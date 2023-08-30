@@ -9,11 +9,12 @@ seed = 57063
 from ast2000tools.solar_system import SolarSystem
 
 system = SolarSystem(seed)
+mission = SpaceMission(seed)
 utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
 # from mpl_toolkits import mplot3d  # Plotting
 
-L = 10e-6  # Bredde på boksen i meter
+L = 10e-7  # Bredde på boksen i meter
 T = 3000  # Gassens temperatur i kelvin
 N = 10000  # Antall partikler
 t_c = 10e-9  # Tid
@@ -144,8 +145,8 @@ def simulate_engine_performance(
     print(average_trykk)
 
     n = N / (L * L * L)
-    numerical_analytical_pressure = n * k_B * T
-    print(numerical_analytical_pressure)
+    analytical_pressure = n * k_B * T
+    print(analytical_pressure)
 
     # Fuel consumption
     tot_fuel = m_H2 * len(a)
@@ -157,9 +158,13 @@ def simulate_engine_performance(
         P += m_H2 * a[i]  # P = mv, bruker bare v_z da de andre blir 0 totalt.
     tpb = -P / t_c  # F = mv / dt
 
+    print(average_trykk * ((L * L) / 4))
+
     return tpb, fuel_cons  # thrust per box og fuel consumption
 
 
 x = simulate_engine_performance(N)
-print(x)
+print(mission.spacecraft_mass, mission.spacecraft_area)
+
+
 # plt.show()
