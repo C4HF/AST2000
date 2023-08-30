@@ -70,7 +70,15 @@ def simulate_engine_performance(
     ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
         vel_0 = np.where(vel[i] == 0)[0]
         vel[i][vel_0] = vel[i - 1][vel_0]
-
+    x_axis = np.arange(-4*scale, 4*scale, 0.01)
+    plt.subplot(1,3,1)
+    plt.hist(vel[0], histtype=u'step', label = 'vel_x')
+    plt.plot((x_axis, np.random.normal(loc, scale, len(x_axis))), label = 'Boltzman')
+    plt.subplot(1,3,2)
+    plt.hist(vel[1])
+    plt.subplot(1,3,3)
+    plt.hist(vel[2])
+    plt.legend()
     pressure_list = []
     for m in range(len(t)):  # tidssteg
         pos += dt * vel  # Euler cromer
@@ -161,4 +169,4 @@ x = simulate_engine_performance(N)
 print(mission.spacecraft_mass, mission.spacecraft_area)
 
 
-# plt.show()
+plt.show()
