@@ -7,12 +7,14 @@ import math
 
 seed = 57063
 from ast2000tools.solar_system import SolarSystem
+
 system = SolarSystem(seed)
+mission = SpaceMission(seed)
 utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
 # from mpl_toolkits import mplot3d  # Plotting
 
-L = 10e-6  # Bredde på boksen i meter
+L = 10e-7  # Bredde på boksen i meter
 T = 3000  # Gassens temperatur i kelvin
 N = 10000  # Antall partikler
 t_c = 10e-9  # Tid
@@ -46,6 +48,7 @@ k_B = const.k_B
 
 """Kode for 1B and 1C."""
 
+
 def simulate_engine_performance(
     npb,
 ):  # npb = number_of_particles_in_box. Code for 1 B and C
@@ -56,11 +59,19 @@ def simulate_engine_performance(
 
     pos = L * np.random.rand(rows, cols)  # Particle positions
     loc = 0
-    scale = np.sqrt(const.k_B * T / const.m_H2)  # Må bruke for vektorer. Stden stod i boka.
-    vel = np.random.normal(loc=loc, scale=scale, size=(rows, cols))  # loc = mean, scale = standard deviation(std)
-    for i in range(len(vel)):   #Sørger for at ingen hastigheter er negative(Sjelden feil)
+    scale = np.sqrt(
+        const.k_B * T / const.m_H2
+    )  # Må bruke for vektorer. Stden stod i boka.
+    vel = np.random.normal(
+        loc=loc, scale=scale, size=(rows, cols)
+    )  # loc = mean, scale = standard deviation(std)
+    for i in range(
+        len(vel)
+    ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
         vel_0 = np.where(vel[i] == 0)[0]
-        vel[i][vel_0] = vel[i-1][vel_0]
+        vel[i][vel_0] = vel[i - 1][vel_0]
+
+    pressure_list = []
     for m in range(len(t)):  # tidssteg
         pos += dt * vel  # Euler cromer
 
@@ -72,10 +83,16 @@ def simulate_engine_performance(
         z2 = np.where(pos[2] <= 0)[0]
 
         for m in range(len(z2)):
-            if (L / 4 < pos[0][z2[m]] < (3 / 4) * L):  # Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
+            if (
+                L / 4 < pos[0][z2[m]] < (3 / 4) * L
+            ):  # Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
                 if L / 4 < pos[1][z2[m]] < (3 / 4) * L:
-                    a.append(vel[2][z2[m]])  # Lagrer farten til partiklene som forsvinner ut. Kan brukes til beregninger
-                    for i in range(2):   #Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
+                    a.append(
+                        vel[2][z2[m]]
+                    )  # Lagrer farten til partiklene som forsvinner ut. Kan brukes til beregninger
+                    for i in range(
+                        2
+                    ):  # Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
                         pos[i][m] = L * np.random.rand()
                     pos[2][m] = L
 
@@ -99,7 +116,9 @@ def simulate_engine_performance(
         #         y2.remove(nr[i])
 
         vel[0][x1] = -vel[0][x1]
-        vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu farten til det motsatte i en gitt retning
+        vel[0][x2] = -vel[0][
+            x2
+        ]  # Elastisk støt ved å snu farten til det motsatte i en gitt retning
         vel[1][y1] = -vel[1][y1]
         vel[1][y2] = -vel[1][y2]
         vel[2][z1] = -vel[2][z1]
@@ -107,14 +126,29 @@ def simulate_engine_performance(
 
         # ax.scatter(pos[0], pos[1], pos[2])  # Plotter rakettmotoren
 
+        # Trykk per tidsteg
+        momentum = vel * m_H2
+        df = np.sum(
+            (2 * np.abs(momentum[0][x1])) / dt
+        )  # regner ut kraft som virker på veggen per tidssteg
+        dp = df / (L * L)
+        pressure_list.append(dp)
+
     # Gjennomsnittlig energi per molekyl
     numerical_kinetic_energy = 1 / 2 * m_H2 * vel**2
     numerical_total_energy = np.sum(numerical_kinetic_energy)
     numerical_average_energy = numerical_total_energy / N
     analytical_average_energy = (3 / 2) * k_B * T
-    #Trykk 
 
-    #Fuel consumption
+    # Average trykk
+    average_trykk = sum(pressure_list) / len(pressure_list)
+    print(average_trykk)
+
+    n = N / (L * L * L)
+    analytical_pressure = n * k_B * T
+    print(analytical_pressure)
+
+    # Fuel consumption
     tot_fuel = m_H2 * len(a)
     fuel_cons = tot_fuel / t_c
 
@@ -124,5 +158,7 @@ def simulate_engine_performance(
     return tpb, fuel_cons #thrust per box og fuel consumption
 
 x = simulate_engine_performance(N)
-print(x)
+print(mission.spacecraft_mass, mission.spacecraft_area)
+
+
 # plt.show()
