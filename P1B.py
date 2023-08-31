@@ -72,15 +72,8 @@ def simulate_engine_performance(
     ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
         vel_0 = np.where(vel[i] == 0)[0]
         vel[i][vel_0] = vel[i - 1][vel_0]
-    x_axis = np.arange(-4*scale, 4*scale, 0.01)
-    plt.subplot(1,3,1)
-    plt.hist(vel[0], histtype=u'step', label = 'vel_x')
-    plt.plot((x_axis, np.random.normal(loc, scale, len(x_axis))), label = 'Boltzman')
-    plt.subplot(1,3,2)
-    plt.hist(vel[1])
-    plt.subplot(1,3,3)
-    plt.hist(vel[2])
-    plt.legend()
+    x_axis = np.arange(-4 * scale, 4 * scale, 0.01)
+
     pressure_list = []
 
     for m in range(len(t)):  # tidssteg
@@ -146,17 +139,51 @@ def simulate_engine_performance(
         pressure_list.append(dp)
 
     ########## Plotting av velocity-fordeling vs Boltzmann ##############
-    x_axis = np.linspace(-4 * scale, 4 * scale, 1000)
+    x_axis = np.linspace(-4 * scale, 4 * scale, N)
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+    # Boltz = np.random.normal(loc=loc, scale=scale, size=(rows, cols))
+    bins = 20
 
-    ax1.hist(vel[0], histtype="step", alpha=0.6)
-    ax1.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
+    ax1.hist(
+        vel[0], bins=bins, alpha=0.4, density=True, label="x-velocity", color="cyan"
+    )
+    ax1.plot(
+        x_axis,
+        norm.pdf(x_axis, loc=loc, scale=scale),
+        color="red",
+        label="MB-dist",
+    )
 
-    ax2.hist(vel[1], density=True, alpha=0.6)
-    ax2.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
+    ax2.hist(
+        vel[1], bins=bins, alpha=0.4, density=True, label="y-velocity", color="olive"
+    )
+    ax2.plot(
+        x_axis,
+        norm.pdf(x_axis, loc=loc, scale=scale),
+        color="red",
+        label="MB-dist",
+    )
 
-    ax3.hist(vel[2], histtype="step", alpha=0.6)
-    ax3.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
+    ax3.hist(
+        vel[2], bins=bins, alpha=0.4, density=True, label="z-velocity", color="pink"
+    )
+    ax3.plot(
+        x_axis,
+        norm.pdf(x_axis, loc=loc, scale=scale),
+        color="red",
+        label="MB-dist",
+    )
+    ax1.set_ylabel("%")
+    ax1.set_xlabel("m/s")
+    ax1.set_title("Velocity x-direction")
+    ax1.legend(loc="upper left")
+    ax2.set_xlabel("m/s")
+    ax2.set_title("Velocity y-direction")
+    ax2.legend(loc="upper left")
+    ax3.set_xlabel("m/s")
+    ax3.set_title("Velocity z-direction")
+    ax3.legend(loc="upper left")
+    fig.suptitle("Simulated velocity of our particles compared to Maxwell-Boltzmann")
     plt.show()
 
     # Gjennomsnittlig energi per molekyl
