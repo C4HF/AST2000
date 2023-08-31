@@ -1,22 +1,22 @@
+########## Egen kode ##################################
 import numpy as np
 import matplotlib.pyplot as plt
 import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
+from ast2000tools.solar_system import SolarSystem
 import math
 from scipy.stats import norm
 
-
 seed = 57063
-from ast2000tools.solar_system import SolarSystem
-
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
 utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
 # from mpl_toolkits import mplot3d  # Plotting
 
-L = 10e-9  # Bredde på boksen i meter
+"""Parametre"""
+L = 10e-7  # Bredde på boksen i meter
 T = 3000  # Gassens temperatur i kelvin
 N = 10000  # Antall partikler
 t_c = 10e-9  # Tid
@@ -25,6 +25,7 @@ t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
 L = 10e-6  # Bredde på boksen i meter
 m_H2 = const.m_H2
 k_B = const.k_B
+MB = np.sqrt(const.k_B * T / const.m_H2)
 
 # fig = plt.figure()
 # ax = plt.axes(projection='3d')  #For 3d plotting av rakettmotoren
@@ -51,28 +52,29 @@ k_B = const.k_B
 """Kode for 1B og 1C."""
 
 
-def simulate_engine_performance(
+def simulate_small_engine(
+        
     npb,
-):  # npb = number_of_particles_in_box. Code for 1 B and C
+):
+    """Funksjonen simulerer bevegelsen til partiklene i en liten boks.
+    Tar inn variabel npb (antall partikler per boks) og returnerer
+    tuppel: (vel, average_pressure, average_energy, F, fuel_cons).
+    """
     a = []  # Skal telle farten til partiklene som slipper ut
     # nr = []  # Bare til plotting underveis
     rows = 3  # For vectors
     cols = npb
-
     pos = L * np.random.rand(rows, cols)  # Particle positions
-    loc = 0
-    scale = np.sqrt(
-        const.k_B * T / const.m_H2
-    )  # Må bruke for vektorer. Stden stod i boka.
+    mean = 0
+    std = MB
     vel = np.random.normal(
-        loc=loc, scale=scale, size=(rows, cols)
+        loc=mean, scale=std, size=(rows, cols)
     )  # loc = mean, scale = standard deviation(std)
     for i in range(
         len(vel)
     ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
         vel_0 = np.where(vel[i] == 0)[0]
         vel[i][vel_0] = vel[i - 1][vel_0]
-    x_axis = np.arange(-4 * scale, 4 * scale, 0.01)
 
     pressure_list = []
 
@@ -138,18 +140,44 @@ def simulate_engine_performance(
         dp = df / (L * L)
         pressure_list.append(dp)
 
-    ########## Plotting av velocity-fordeling vs Boltzmann ##############
-    x_axis = np.linspace(-4 * scale, 4 * scale, N)
+    # Trykk
+    average_pressure = sum(pressure_list) / len(pressure_list)
+    n = N / (L * L * L)
+    analytical_pressure = n * k_B * T
+
+    # Energi
+    numerical_kinetic_energy = 1 / 2 * m_H2 * vel**2
+    numerical_total_energy = np.sum(numerical_kinetic_energy)
+    average_energy = numerical_total_energy / N
+    analytical_average_energy = (3 / 2) * k_B * T
+
+    # Fuel consumption
+    tot_fuel = m_H2 * len(a)
+    fuel_cons = tot_fuel / t_c
+
+    # Fremdrift
+    P = sum(a) * m_H2  # P = mv, bruker bare v_z da de andre blir 0 totalt.
+    F = -P / t_c  # F = mv / dt
+
+    return vel, average_pressure, average_energy, F, fuel_cons
+def plot_velocity_distribution(npb, bins=30):
+    """Funksjonen kaller på simulate_small_engine funksjonen og danner et
+    subplot som sammenligner den simulerte farten med Maxwell-Boltzmann fordelingen.
+    Tar inn npb variabel (antall partikler per boks), bins (antall stolper i histogrammet).
+    Returnerer ingenting"""
+    (vel, average_pressure, average_energy, F, fuel_cons) = simulate_small_engine(npb)
+    mean = 0
+    std = MB
+    x_axis = np.linspace(-4 * std, 4 * std, N)
+    bins = bins
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
-    # Boltz = np.random.normal(loc=loc, scale=scale, size=(rows, cols))
-    bins = 20
 
     ax1.hist(
         vel[0], bins=bins, alpha=0.4, density=True, label="x-velocity", color="cyan"
     )
     ax1.plot(
         x_axis,
-        norm.pdf(x_axis, loc=loc, scale=scale),
+        norm.pdf(x_axis, loc=mean, scale=mean),
         color="red",
         label="MB-dist",
     )
@@ -159,7 +187,7 @@ def simulate_engine_performance(
     )
     ax2.plot(
         x_axis,
-        norm.pdf(x_axis, loc=loc, scale=scale),
+        norm.pdf(x_axis, loc=mean, scale=std),
         color="red",
         label="MB-dist",
     )
@@ -169,7 +197,7 @@ def simulate_engine_performance(
     )
     ax3.plot(
         x_axis,
-        norm.pdf(x_axis, loc=loc, scale=scale),
+        norm.pdf(x_axis, loc=mean, scale=std),
         color="red",
         label="MB-dist",
     )
@@ -185,32 +213,6 @@ def simulate_engine_performance(
     ax3.legend(loc="upper left")
     fig.suptitle("Simulated velocity of our particles compared to Maxwell-Boltzmann")
     plt.show()
-
-    # Gjennomsnittlig energi per molekyl
-    numerical_kinetic_energy = 1 / 2 * m_H2 * vel**2
-    numerical_total_energy = np.sum(numerical_kinetic_energy)
-    numerical_average_energy = numerical_total_energy / N
-    analytical_average_energy = (3 / 2) * k_B * T
-
-    # Average trykk
-    average_trykk = sum(pressure_list) / len(pressure_list)
-    # print(average_trykk)
-    n = N / (L * L * L)
-    analytical_pressure = n * k_B * T
-    # print(analytical_pressure)
-
-    # Fuel consumption
-    tot_fuel = m_H2 * len(a)
-    fuel_cons = tot_fuel / t_c
-
-    # Fremdrift
-    P = sum(a) * m_H2  # P = mv, bruker bare v_z da de andre blir 0 totalt.
-    tpb = -P / t_c  # F = mv / dt
-    return tpb, fuel_cons  # thrust per box og fuel consumption
-
-
-x = simulate_engine_performance(N)
-# print(mission.spacecraft_mass, mission.spacecraft_area)
-
-
-plt.show()
+def plot_small_engine():
+# simulate_small_engine(N)
+# plot_velocity_distribution(N)
