@@ -16,7 +16,7 @@ utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
 # from mpl_toolkits import mplot3d  # Plotting
 
-L = 10e-7  # Bredde på boksen i meter
+L = 10e-9  # Bredde på boksen i meter
 T = 3000  # Gassens temperatur i kelvin
 N = 10000  # Antall partikler
 t_c = 10e-9  # Tid
@@ -48,7 +48,7 @@ k_B = const.k_B
 # times, planet_positions = ... # Your own orbit simulation code
 # system.generate_orbit_video(times, planet_positions, filename='orbit_video.xml')
 
-"""Kode for 1B and 1C."""
+"""Kode for 1B og 1C."""
 
 
 def simulate_engine_performance(
@@ -72,15 +72,6 @@ def simulate_engine_performance(
     ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
         vel_0 = np.where(vel[i] == 0)[0]
         vel[i][vel_0] = vel[i - 1][vel_0]
-    x_axis = np.arange(-4*scale, 4*scale, 0.01)
-    plt.subplot(1,3,1)
-    plt.hist(vel[0], histtype=u'step', label = 'vel_x')
-    plt.plot((x_axis, np.random.normal(loc, scale, len(x_axis))), label = 'Boltzman')
-    plt.subplot(1,3,2)
-    plt.hist(vel[1])
-    plt.subplot(1,3,3)
-    plt.hist(vel[2])
-    plt.legend()
     pressure_list = []
 
     for m in range(len(t)):  # tidssteg
@@ -146,13 +137,13 @@ def simulate_engine_performance(
         pressure_list.append(dp)
 
     ########## Plotting av velocity-fordeling vs Boltzmann ##############
-    x_axis = np.linspace(-4 * scale, 4 * scale, 1000)
+    x_axis = np.linspace(-4 * scale, 4 * scale, N)
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
 
-    ax1.hist(vel[0], histtype="step", alpha=0.6)
+    ax1.hist(vel[0], histtype="step", bins = 50, alpha=0.6)
     ax1.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
 
-    ax2.hist(vel[1], density=True, alpha=0.6)
+    ax2.hist(vel[1], histtype="step", alpha=0.6)
     ax2.plot(x_axis, norm.pdf(x_axis, loc, scale), color="orange")
 
     ax3.hist(vel[2], histtype="step", alpha=0.6)
@@ -168,7 +159,6 @@ def simulate_engine_performance(
     # Average trykk
     average_trykk = sum(pressure_list) / len(pressure_list)
     # print(average_trykk)
-
     n = N / (L * L * L)
     analytical_pressure = n * k_B * T
     # print(analytical_pressure)
