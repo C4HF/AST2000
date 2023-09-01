@@ -50,6 +50,125 @@ homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
 """Kode for 1B og 1C."""
 
 
+class Engine:
+    """Create instance of engine with N particles, L dimension small engine,
+    n_A nozzle area, T temperature in Kelvin, t_c simulation time, dt simulation timestep.
+    """
+
+    def __init__(self, N: int, L: float, n_A: float, T: float, t_c: float, dt: float):
+        if n_A > L**2:
+            raise ValueError(
+                f"n_A should be less than {L**2:.2f}. Got n_A = {n_A:.2f}."
+            )
+        self.N = N
+        self.L = L
+        self.n_A = n_A
+        self.T = T
+        self.t_c = t_c
+        self.dt = dt
+        self._simulate_small_engine()  # function is called by constructer
+
+    def _simulate_small_engine(self):
+        """Simulate engine performance."""
+        N = self.N
+        L = self.L
+        n_A = self.n_A
+        T = self.T
+        t_c = self.t_c
+        dt = self.dt
+        l = np.sqrt(n_A)
+        d = (L - l) / 2
+        m_H2 = const.m_H2
+        k_B = const.k_B
+        MB = np.sqrt(const.k_B * T / const.m_H2)
+
+        a = []  # Skal telle farten til partiklene som slipper ut
+        rows = 3  # For vectors
+        cols = N
+        pos = L * np.random.rand(rows, cols)  # Particle positions
+        mean = 0
+        std = MB
+        vel = np.random.normal(
+            loc=mean, scale=std, size=(rows, cols)
+        )  # loc = mean, scale = standard deviation(std)
+        for i in range(
+            len(vel)
+        ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
+            vel_0 = np.where(vel[i] == 0)[0]
+            vel[i][vel_0] = vel[i - 1][vel_0]
+
+        pressure_list = []
+
+        for m in range(len(t)):  # tidssteg
+            pos += dt * vel  # Euler cromer
+
+            x1 = np.where(pos[0] >= L)[0]  # Ser etter kollisjoner for x
+            x2 = np.where(pos[0] <= 0)[0]
+            y1 = np.where(pos[1] >= L)[0]  # Ser etter kollisjoner for y
+            y2 = np.where(pos[1] <= 0)[0]
+            z1 = np.where(pos[2] >= L)[0]  # Ser etter kollisjoner for z
+            z2 = np.where(pos[2] <= 0)[0]
+
+            for m in range(len(z2)):
+                if (
+                    d < pos[0][z2[m]] < (L - d)
+                ):  # Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
+                    if d < pos[1][z2[m]] < (L - d):
+                        a.append(
+                            vel[2][z2[m]]
+                        )  # Lagrer farten til partiklene som forsvinner ut. Kan brukes til beregninger
+                        for i in range(
+                            2
+                        ):  # Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
+                            pos[i][m] = L * np.random.rand()
+                        pos[2][m] = L
+
+            vel[0][x1] = -vel[0][x1]
+            vel[0][x2] = -vel[0][
+                x2
+            ]  # Elastisk støt ved å snu farten til det motsatte i en gitt retning
+            vel[1][y1] = -vel[1][y1]
+            vel[1][y2] = -vel[1][y2]
+            vel[2][z1] = -vel[2][z1]
+            vel[2][z2] = -vel[2][z2]
+
+            # Trykk per tidsteg
+            momentum = vel * m_H2
+            df = np.sum(
+                (2 * np.abs(momentum[0][x1])) / dt
+            )  # regner ut kraft som virker på veggen per tidssteg
+            dp = df / (L * L)
+            pressure_list.append(dp)
+
+        # Trykk
+        self.simulated_average_pressure = sum(pressure_list) / len(pressure_list)
+        n = N / (L * L * L)
+        self.analytical_expected_pressure = n * k_B * T
+
+        # Energi
+        self.simulated_kinetic_energy = 1 / 2 * m_H2 * vel**2
+        self.simulated_total_energy = np.sum(self.simulated_kinetic_energy)
+        self.simulated_average_energy = self.simulated_total_energy / N
+        self.analytical_expected_energy = (3 / 2) * k_B * T
+
+        # Fuel consumption
+        self.tot_fuel = m_H2 * len(a)
+        self.fuel_cons = (
+            self.tot_fuel / t_c
+        )  # fuel constant per second per small engine
+
+        # Fremdrift
+        self.P = sum(a) * m_H2  # P = mv, bruker bare v_z da de andre blir 0 totalt.
+        self.F = -self.P / t_c  # F = mv / dt
+
+        ## Utregning av total thrust og total fuel-constant
+        self.number_of_engines = crosssection_rocket / (L**2)
+        self.thrust = self.number_of_engines * self.F
+        self.total_fuel_constant = self.fuel_cons * self.number_of_engines
+
+        return vel, average_pressure, average_energy, F, fuel_cons
+
+
 def simulate_small_engine(
     npb,
 ):
@@ -348,11 +467,28 @@ def launch_rocket(fuel_weight, target_vertical_velocity, dt=10):
     return (altitude, vertical_velocity, total_time, fuel_weight)
 
 
-(altitude, vertical_velocity, total_time, fuel_weight) = launch_rocket(45, 100)
-print(
-    f"The rocket reached altitude: {altitude:.2f}m in {total_time:.2f}s. Current speed {vertical_velocity:.2f}m/s and fuel-level: {fuel_weight:.2f}kg."
-)
+# (altitude, vertical_velocity, total_time, fuel_weight) = launch_rocket(45, 100)
+# print(
+#     f"The rocket reached altitude: {altitude:.2f}m in {total_time:.2f}s. Current speed {vertical_velocity:.2f}m/s and fuel-level: {fuel_weight:.2f}kg."
+# )
 
 # simulate_small_engine(N)
 # plot_velocity_distribution(N)
 # plot_small_engine()
+
+"""Parametre"""
+L = 10e-7  # Bredde på boksen i meter
+T = 3000  # Gassens temperatur i kelvin
+N = 10**4  # Antall partikler
+t_c = 10e-9  # Tid
+dt = 10e-12  # Tids intervall i s'
+t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
+m_H2 = const.m_H2
+k_B = const.k_B
+MB = np.sqrt(const.k_B * T / const.m_H2)
+
+engine1 = Engine(N=10**4, L=10e-8, n_A=5 * (10e-15), T=3000, t_c=10e-9, dt=10e-12)
+engine2 = Engine(N=10**4, L=10e-7, n_A=5 * (10e-15), T=3000, t_c=10e-9, dt=10e-12)
+
+print(engine1.thrust / engine1.total_fuel_constant)
+print(engine2.thrust / engine2.total_fuel_constant)
