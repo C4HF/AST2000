@@ -15,9 +15,9 @@ utils.check_for_newer_version()
 #@jit(nopython = True) #Optimalisering(?)
 
 """Parametre"""
-L = 10e-6  # Bredde på boksen i meter
+L = 10e-7  # Bredde på boksen i meter
 T = 3000  # Gassens temperatur i kelvin
-N = 100  # Antall partikler
+N = 10000  # Antall partikler
 t_c = 10e-9  # Tid
 dt = 10e-12  # Tids intervall i s'
 t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
@@ -133,7 +133,7 @@ def plot_velocity_distribution(npb, bins=30):
     std = MB
     x_axis = np.linspace(-4 * std, 4 * std, N)
     bins = bins
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
 
     ax1.hist(
         vel[0], bins=bins, alpha=0.4, density=True, label="x-velocity", color="cyan"
@@ -176,7 +176,7 @@ def plot_velocity_distribution(npb, bins=30):
     ax3.legend(loc="upper left")
     fig.suptitle("Simulated velocity of our particles compared to Maxwell-Boltzmann")
     plt.show()
-def plot_small_engine(npb = 100, time = 100):
+def plot_small_engine(npb = 100, time = 200):
     from mpl_toolkits import mplot3d  # Plotting
     fig = plt.figure()
     ax = plt.axes(projection='3d')  #For 3d plotting av rakettmotoren
@@ -218,27 +218,27 @@ def plot_small_engine(npb = 100, time = 100):
         for m in range(len(z2)): #Sjekker om kollisjonene for z2(xy-planet) 
             if (L / 4 < pos[0][z2[m]] < (3 / 4) * L):  #egentlig er i 
                 if L / 4 < pos[1][z2[m]] < (3 / 4) * L: #utgangshullet
-                    for i in range(2):  #Flytter partikkelen til en uniformt 
-                        pos[i][m] = L * np.random.rand() #fordelt posisjon på 
-                    pos[2][m] = L   #toppen av boksen, med samme vel.
+                    # for i in range(2):  #Flytter partikkelen til en uniformt 
+                    #     pos[i][m] = L * np.random.rand() #fordelt posisjon på 
+                    # pos[2][m] = L   #toppen av boksen, med samme vel.
                     if z2[m] not in nr:  # Brukes til plotting
                         nr.append(z2[m])   
-        # z2 = list(z2)
-        # x1 = list(x1)
-        # x2 = list(x2)
-        # y1 = list(y1)
-        # y2 = list(y2)
-        # for i in range(len(nr)):  # For plotting
-        #     if nr[i] in z2:       # Av at partiklene fyker ut av boksen
-        #         z2.remove(nr[i])
-        #     if nr[i] in x1:
-        #         x1.remove(nr[i])
-        #     if nr[i] in x2:
-        #         x2.remove(nr[i])
-        #     if nr[i] in y1:
-        #         y1.remove(nr[i])
-        #     if nr[i] in y2:
-        #         y2.remove(nr[i])
+        z2 = list(z2)
+        x1 = list(x1)
+        x2 = list(x2)
+        y1 = list(y1)
+        y2 = list(y2)
+        for i in range(len(nr)):  # For plotting
+            if nr[i] in z2:       # Av at partiklene fyker ut av boksen
+                z2.remove(nr[i])
+            if nr[i] in x1:
+                x1.remove(nr[i])
+            if nr[i] in x2:
+                x2.remove(nr[i])
+            if nr[i] in y1:
+                y1.remove(nr[i])
+            if nr[i] in y2:
+                y2.remove(nr[i])
 
         vel[0][x1] = -vel[0][x1]
         vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu 
@@ -252,4 +252,4 @@ def plot_small_engine(npb = 100, time = 100):
     plt.show()
 #simulate_small_engine(N)
 #plot_velocity_distribution(N)
-#plot_small_engine()
+plot_small_engine()
