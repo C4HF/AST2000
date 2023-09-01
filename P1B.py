@@ -583,9 +583,11 @@ wet_rocket_mass = dry_rocket_mass + estimated_fuel_weight
 """Kode 1E"""
 
 
-def launch_rocket(fuel_weight, target_vertical_velocity, dt=10):
+def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
     """Funksjonen simulerer launch av raketten."""
-    vel, average_pressure, average_energy, F, fuel_cons = simulate_small_engine(N)
+    thrust = engine.thrust
+    total_fuel_constant = engine.total_fuel_constant
+
     altitude = 0
     vertical_velocity = 0
     total_time = 0
@@ -594,8 +596,7 @@ def launch_rocket(fuel_weight, target_vertical_velocity, dt=10):
     F_g = (G * homeplanet_mass * wet_rocket_mass) / (
         homeplanet_radius + altitude
     )  # The gravitational force
-    rocket_thrust_gravitation_diff = (number_of_engines * F) - F_g
-    total_fuel_constant = fuel_cons * number_of_engines
+    rocket_thrust_gravitation_diff = thrust - F_g
 
     while vertical_velocity < target_vertical_velocity:
         vertical_velocity += (rocket_thrust_gravitation_diff / wet_rocket_mass) * dt
@@ -612,17 +613,8 @@ def launch_rocket(fuel_weight, target_vertical_velocity, dt=10):
     return (altitude, vertical_velocity, total_time, fuel_weight)
 
 
-# (altitude, vertical_velocity, total_time, fuel_weight) = launch_rocket(45, 100)
-# print(
-#     f"The rocket reached altitude: {altitude:.2f}m in {total_time:.2f}s. Current speed {vertical_velocity:.2f}m/s and fuel-level: {fuel_weight:.2f}kg."
-# )
-
-# simulate_small_engine(N)
-# plot_velocity_distribution(N)
-# plot_small_engine()
-
-
 ### Eksempel på bruk av engine-class: ########
-engine1 = Engine(N=10**5, L=10e-7, n_A=0.5, T=30000, t_c=10e-10, dt=10e-12)
+engine1 = Engine(N=10**5, L=10e-7, n_A=0.5, T=30000, t_c=10e-9, dt=10e-12)
 engine2 = Engine(N=10**5, L=10e-7, n_A=0.5, T=3000, t_c=10e-9, dt=10e-12)
-# engine1.plot_small_engine()
+print(launch_rocket(engine1, 5000, 100, 100))
+print(launch_rocket(engine2, 5000, 100, 100))
