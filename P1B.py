@@ -8,7 +8,6 @@ from ast2000tools.solar_system import SolarSystem
 import math
 from scipy.stats import norm
 
-# seed = utils.get_seed("username")
 seed = 57063
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
@@ -16,16 +15,16 @@ utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
 
 """Parametre"""
-L = 10e-7  # Bredde på boksen i meter
-T = 3000  # Gassens temperatur i kelvin
-N = 10**4  # Antall partikler
-t_c = 10e-9  # Tid
-dt = 10e-12  # Tids intervall i s'
-t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
+# L = 10e-7  # Bredde på boksen i meter
+# T = 3000  # Gassens temperatur i kelvin
+# N = 10**4  # Antall partikler
+# t_c = 10e-9  # Tid
+# dt = 10e-12  # Tids intervall i s'
+# t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
+
 m_H2 = const.m_H2
 k_B = const.k_B
 MB = np.sqrt(const.k_B * T / const.m_H2)
-
 SM = 5.02739933 * 10 ** (31)  # Solar masses in kg
 G = 6.6743 * 10 ** (-11)  # Gravitational constant
 dry_rocket_mass = mission.spacecraft_mass
@@ -33,8 +32,6 @@ crosssection_rocket = mission.spacecraft_area
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
 # print(system.__dir__())  ### get a list of attribute-commands
-
-
 # print(homeplanet_radius)
 # print(homeplanet_mass)
 # for planet_idx in range(system.number_of_planets):
@@ -42,10 +39,12 @@ homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
 #         f"Planet index{planet_idx}, type {system.types[planet_idx]} has mass {system._masses[planet_idx]} and radius {system._radii[planet_idx]}"
 #     )
 
+
 ### Må confirme escape velocity ###############
 # escape_velocity = 11882
 # print(escape_velocity)
 # print(np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius))
+
 
 """Kode for 1B og 1C."""
 
@@ -555,13 +554,13 @@ def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=10):
     return fuel_consumed
 
 
-## Utregning av total thrust, total fuel-constant og total rocket mass
-(vel, average_pressure, average_energy, F, fuel_cons) = simulate_small_engine(N)
-estimated_fuel_weight = 4500
-number_of_engines = crosssection_rocket / (L**2)
-rocket_total_thrust = number_of_engines * F
-total_fuel_constant = fuel_cons * number_of_engines
-wet_rocket_mass = dry_rocket_mass + estimated_fuel_weight
+# ## Utregning av total thrust, total fuel-constant og total rocket mass
+# (vel, average_pressure, average_energy, F, fuel_cons) = simulate_small_engine(N)
+# estimated_fuel_weight = 4500
+# number_of_engines = crosssection_rocket / (L**2)
+# rocket_total_thrust = number_of_engines * F
+# total_fuel_constant = fuel_cons * number_of_engines
+# wet_rocket_mass = dry_rocket_mass + estimated_fuel_weight
 
 # print("Number of engines:")
 # print(number_of_engines)
