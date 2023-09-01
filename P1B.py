@@ -8,6 +8,7 @@ from ast2000tools.solar_system import SolarSystem
 import math
 from scipy.stats import norm
 
+# seed = utils.get_seed("username")
 seed = 57063
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
@@ -24,19 +25,27 @@ t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
 m_H2 = const.m_H2
 k_B = const.k_B
 MB = np.sqrt(const.k_B * T / const.m_H2)
+
+SM = 5.02739933 * 10 ** (31)  # Solar masses in kg
+G = 6.6743 * 10 ** (-11)  # Gravitational constant
 dry_rocket_mass = mission.spacecraft_mass
 crosssection_rocket = mission.spacecraft_area
-escape_velocity = 11882
+homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
+homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
+# print(system.__dir__())  ### get a list of attribute-commands
 
-# print('My system has a {:g} solar mass star with a radius of {:g} kilometers.'
-#      .format(system.star_mass, system.star_radius))
 
-# for planet_idx in range(system.number_of_planets):  #Planet 0 er )hjem planeten
-#   print('Planet {:d} is a {} planet with a semi-major axis of {:g} AU.'
-#        .format(planet_idx, system.types[planet_idx], system.semi_major_axes[planet_idx]))
+# print(homeplanet_radius)
+# print(homeplanet_mass)
+# for planet_idx in range(system.number_of_planets):
+#     print(
+#         f"Planet index{planet_idx}, type {system.types[planet_idx]} has mass {system._masses[planet_idx]} and radius {system._radii[planet_idx]}"
+#     )
 
-# times, planet_positions = ... # Your own orbit simulation code
-# system.generate_orbit_video(times, planet_positions, filename='orbit_video.xml')
+### Må confirme escape velocity ###############
+# escape_velocity = 11882
+# print(escape_velocity)
+# print(np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius))
 
 """Kode for 1B og 1C."""
 
@@ -290,22 +299,59 @@ rocket_total_thrust = number_of_engines * F
 total_fuel_constant = fuel_cons * number_of_engines
 wet_rocket_mass = dry_rocket_mass + estimated_fuel_weight
 
-print("Number of engines:")
-print(number_of_engines)
-print("Total thrust per second in Newton:")
-print(rocket_total_thrust)
-print("Fuel consumed per small engine per second:")
-print(fuel_cons)
-print("Total fuel used per second of entire rocket:")
-print(total_fuel_constant)
-print("Total weight rocket")
-print(wet_rocket_mass)
+# print("Number of engines:")
+# print(number_of_engines)
+# print("Total thrust per second in Newton:")
+# print(rocket_total_thrust)
+# print("Fuel consumed per small engine per second:")
+# print(fuel_cons)
+# print("Total fuel used per second of entire rocket:")
+# print(total_fuel_constant)
+# print("Total weight rocket")
+# print(wet_rocket_mass)
 
-needed_fuel = calculate_needed_fuel(
-    rocket_total_thrust, total_fuel_constant, wet_rocket_mass, escape_velocity
+# needed_fuel = calculate_needed_fuel(
+#     rocket_total_thrust, total_fuel_constant, wet_rocket_mass, escape_velocity
+# )
+# print("Total burned fuel to perform velocity-boost")
+# print(needed_fuel)
+
+"""Kode 1E"""
+
+
+def launch_rocket(fuel_weight, target_vertical_velocity, dt=10):
+    """Funksjonen simulerer launch av raketten."""
+    vel, average_pressure, average_energy, F, fuel_cons = simulate_small_engine(N)
+    altitude = 0
+    vertical_velocity = 0
+    total_time = 0
+
+    wet_rocket_mass = dry_rocket_mass + fuel_weight
+    F_g = (G * homeplanet_mass * wet_rocket_mass) / (
+        homeplanet_radius + altitude
+    )  # The gravitational force
+    rocket_thrust_gravitation_diff = (number_of_engines * F) - F_g
+    total_fuel_constant = fuel_cons * number_of_engines
+
+    while vertical_velocity < target_vertical_velocity:
+        vertical_velocity += (rocket_thrust_gravitation_diff / wet_rocket_mass) * dt
+        altitude += vertical_velocity * dt
+        fuel_weight -= total_fuel_constant * dt
+        total_time += dt
+
+        if fuel_weight <= 0:
+            break
+        elif total_time > 1800:
+            break
+        elif altitude < 0:
+            break
+    return (altitude, vertical_velocity, total_time, fuel_weight)
+
+
+(altitude, vertical_velocity, total_time, fuel_weight) = launch_rocket(45, 100)
+print(
+    f"The rocket reached altitude: {altitude:.2f}m in {total_time:.2f}s. Current speed {vertical_velocity:.2f}m/s and fuel-level: {fuel_weight:.2f}kg."
 )
-print("Total burned fuel to perform velocity-boost")
-print(needed_fuel)
 
 # simulate_small_engine(N)
 # plot_velocity_distribution(N)
