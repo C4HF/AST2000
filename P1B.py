@@ -56,10 +56,8 @@ class Engine:
     """
 
     def __init__(self, N: int, L: float, n_A: float, T: float, t_c: float, dt: float):
-        if n_A > L**2:
-            raise ValueError(
-                f"n_A should be less than {L**2:.2f}. Got n_A = {n_A:.2f}."
-            )
+        if 1 < n_A < 0:
+            raise ValueError(f"n_A should be between 0 and 1. Got n_A = {n_A:.2f}.")
         self.N = N
         self.L = L
         self.n_A = n_A
@@ -69,25 +67,25 @@ class Engine:
         self._simulate_small_engine()  # function is called by constructer
 
     def _simulate_small_engine(self):
-        """Simulate engine performance."""
+        """Simulate small engine performance."""
         N = self.N
         L = self.L
         n_A = self.n_A
         T = self.T
         t_c = self.t_c
         dt = self.dt
-        l = np.sqrt(n_A)
+        l = L * np.sqrt(n_A)
         d = (L - l) / 2
         m_H2 = const.m_H2
         k_B = const.k_B
-        MB = np.sqrt(const.k_B * T / const.m_H2)
+        self.MB = np.sqrt(const.k_B * T / const.m_H2)
 
         a = []  # Skal telle farten til partiklene som slipper ut
         rows = 3  # For vectors
         cols = N
         pos = L * np.random.rand(rows, cols)  # Particle positions
         mean = 0
-        std = MB
+        std = self.MB
         vel = np.random.normal(
             loc=mean, scale=std, size=(rows, cols)
         )  # loc = mean, scale = standard deviation(std)
@@ -139,6 +137,7 @@ class Engine:
             )  # regner ut kraft som virker på veggen per tidssteg
             dp = df / (L * L)
             pressure_list.append(dp)
+        self.vel = vel
 
         # Trykk
         self.simulated_average_pressure = sum(pressure_list) / len(pressure_list)
@@ -153,9 +152,7 @@ class Engine:
 
         # Fuel consumption
         self.tot_fuel = m_H2 * len(a)
-        self.fuel_cons = (
-            self.tot_fuel / t_c
-        )  # fuel constant per second per small engine
+        self.fuel_cons = self.tot_fuel / t_c
 
         # Fremdrift
         self.P = sum(a) * m_H2  # P = mv, bruker bare v_z da de andre blir 0 totalt.
@@ -166,7 +163,154 @@ class Engine:
         self.thrust = self.number_of_engines * self.F
         self.total_fuel_constant = self.fuel_cons * self.number_of_engines
 
-        return vel, average_pressure, average_energy, F, fuel_cons
+    def plot_velocity_distribution(self, bins=30):
+        """Funksjonen kaller på simulate_small_engine funksjonen og danner et
+        subplot som sammenligner den simulerte farten med Maxwell-Boltzmann fordelingen.
+        Tar inn npb variabel (antall partikler per boks), bins (antall stolper i histogrammet).
+        Returnerer ingenting"""
+        vel = self.vel
+        N = self.N
+        mean = 0
+        std = self.MB
+        x_axis = np.linspace(-4 * std, 4 * std, N)
+        bins = bins
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+
+        ax1.hist(
+            vel[0], bins=bins, alpha=0.4, density=True, label="x-velocity", color="cyan"
+        )
+        ax1.plot(
+            x_axis,
+            norm.pdf(x_axis, loc=mean, scale=std),
+            color="red",
+            label="MB-dist",
+        )
+
+        ax2.hist(
+            vel[1],
+            bins=bins,
+            alpha=0.4,
+            density=True,
+            label="y-velocity",
+            color="olive",
+        )
+        ax2.plot(
+            x_axis,
+            norm.pdf(x_axis, loc=mean, scale=std),
+            color="red",
+            label="MB-dist",
+        )
+
+        ax3.hist(
+            vel[2], bins=bins, alpha=0.4, density=True, label="z-velocity", color="pink"
+        )
+        ax3.plot(
+            x_axis,
+            norm.pdf(x_axis, loc=mean, scale=std),
+            color="red",
+            label="MB-dist",
+        )
+        ax1.set_ylabel("%")
+        ax1.set_xlabel("m/s")
+        ax1.set_title("Velocity x-direction")
+        ax1.legend(loc="upper left")
+        ax2.set_xlabel("m/s")
+        ax2.set_title("Velocity y-direction")
+        ax2.legend(loc="upper left")
+        ax3.set_xlabel("m/s")
+        ax3.set_title("Velocity z-direction")
+        ax3.legend(loc="upper left")
+        fig.suptitle(
+            "Simulated velocity of our particles compared to Maxwell-Boltzmann"
+        )
+        plt.show()
+
+    def plot_small_engine(self, npb=10, time=100):
+        """Plots a simulation of particle movement inside one small engine, with fewer particles."""
+        from mpl_toolkits import mplot3d  # Plotting
+
+        n_A = self.n_A
+        L = self.L
+        MB = self.MB
+        l = L * np.sqrt(n_A)
+        d = (L - l) / 2
+
+        fig = plt.figure()
+        ax = plt.axes(projection="3d")  # For 3d plotting av rakettmotoren
+        ax.plot3D(
+            [0, L], [0, 0], [0, 0], "green"
+        )  # Lager en yttre firkant på xy-planet
+        ax.plot3D([L, L], [0, L], [0, 0], "green")
+        ax.plot3D([0, 0], [0, L], [0, 0], "green")
+        ax.plot3D([0, L], [L, L], [0, 0], "green")
+
+        ax.plot3D(
+            [0.25 * L, 0.75 * L], [0.25 * L, 0.25 * L], [0, 0], "green"
+        )  # Lager en indre firkant på xy-planet (utgangshull)
+        ax.plot3D([0.25 * L, 0.75 * L], [0.75 * L, 0.75 * L], [0, 0], "green")
+        ax.plot3D([0.25 * L, 0.25 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
+        ax.plot3D([0.75 * L, 0.75 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
+
+        nr = []  # Bare til plotting underveis
+        rows = 3  # For vectors
+        cols = npb
+        pos = L * np.random.rand(rows, cols)  # Particle positions
+        mean = 0
+        std = MB
+        vel = np.random.normal(
+            loc=mean, scale=std, size=(rows, cols)
+        )  # loc = mean, scale = standard deviation(std)
+        for i in range(
+            len(vel)
+        ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
+            vel_0 = np.where(vel[i] == 0)[0]
+            vel[i][vel_0] = vel[i - 1][vel_0]
+
+        for m in range(time):  # tidssteg
+            pos += dt * vel  # Euler cromer
+
+            x1 = np.where(pos[0] >= L)[0]  # Ser etter kollisjoner for x
+            x2 = np.where(pos[0] <= 0)[0]
+            y1 = np.where(pos[1] >= L)[0]  # Ser etter kollisjoner for y
+            y2 = np.where(pos[1] <= 0)[0]
+            z1 = np.where(pos[2] >= L)[0]  # Ser etter kollisjoner for z
+            z2 = np.where(pos[2] <= 0)[0]
+
+            for m in range(len(z2)):  # Sjekker om kollisjonene for z2(xy-planet)
+                if d < pos[0][z2[m]] < (L - d):  # egentlig er i
+                    if d < pos[1][z2[m]] < (L - d):  # utgangshullet
+                        for i in range(2):  # Flytter partikkelen til en uniformt
+                            pos[i][m] = L * np.random.rand()  # fordelt posisjon på
+                        pos[2][m] = L  # toppen av boksen, med samme vel.
+                        if z2[m] not in nr:  # Brukes til plotting
+                            nr.append(z2[m])
+            # z2 = list(z2)
+            # x1 = list(x1)
+            # x2 = list(x2)
+            # y1 = list(y1)
+            # y2 = list(y2)
+            # for i in range(len(nr)):  # For plotting
+            #     if nr[i] in z2:       # Av at partiklene fyker ut av boksen
+            #         z2.remove(nr[i])
+            #     if nr[i] in x1:
+            #         x1.remove(nr[i])
+            #     if nr[i] in x2:
+            #         x2.remove(nr[i])
+            #     if nr[i] in y1:
+            #         y1.remove(nr[i])
+            #     if nr[i] in y2:
+            #         y2.remove(nr[i])
+
+            vel[0][x1] = -vel[0][x1]
+            vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu
+            vel[1][y1] = -vel[1][y1]  # farten til det motsatte i en gitt retning
+            vel[1][y2] = -vel[1][y2]
+            vel[2][z1] = -vel[2][z1]
+            vel[2][z2] = -vel[2][z2]
+
+            ax.scatter(pos[0], pos[1], pos[2])  # Plotter rakettmotoren
+
+        plt.show()
 
 
 def simulate_small_engine(
@@ -395,11 +539,12 @@ def plot_small_engine(npb=100, time=100):
 """Kode 1D"""
 
 
-def calculate_needed_fuel(thrust, fuel_consumption, initial_rocket_mass, speed_boost):
+def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=10):
     """Funksjonen regner ut hvor mye drivstoff vi trenger for å øke hastigheten med en ønsket mengde.
     Tar inn variabler (thrust, fuel_consumption, initial_rocket_mass, speed_boost) og returnerer
     fuel_consumed."""
-    dt = 10
+    thrust = engine.thrust
+    fuel_consumption = engine.fuel_cons
     start_speed = 0
     total_time = 0
     while start_speed < speed_boost:
@@ -476,19 +621,8 @@ def launch_rocket(fuel_weight, target_vertical_velocity, dt=10):
 # plot_velocity_distribution(N)
 # plot_small_engine()
 
-"""Parametre"""
-L = 10e-7  # Bredde på boksen i meter
-T = 3000  # Gassens temperatur i kelvin
-N = 10**4  # Antall partikler
-t_c = 10e-9  # Tid
-dt = 10e-12  # Tids intervall i s'
-t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
-m_H2 = const.m_H2
-k_B = const.k_B
-MB = np.sqrt(const.k_B * T / const.m_H2)
 
-engine1 = Engine(N=10**4, L=10e-8, n_A=5 * (10e-15), T=3000, t_c=10e-9, dt=10e-12)
-engine2 = Engine(N=10**4, L=10e-7, n_A=5 * (10e-15), T=3000, t_c=10e-9, dt=10e-12)
-
-print(engine1.thrust / engine1.total_fuel_constant)
-print(engine2.thrust / engine2.total_fuel_constant)
+### Eksempel på bruk av engine-class: ########
+engine1 = Engine(N=10**5, L=10e-7, n_A=0.5, T=30000, t_c=10e-10, dt=10e-12)
+engine2 = Engine(N=10**5, L=10e-7, n_A=0.5, T=3000, t_c=10e-9, dt=10e-12)
+# engine1.plot_small_engine()
