@@ -26,7 +26,7 @@ m_H2 = const.m_H2
 k_B = const.k_B
 # MB = np.sqrt(const.k_B * T / const.m_H2)
 SM = 5.02739933 * 10 ** (31)  # Solar masses in kg
-G = 6.6743 * 10 ** (-11)  # Gravitational constant
+G = 6.6743 * (10 ** (-11))  # Gravitational constant
 dry_rocket_mass = mission.spacecraft_mass
 crosssection_rocket = mission.spacecraft_area
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
@@ -41,9 +41,9 @@ homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
 
 
 ### Må confirme escape velocity ###############
-# escape_velocity = 11882
-# print(escape_velocity)
-# print(np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius))
+escape_velocity = 11882
+print(escape_velocity)
+print(np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius))
 
 
 """Kode for 1B og 1C."""
@@ -573,12 +573,3 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
 
 ### Eksempel på bruk av engine-class: ########
 falcon_engine = Engine(N=10**5, L=10e-6, n_A=0.5, T=3000, t_c=10e-9, dt=10e-12)
-# engine2 = Engine(N=10**5, L=10e-7, n_A=0.8, T=3000, t_c=10e-9, dt=10e-12)
-# engine3 = Engine(N=10**5, L=10e-8, n_A=0.9, T=3000, t_c=10e-9, dt=10e-12)
-# engine4 = Engine(N=10**5, L=10e-9, n_A=0.2, T=3000, t_c=10e-9, dt=10e-12)
-# print(engine1.thrust)
-# print(G * homeplanet_mass * dry_rocket_mass / (homeplanet_radius**2))
-# print(launch_rocket(engine2, 5000, 100, 100))
-# print(launch_rocket(engine3, 5000, 100, 100))
-# print(launch_rocket(engine4, 5000, 100, 100))
-falcon_engine.plot_velocity_distribution()
