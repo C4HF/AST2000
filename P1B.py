@@ -51,11 +51,11 @@ homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
 
 class Engine:
     """Create instance of engine with N particles, L dimension small engine,
-    n_A nozzle area, T temperature in Kelvin, t_c simulation time, dt simulation timestep.
+    n_A nozzle area in percent, T temperature in Kelvin, t_c simulation time, dt simulation timestep.
     """
 
     def __init__(self, N: int, L: float, n_A: float, T: float, t_c: float, dt: float):
-        if 1 < n_A < 0:
+        if n_A < 0 or n_A > 1:
             raise ValueError(f"n_A should be between 0 and 1. Got n_A = {n_A:.2f}.")
         self.N = N
         self.L = L
@@ -455,47 +455,48 @@ class Engine:
     #     plt.show()
 
     # def plot_small_engine(npb=100, time=100):
-    from mpl_toolkits import mplot3d  # Plotting
+    #     from mpl_toolkits import mplot3d  # Plotting
 
-    fig = plt.figure()
-    ax = plt.axes(projection="3d")  # For 3d plotting av rakettmotoren
-    ax.plot3D([0, L], [0, 0], [0, 0], "green")  # Lager en yttre firkant på xy-planet
-    ax.plot3D([L, L], [0, L], [0, 0], "green")
-    ax.plot3D([0, 0], [0, L], [0, 0], "green")
-    ax.plot3D([0, L], [L, L], [0, 0], "green")
+    #     fig = plt.figure()
+    #     ax = plt.axes(projection="3d")  # For 3d plotting av rakettmotoren
+    #     ax.plot3D([0, L], [0, 0], [0, 0], "green")  # Lager en yttre firkant på xy-planet
+    #     ax.plot3D([L, L], [0, L], [0, 0], "green")
+    #     ax.plot3D([0, 0], [0, L], [0, 0], "green")
+    #     ax.plot3D([0, L], [L, L], [0, 0], "green")
 
-    ax.plot3D(
-        [0.25 * L, 0.75 * L], [0.25 * L, 0.25 * L], [0, 0], "green"
-    )  # Lager en indre firkant på xy-planet (utgangshull)
-    ax.plot3D([0.25 * L, 0.75 * L], [0.75 * L, 0.75 * L], [0, 0], "green")
-    ax.plot3D([0.25 * L, 0.25 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
-    ax.plot3D([0.75 * L, 0.75 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
+    #     ax.plot3D(
+    #         [0.25 * L, 0.75 * L], [0.25 * L, 0.25 * L], [0, 0], "green"
+    #     )  # Lager en indre firkant på xy-planet (utgangshull)
+    #     ax.plot3D([0.25 * L, 0.75 * L], [0.75 * L, 0.75 * L], [0, 0], "green")
+    #     ax.plot3D([0.25 * L, 0.25 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
+    #     ax.plot3D([0.75 * L, 0.75 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
 
-    nr = []  # Bare til plotting underveis
-    rows = 3  # For vectors
-    cols = npb
-    pos = L * np.random.rand(rows, cols)  # Particle positions
-    mean = 0
-    std = MB
-    vel = np.random.normal(
-        loc=mean, scale=std, size=(rows, cols)
-    )  # loc = mean, scale = standard deviation(std)
-    for i in range(
-        len(vel)
-    ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
-        vel_0 = np.where(vel[i] == 0)[0]
-        vel[i][vel_0] = vel[i - 1][vel_0]
+    #     nr = []  # Bare til plotting underveis
+    #     rows = 3  # For vectors
+    #     cols = npb
+    #     pos = L * np.random.rand(rows, cols)  # Particle positions
+    #     mean = 0
+    #     std = MB
+    #     vel = np.random.normal(
+    #         loc=mean, scale=std, size=(rows, cols)
+    #     )  # loc = mean, scale = standard deviation(std)
+    #     for i in range(
+    #         len(vel)
+    #     ):  # Sørger for at ingen hastigheter er negative(Sjelden feil)
+    #         vel_0 = np.where(vel[i] == 0)[0]
+    #         vel[i][vel_0] = vel[i - 1][vel_0]
 
-    for m in range(time):  # tidssteg
-        pos += dt * vel  # Euler cromer
+    #     for m in range(time):  # tidssteg
+    #         pos += dt * vel  # Euler cromer
 
-        x1 = np.where(pos[0] >= L)[0]  # Ser etter kollisjoner for x
-        x2 = np.where(pos[0] <= 0)[0]
-        y1 = np.where(pos[1] >= L)[0]  # Ser etter kollisjoner for y
-        y2 = np.where(pos[1] <= 0)[0]
-        z1 = np.where(pos[2] >= L)[0]  # Ser etter kollisjoner for z
-        z2 = np.where(pos[2] <= 0)[0]
+    #         x1 = np.where(pos[0] >= L)[0]  # Ser etter kollisjoner for x
+    #         x2 = np.where(pos[0] <= 0)[0]
+    #         y1 = np.where(pos[1] >= L)[0]  # Ser etter kollisjoner for y
+    #         y2 = np.where(pos[1] <= 0)[0]
+    #         z1 = np.where(pos[2] >= L)[0]  # Ser etter kollisjoner for z
+    #         z2 = np.where(pos[2] <= 0)[0]
 
+<<<<<<< HEAD
         for m in range(len(z2)):  # Sjekker om kollisjonene for z2(xy-planet)
             if L / 4 < pos[0][z2[m]] < (3 / 4) * L:  # egentlig er i
                 if L / 4 < pos[1][z2[m]] < (3 / 4) * L:  # utgangshullet
@@ -526,17 +527,43 @@ class Engine:
                 y1.remove(nr[i])
             if nr[i] in y2:
                 y2.remove(nr[i])
+=======
+    #         for m in range(len(z2)):  # Sjekker om kollisjonene for z2(xy-planet)
+    #             if L / 4 < pos[0][z2[m]] < (3 / 4) * L:  # egentlig er i
+    #                 if L / 4 < pos[1][z2[m]] < (3 / 4) * L:  # utgangshullet
+    #                     for i in range(2):  # Flytter partikkelen til en uniformt
+    #                         pos[i][m] = L * np.random.rand()  # fordelt posisjon på
+    #                     pos[2][m] = L  # toppen av boksen, med samme vel.
+    #                     if z2[m] not in nr:  # Brukes til plotting
+    #                         nr.append(z2[m])
+    #         # z2 = list(z2)
+    #         # x1 = list(x1)
+    #         # x2 = list(x2)
+    #         # y1 = list(y1)
+    #         # y2 = list(y2)
+    #         # for i in range(len(nr)):  # For plotting
+    #         #     if nr[i] in z2:       # Av at partiklene fyker ut av boksen
+    #         #         z2.remove(nr[i])
+    #         #     if nr[i] in x1:
+    #         #         x1.remove(nr[i])
+    #         #     if nr[i] in x2:
+    #         #         x2.remove(nr[i])
+    #         #     if nr[i] in y1:
+    #         #         y1.remove(nr[i])
+    #         #     if nr[i] in y2:
+    #         #         y2.remove(nr[i])
+>>>>>>> 390b441 (feilretting)
 
-        vel[0][x1] = -vel[0][x1]
-        vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu
-        vel[1][y1] = -vel[1][y1]  # farten til det motsatte i en gitt retning
-        vel[1][y2] = -vel[1][y2]
-        vel[2][z1] = -vel[2][z1]
-        vel[2][z2] = -vel[2][z2]
+    #         vel[0][x1] = -vel[0][x1]
+    #         vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu
+    #         vel[1][y1] = -vel[1][y1]  # farten til det motsatte i en gitt retning
+    #         vel[1][y2] = -vel[1][y2]
+    #         vel[2][z1] = -vel[2][z1]
+    #         vel[2][z2] = -vel[2][z2]
 
-        ax.scatter(pos[0], pos[1], pos[2])  # Plotter rakettmotoren
+    #         ax.scatter(pos[0], pos[1], pos[2])  # Plotter rakettmotoren
 
-    plt.show()
+    #     plt.show()
 
 
 """Kode 1D"""
@@ -592,13 +619,12 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
 
 
 ### Eksempel på bruk av engine-class: ########
-engine1 = Engine(N=10**5, L=10e-8, n_A=0.8, T=10000, t_c=10e-9, dt=10e-12)
+falcon_engine = Engine(N=10**5, L=10e-7, n_A=2, T=300000, t_c=10e-9, dt=10e-12)
 # engine2 = Engine(N=10**5, L=10e-7, n_A=0.8, T=3000, t_c=10e-9, dt=10e-12)
 # engine3 = Engine(N=10**5, L=10e-8, n_A=0.9, T=3000, t_c=10e-9, dt=10e-12)
 # engine4 = Engine(N=10**5, L=10e-9, n_A=0.2, T=3000, t_c=10e-9, dt=10e-12)
 # print(engine1.thrust)
 # print(G * homeplanet_mass * dry_rocket_mass / (homeplanet_radius**2))
-print(launch_rocket(engine1, 4000, 100, 100))
 # print(launch_rocket(engine2, 5000, 100, 100))
 # print(launch_rocket(engine3, 5000, 100, 100))
 # print(launch_rocket(engine4, 5000, 100, 100))
