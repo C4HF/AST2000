@@ -1,4 +1,4 @@
-########## Egen kode ##################################
+########## Egen kode #############################
 import numpy as np
 import matplotlib.pyplot as plt
 import ast2000tools.constants as const
@@ -174,7 +174,7 @@ class Engine:
         std = self.MB
         x_axis = np.linspace(-4 * std, 4 * std, N)
         bins = bins
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
 
         ax1.hist(
             vel[0], bins=bins, alpha=0.4, density=True, label="x-velocity", color="cyan"
@@ -454,6 +454,7 @@ class Engine:
     #     fig.suptitle("Simulated velocity of our particles compared to Maxwell-Boltzmann")
     #     plt.show()
 
+<<<<<<< HEAD
     # def plot_small_engine(npb=100, time=100):
     #     from mpl_toolkits import mplot3d  # Plotting
 
@@ -565,6 +566,8 @@ class Engine:
 
     #     plt.show()
 
+=======
+>>>>>>> cc3b4ef (endra plot til 3,1)
 
 """Kode 1D"""
 
@@ -619,7 +622,7 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
 
 
 ### Eksempel på bruk av engine-class: ########
-falcon_engine = Engine(N=10**5, L=10e-7, n_A=2, T=300000, t_c=10e-9, dt=10e-12)
+falcon_engine = Engine(N=10**5, L=10e-6, n_A=0.5, T=3000, t_c=10e-9, dt=10e-12)
 # engine2 = Engine(N=10**5, L=10e-7, n_A=0.8, T=3000, t_c=10e-9, dt=10e-12)
 # engine3 = Engine(N=10**5, L=10e-8, n_A=0.9, T=3000, t_c=10e-9, dt=10e-12)
 # engine4 = Engine(N=10**5, L=10e-9, n_A=0.2, T=3000, t_c=10e-9, dt=10e-12)
@@ -628,3 +631,4 @@ falcon_engine = Engine(N=10**5, L=10e-7, n_A=2, T=300000, t_c=10e-9, dt=10e-12)
 # print(launch_rocket(engine2, 5000, 100, 100))
 # print(launch_rocket(engine3, 5000, 100, 100))
 # print(launch_rocket(engine4, 5000, 100, 100))
+falcon_engine.plot_velocity_distribution()
