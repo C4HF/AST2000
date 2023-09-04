@@ -159,7 +159,7 @@ class Engine:
         self.F = -self.P / t_c  # F = mv / dt
 
         ## Utregning av total thrust og total fuel-constant
-        self.number_of_engines = crosssection_rocket / (L**2)
+        self.number_of_engines = (crosssection_rocket / (L**2)) * 10
         self.thrust = self.number_of_engines * self.F
         self.total_fuel_constant = self.fuel_cons * self.number_of_engines
 
@@ -366,4 +366,14 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
 
 
 ### Eksempel på bruk av engine-class: ########
-falcon_engine = Engine(N=10**5, L=10e-6, n_A=0.5, T=3000, t_c=10e-9, dt=10e-12)
+falcon_engine = Engine(N=2 * 10**6, L=7 * 10e-8, n_A=1, T=3250, t_c=10e-9, dt=10e-12)
+# print((G * homeplanet_mass * 5000) / ((homeplanet_radius**2) * k_B * 3000 * (16)))
+# L = ((10**5) / (2 * 10**24)) ** (1 / 3)
+# print(L)
+
+# print(calculate_needed_fuel(falcon_engine, 30000, 59757))
+print(launch_rocket(falcon_engine, 9000, 59757, dt=10))
+print(falcon_engine.thrust)
+print(falcon_engine.total_fuel_constant)
+print(falcon_engine.thrust / falcon_engine.total_fuel_constant)
+print(falcon_engine.simulated_average_pressure)
