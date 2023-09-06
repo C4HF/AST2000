@@ -348,7 +348,6 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
             homeplanet_radius + altitude
         ) ** 2  # The gravitational force
         rocket_thrust_gravitation_diff = thrust - F_g
-        print(f"Diff: {rocket_thrust_gravitation_diff}")
         vertical_velocity += (rocket_thrust_gravitation_diff / wet_rocket_mass) * dt
         altitude += vertical_velocity * dt
         fuel_weight -= total_fuel_constant * dt
