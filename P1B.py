@@ -116,8 +116,8 @@ class Engine:
                         for i in range(
                             2
                         ):  # Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
-                            pos[i][m] = L * np.random.rand()
-                        pos[2][m] = L
+                            pos[i][z2[m]] = L * np.random.rand()
+                        pos[2][z2[m]] = L
 
             vel[0][x1] = -vel[0][x1]
             vel[0][x2] = -vel[0][
@@ -143,7 +143,7 @@ class Engine:
         self.analytical_expected_pressure = n * k_B * T
 
         # Energi
-        self.simulated_kinetic_energy = 1 / 2 * m_H2 * vel**2
+        self.simulated_kinetic_energy = 1 / 2 * m_H2 * np.power(vel, 2)
         self.simulated_total_energy = np.sum(self.simulated_kinetic_energy)
         self.simulated_average_energy = self.simulated_total_energy / N
         self.analytical_expected_energy = (3 / 2) * k_B * T
@@ -157,7 +157,7 @@ class Engine:
         self.F = -self.P / t_c  # F = mv / dt
 
         ## Utregning av total thrust og total fuel-constant
-        self.number_of_engines = (crosssection_rocket / (L**2)) * 20
+        self.number_of_engines = crosssection_rocket * 5 / (L**2)
         self.thrust = self.number_of_engines * self.F
         self.total_fuel_constant = self.fuel_cons * self.number_of_engines
 
@@ -342,13 +342,13 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
     vertical_velocity = 0
     total_time = 0
 
-    wet_rocket_mass = dry_rocket_mass + fuel_weight
-    F_g = (G * homeplanet_mass * wet_rocket_mass) / (
-        homeplanet_radius + altitude
-    ) ** 2  # The gravitational force
-    rocket_thrust_gravitation_diff = thrust - F_g
-
     while vertical_velocity < target_vertical_velocity:
+        wet_rocket_mass = dry_rocket_mass + fuel_weight
+        F_g = (G * homeplanet_mass * wet_rocket_mass) / (
+            homeplanet_radius + altitude
+        ) ** 2  # The gravitational force
+        rocket_thrust_gravitation_diff = thrust - F_g
+        print(f"Diff: {rocket_thrust_gravitation_diff}")
         vertical_velocity += (rocket_thrust_gravitation_diff / wet_rocket_mass) * dt
         altitude += vertical_velocity * dt
         fuel_weight -= total_fuel_constant * dt
@@ -364,14 +364,21 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
 
 
 ### Eksempel på bruk av engine-class: ########
-falcon_engine = Engine(N=6 * 10**6, L=6 * 10e-7, n_A=1, T=3000, t_c=10e-9, dt=10e-12)
+falcon_engine = Engine(N=2 * 10**5, L=1 * 10e-7, n_A=1, T=3000, t_c=10e-10, dt=10e-14)
+# falcon_engine.plot_velocity_distribution()
 # print((G * homeplanet_mass * 5000) / ((homeplanet_radius**2) * k_B * 3000 * (16)))
 # L = ((10**5) / (2 * 10**24)) ** (1 / 3)
 # print(L)
 
 # print(calculate_needed_fuel(falcon_engine, 30000, 59757))
-print(launch_rocket(falcon_engine, 25000, escape_velocity, dt=10))
-# print(falcon_engine.thrust)
-# print(falcon_engine.total_fuel_constant)
-# print(falcon_engine.thrust / falcon_engine.total_fuel_constant)
-# print(falcon_engine.simulated_average_pressure)
+print(launch_rocket(falcon_engine, 12000, escape_velocity, dt=1))
+print(f"Thrust: {falcon_engine.thrust}")
+print(f"Total fuel constant: {falcon_engine.total_fuel_constant}")
+print(
+    f"Thrust/total fuel constant: {falcon_engine.thrust / falcon_engine.total_fuel_constant}"
+)
+print(f"Simulated pressure: {falcon_engine.simulated_average_pressure}")
+print(f"Expected pressure: {falcon_engine.analytical_expected_pressure}")
+print(f"Simulated total energy: {falcon_engine.simulated_total_energy}")
+print(f"Simulated average energy: {falcon_engine.simulated_average_energy}")
+print(f"Analytical expected energy: {falcon_engine.analytical_expected_energy}")
