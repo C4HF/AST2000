@@ -434,24 +434,24 @@ print(f"Density (N / (m**3) = {falcon_engine.n:.3f}\n-----------------------")
 """
 Kjøreeksempel med VSCODE:
 
-Task 1D: Simplified calculation of needed fuel: 3.2044512326543484e-10
+Task 1D: Simplified calculation of needed fuel: 3.178742835894788e-10
 ----------------------
 Launch results:
- Total launch time (s): 1
- Remaining fuel (kg): 164650.69684153714 
- Solar-xy-pos (Au): (0.0658542180234518, 3.9079719631647536e-07) 
- Solar-xy-vel (Au/yr): (-4.719914137981796e-07, 12.324180383036367)
+ Total launch time (s): 453
+ Remaining fuel (kg): 4926.922958021916 
+ Solar-xy-pos (Au): (0.06586052006740169, 0.00017703112993136335) 
+ Solar-xy-vel (Au/yr): (2.543081756891843, 12.324180383036367)
 ----------------------
 ---------------
 Engine performance:
-Thrust (N): 1740868.638
-Initial thrust/kg (N/kg): 1110.551
-Total fuel constant (kg/s): 349.303
-Thrust/total fuel constant (Ns/kg): 4983.833
-Simulated pressure (pa): 16599.098
+Thrust (N): 1782376.879
+Initial thrust/kg (N/kg): 1110.802
+Total fuel constant (kg/s): 353.362
+Thrust/total fuel constant (Ns/kg): 5044.051
+Simulated pressure (pa): 17029.774
 Expected pressure (pa): 16938.555
-Simulated total energy (J): 1.3574647388985732e-15
-Simulated energy (J): 6.787323694492866e-20
+Simulated total energy (J): 1.3695543284204117e-15
+Simulated energy (J): 6.847771642102058e-20
 Analytical expected energy(J): 6.83421255e-20
 Density (N / (m**3) = 371774097278758855639040.000
 -----------------------
