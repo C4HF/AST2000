@@ -18,30 +18,26 @@ m_H2 = const.m_H2
 k_B = const.k_B
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 G = 6.6743 * (10 ** (-11))  # Gravitational constant
-dry_rocket_mass = mission.spacecraft_mass
-crosssection_rocket = mission.spacecraft_area
+Au = 149597870700  # meters
+dry_rocket_mass = mission.spacecraft_mass  # kg
+crosssection_rocket = mission.spacecraft_area  # m**2
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
 home_planet_initial_vel = (
     system._initial_velocities[0][0],
     system._initial_velocities[1][0],
-)  # homeplanet initital velocity
+)  # homeplanet initital velocity (Au/yr)
 home_planet_initial_pos = (
     system._initial_positions[0][0],
     system._initial_positions[1][0],
-)  # homeplanet initial pos
+)  # homeplanet initial pos (Au)
 home_planet_rotational_period = system._rotational_periods[
     0
-]  # homeplanet rotational period
+]  # homeplanet rotational period (earth days)
 
-escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)
-print(system.__dir__())  ### get a list of attribute-commands
+escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
+# print(system.__dir__())  ### get a list of attribute-commands
 # print(mission.__dir__())
-print(homeplanet_radius)
-print(homeplanet_mass)
-print(home_planet_initial_vel)
-print(home_planet_initial_pos)
-print(home_planet_rotational_period)
 
 
 """Kode for 1B og 1C."""
@@ -227,7 +223,7 @@ class Engine:
         )
         plt.show()
 
-    def plot_small_engine(self, npb=10, time=100):
+    def plot_small_engine(self, npb=100, time=200):
         """Plots a simulation of particle movement inside one small engine, with fewer particles."""
         from mpl_toolkits import mplot3d  # Plotting
 
@@ -247,12 +243,12 @@ class Engine:
         ax.plot3D([0, 0], [0, L], [0, 0], "green")
         ax.plot3D([0, L], [L, L], [0, 0], "green")
 
-        ax.plot3D(
-            [0.25 * L, 0.75 * L], [0.25 * L, 0.25 * L], [0, 0], "green"
-        )  # Lager en indre firkant på xy-planet (utgangshull)
-        ax.plot3D([0.25 * L, 0.75 * L], [0.75 * L, 0.75 * L], [0, 0], "green")
-        ax.plot3D([0.25 * L, 0.25 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
-        ax.plot3D([0.75 * L, 0.75 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
+        # ax.plot3D(
+        #     [0.25 * L, 0.75 * L], [0.25 * L, 0.25 * L], [0, 0], "green"
+        # )  # Lager en indre firkant på xy-planet (utgangshull)
+        # ax.plot3D([0.25 * L, 0.75 * L], [0.75 * L, 0.75 * L], [0, 0], "green")
+        # ax.plot3D([0.25 * L, 0.25 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
+        # ax.plot3D([0.75 * L, 0.75 * L], [0.25 * L, 0.75 * L], [0, 0], "green")
 
         nr = []  # Bare til plotting underveis
         rows = 3  # For vectors
@@ -282,9 +278,9 @@ class Engine:
             for m in range(len(z2)):  # Sjekker om kollisjonene for z2(xy-planet)
                 if d < pos[0][z2[m]] < (L - d):  # egentlig er i
                     if d < pos[1][z2[m]] < (L - d):  # utgangshullet
-                        for i in range(2):  # Flytter partikkelen til en uniformt
-                            pos[i][m] = L * np.random.rand()  # fordelt posisjon på
-                        pos[2][m] = L  # toppen av boksen, med samme vel.
+                        # for i in range(2):  # Flytter partikkelen til en uniformt
+                        #     pos[i][m] = L * np.random.rand()  # fordelt posisjon på
+                        # pos[2][m] = L  # toppen av boksen, med samme vel.
                         if z2[m] not in nr:  # Brukes til plotting
                             nr.append(z2[m])
             z2 = list(z2)
@@ -335,28 +331,43 @@ def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=10):
     return fuel_consumed
 
 
-"""Kode 1E"""
+"""Kode 1E og 1F"""
 
 
 def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
-    """Funksjonen simulerer launch av raketten."""
+    """Funksjonen tar inn instans av engine, start-fuel-vekt, ønsket hastighet.
+    Regner ut akselereasjon med hensyn på gravitasjon og regner ut hastighet og posisjon.
+    Funksjonen returnerer høyde over jordoverflaten, vertikal-hastighet, total-tid, resterende drivstoffvekt
+    samt xy-posisjon og xy-hastighet i forhold til stjernen i solsystemet vårt."""
     thrust = engine.thrust
     total_fuel_constant = engine.total_fuel_constant
+    sec_per_year = 60 * 60 * 24 * 365
+    rotational_y_velocity = (2 * np.pi * homeplanet_radius / Au) / (
+        home_planet_rotational_period / 365
+    )
 
-    altitude = 0
-    vertical_velocity = 0
-    total_time = 0
+    solar_x_pos = home_planet_initial_pos[0]  # Au
+    solar_y_pos = home_planet_initial_pos[1]  # Au
+    solar_x_vel = home_planet_initial_vel[0]  # Ay/yr
+    solar_y_vel = home_planet_initial_vel[1] + rotational_y_velocity  # Au/yr
+
+    altitude = 0  # m
+    vertical_velocity = 0  # m/s
+    total_time = 0  # s
 
     while vertical_velocity < target_vertical_velocity:
         wet_rocket_mass = dry_rocket_mass + fuel_weight
         F_g = (G * homeplanet_mass * wet_rocket_mass) / (
             homeplanet_radius + altitude
         ) ** 2  # The gravitational force
-        rocket_thrust_gravitation_diff = thrust - F_g
-        vertical_velocity += (rocket_thrust_gravitation_diff / wet_rocket_mass) * dt
-        altitude += vertical_velocity * dt
-        fuel_weight -= total_fuel_constant * dt
-        total_time += dt
+        rocket_thrust_gravitation_diff = thrust - F_g  # netto-kraft
+        vertical_velocity += (
+            rocket_thrust_gravitation_diff / wet_rocket_mass
+        ) * dt  # m/s
+        altitude += vertical_velocity * dt  # m
+        solar_x_pos += vertical_velocity * dt / Au  # Au
+        fuel_weight -= total_fuel_constant * dt  # kg
+        total_time += dt  # s
 
         if fuel_weight <= 0:
             break
@@ -364,24 +375,31 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
             break
         elif altitude < 0:
             break
-    return (altitude, vertical_velocity, total_time, fuel_weight)
+    solar_x_vel += vertical_velocity * (sec_per_year / Au)
+    solar_y_pos += solar_y_vel * (
+        total_time / sec_per_year
+    )  # trenger ikke å ha i loopen, konstant hastighet i y-retning
+    return (
+        altitude,
+        vertical_velocity,
+        total_time,
+        fuel_weight,
+        (solar_x_pos, solar_y_pos),
+        (solar_x_vel, solar_y_vel),
+    )
 
 
-# def get_solar_navigation(engine):
-
-
-### Eksempel på bruk av engine-class: ########
+### Eksempel på bruk av engine-class: #####
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
 falcon_engine.plot_velocity_distribution()
-# print((G * homeplanet_mass * 5000) / ((homeplanet_radius**2) * k_B * 3000 * (16)))
-# L = ((10**5) / (2 * 10**24)) ** (1 / 3)
-# print(L)
-
-# print(calculate_needed_fuel(falcon_engine, 30000, 59757))
+falcon_engine.plot_small_engine()
+print(calculate_needed_fuel(falcon_engine, 30000, 59757))
 print(launch_rocket(falcon_engine, 165000, escape_velocity, dt=1))
-print(f"Thrust: {falcon_engine.thrust}, {falcon_engine.thrust / 165000}")
+print(
+    f"Thrust: {falcon_engine.thrust}, initial newton/kg: {falcon_engine.thrust / 165000 + dry_rocket_mass}"
+)
 print(f"Total fuel constant: {falcon_engine.total_fuel_constant}")
 print(
     f"Thrust/total fuel constant: {falcon_engine.thrust / falcon_engine.total_fuel_constant}"
@@ -391,5 +409,3 @@ print(f"Expected pressure: {falcon_engine.analytical_expected_pressure}")
 print(f"Simulated total energy: {falcon_engine.simulated_total_energy}")
 print(f"Simulated average energy: {falcon_engine.simulated_average_energy}")
 print(f"Analytical expected energy: {falcon_engine.analytical_expected_energy}")
-
-plt.show()
