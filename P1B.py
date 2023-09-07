@@ -1,4 +1,4 @@
-########## Egen kode #############################
+########## Ikke kodemal #############################
 import numpy as np
 import matplotlib.pyplot as plt
 import ast2000tools.constants as const
@@ -117,7 +117,8 @@ class Engine:
                             2
                         ):  # Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
                             pos[i][z2[m]] = L * np.random.rand()
-                        pos[2][z2[m]] = L
+                        pos[2][z2[m]] = L*0.99
+                        vel[2][z2[m]] = -vel[2][z2[m]]
 
             vel[0][x1] = -vel[0][x1]
             vel[0][x2] = -vel[0][
@@ -157,7 +158,7 @@ class Engine:
         self.F = -self.P / t_c  # F = mv / dt
 
         ## Utregning av total thrust og total fuel-constant
-        self.number_of_engines = crosssection_rocket * 5 / (L**2)
+        self.number_of_engines = crosssection_rocket * 10 / (L**2)
         self.thrust = self.number_of_engines * self.F
         self.total_fuel_constant = self.fuel_cons * self.number_of_engines
 
@@ -172,19 +173,19 @@ class Engine:
         std = self.MB
         x_axis = np.linspace(-4 * std, 4 * std, N)
         bins = bins
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
+        #fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
 
-        ax1.hist(
+        plt.hist(
             vel[0], bins=bins, alpha=0.4, density=True, label="x-velocity", color="cyan"
         )
-        ax1.plot(
+        plt.plot(
             x_axis,
             norm.pdf(x_axis, loc=mean, scale=std),
             color="red",
             label="MB-dist",
         )
 
-        ax2.hist(
+        plt.hist(
             vel[1],
             bins=bins,
             alpha=0.4,
@@ -192,34 +193,35 @@ class Engine:
             label="y-velocity",
             color="olive",
         )
-        ax2.plot(
-            x_axis,
-            norm.pdf(x_axis, loc=mean, scale=std),
-            color="red",
-            label="MB-dist",
-        )
+        #ax2.plot(
+        #     x_axis,
+        #     norm.pdf(x_axis, loc=mean, scale=std),
+        #     color="red",
+        #     label="MB-dist",
+        # )
 
-        ax3.hist(
+        plt.hist(
             vel[2], bins=bins, alpha=0.4, density=True, label="z-velocity", color="pink"
         )
-        ax3.plot(
-            x_axis,
-            norm.pdf(x_axis, loc=mean, scale=std),
-            color="red",
-            label="MB-dist",
-        )
-        ax1.set_ylabel("%")
-        ax1.set_xlabel("m/s")
-        ax1.set_title("Velocity x-direction")
-        ax1.legend(loc="upper left")
-        ax2.set_xlabel("m/s")
-        ax2.set_title("Velocity y-direction")
-        ax2.legend(loc="upper left")
-        ax3.set_xlabel("m/s")
-        ax3.set_title("Velocity z-direction")
-        ax3.legend(loc="upper left")
-        fig.suptitle(
-            "Simulated velocity of our particles compared to Maxwell-Boltzmann"
+        # ax3.plot(
+        #     x_axis,
+        #     norm.pdf(x_axis, loc=mean, scale=std),
+        #     color="red",
+        #     label="MB-dist",
+        # )
+        plt.ylabel("%", fontsize = 25)
+        plt.xlabel("m/s", fontsize = 25)
+        plt.xticks(fontsize = 23)
+        plt.yticks(fontsize = 23)
+        plt.legend(loc="upper left", fontsize = 25)
+        # ax2.set_xlabel("m/s")
+        # ax2.set_title("Velocity y-direction")
+        # ax2.legend(loc="upper left")
+        # ax3.set_xlabel("m/s")
+        # ax3.set_title("Velocity z-direction")
+        # ax3.legend(loc="upper left")
+        plt.suptitle(
+            "Simulated velocity of our particles compared to Maxwell-Boltzmann", fontsize = 25
         )
         plt.show()
 
@@ -363,15 +365,15 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
 
 
 ### Eksempel på bruk av engine-class: ########
-falcon_engine = Engine(N=2 * 10**5, L=1 * 10e-7, n_A=1, T=3000, t_c=10e-10, dt=10e-14)
-# falcon_engine.plot_velocity_distribution()
+falcon_engine = Engine(N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14)
+falcon_engine.plot_velocity_distribution()
 # print((G * homeplanet_mass * 5000) / ((homeplanet_radius**2) * k_B * 3000 * (16)))
 # L = ((10**5) / (2 * 10**24)) ** (1 / 3)
 # print(L)
 
 # print(calculate_needed_fuel(falcon_engine, 30000, 59757))
-print(launch_rocket(falcon_engine, 12000, escape_velocity, dt=1))
-print(f"Thrust: {falcon_engine.thrust}")
+print(launch_rocket(falcon_engine, 165000, escape_velocity, dt=1))
+print(f"Thrust: {falcon_engine.thrust}, {falcon_engine.thrust / 165000}")
 print(f"Total fuel constant: {falcon_engine.total_fuel_constant}")
 print(
     f"Thrust/total fuel constant: {falcon_engine.thrust / falcon_engine.total_fuel_constant}"
@@ -381,3 +383,5 @@ print(f"Expected pressure: {falcon_engine.analytical_expected_pressure}")
 print(f"Simulated total energy: {falcon_engine.simulated_total_energy}")
 print(f"Simulated average energy: {falcon_engine.simulated_average_energy}")
 print(f"Analytical expected energy: {falcon_engine.analytical_expected_energy}")
+
+plt.show()
