@@ -1,4 +1,4 @@
-########## Ikke kodemal #############################
+########## Egen kode #############################
 import numpy as np
 import matplotlib.pyplot as plt
 import ast2000tools.constants as const
@@ -22,8 +22,27 @@ dry_rocket_mass = mission.spacecraft_mass
 crosssection_rocket = mission.spacecraft_area
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
+home_planet_initial_vel = (
+    system._initial_velocities[0][0],
+    system._initial_velocities[1][0],
+)  # homeplanet initital velocity
+home_planet_initial_pos = (
+    system._initial_positions[0][0],
+    system._initial_positions[1][0],
+)  # homeplanet initial pos
+home_planet_rotational_period = system._rotational_periods[
+    0
+]  # homeplanet rotational period
+
 escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)
-# print(system.__dir__())  ### get a list of attribute-commands
+print(system.__dir__())  ### get a list of attribute-commands
+# print(mission.__dir__())
+print(homeplanet_radius)
+print(homeplanet_mass)
+print(home_planet_initial_vel)
+print(home_planet_initial_pos)
+print(home_planet_rotational_period)
+
 
 """Kode for 1B og 1C."""
 
@@ -98,7 +117,7 @@ class Engine:
                             2
                         ):  # Flytter partikkelen til en uniformt fordelt posisjon på toppen av boksen, med samme vel.
                             pos[i][z2[m]] = L * np.random.rand()
-                        pos[2][z2[m]] = L*0.99
+                        pos[2][z2[m]] = L * 0.99
                         vel[2][z2[m]] = -vel[2][z2[m]]
 
             vel[0][x1] = -vel[0][x1]
@@ -155,7 +174,7 @@ class Engine:
         std = self.MB
         x_axis = np.linspace(-4 * std, 4 * std, N)
         bins = bins
-        #fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
+        # fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
 
         plt.hist(
             vel[0], bins=bins, alpha=0.4, density=True, label="x-velocity", color="cyan"
@@ -175,7 +194,7 @@ class Engine:
             label="y-velocity",
             color="olive",
         )
-        #ax2.plot(
+        # ax2.plot(
         #     x_axis,
         #     norm.pdf(x_axis, loc=mean, scale=std),
         #     color="red",
@@ -191,11 +210,11 @@ class Engine:
         #     color="red",
         #     label="MB-dist",
         # )
-        plt.ylabel("%", fontsize = 25)
-        plt.xlabel("m/s", fontsize = 25)
-        plt.xticks(fontsize = 23)
-        plt.yticks(fontsize = 23)
-        plt.legend(loc="upper left", fontsize = 25)
+        plt.ylabel("%", fontsize=25)
+        plt.xlabel("m/s", fontsize=25)
+        plt.xticks(fontsize=23)
+        plt.yticks(fontsize=23)
+        plt.legend(loc="upper left", fontsize=25)
         # ax2.set_xlabel("m/s")
         # ax2.set_title("Velocity y-direction")
         # ax2.legend(loc="upper left")
@@ -203,7 +222,8 @@ class Engine:
         # ax3.set_title("Velocity z-direction")
         # ax3.legend(loc="upper left")
         plt.suptitle(
-            "Simulated velocity of our particles compared to Maxwell-Boltzmann", fontsize = 25
+            "Simulated velocity of our particles compared to Maxwell-Boltzmann",
+            fontsize=25,
         )
         plt.show()
 
@@ -347,8 +367,13 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
     return (altitude, vertical_velocity, total_time, fuel_weight)
 
 
+# def get_solar_navigation(engine):
+
+
 ### Eksempel på bruk av engine-class: ########
-falcon_engine = Engine(N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14)
+falcon_engine = Engine(
+    N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
+)
 falcon_engine.plot_velocity_distribution()
 # print((G * homeplanet_mass * 5000) / ((homeplanet_radius**2) * k_B * 3000 * (16)))
 # L = ((10**5) / (2 * 10**24)) ** (1 / 3)
