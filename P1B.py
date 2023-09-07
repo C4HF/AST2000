@@ -136,8 +136,8 @@ class Engine:
 
         # Trykk
         self.simulated_average_pressure = sum(pressure_list) / len(pressure_list)
-        n = N / (L * L * L)
-        self.analytical_expected_pressure = n * k_B * T
+        self.n = N / (L * L * L)
+        self.analytical_expected_pressure = self.n * k_B * T
 
         # Energi
         self.simulated_kinetic_energy = 1 / 2 * m_H2 * np.power(vel, 2)
@@ -154,8 +154,9 @@ class Engine:
         self.F = -self.P / t_c  # F = mv / dt
 
         ## Utregning av total thrust og total fuel-constant
-        self.number_of_engines = crosssection_rocket * 10 / (L**2)
-        self.number_of_engines = crosssection_rocket * 10 / (L**2)
+        self.number_of_engines = (
+            crosssection_rocket * 10 / (L**2)
+        )  # antall motorer (små-bokser)
         self.thrust = self.number_of_engines * self.F
         self.total_fuel_constant = self.fuel_cons * self.number_of_engines
 
@@ -384,8 +385,10 @@ def launch_rocket(engine, fuel_weight, target_vertical_velocity, dt=10):
         vertical_velocity,
         total_time,
         fuel_weight,
-        (solar_x_pos, solar_y_pos),
-        (solar_x_vel, solar_y_vel),
+        solar_x_pos,
+        solar_y_pos,
+        solar_x_vel,
+        solar_y_vel,
     )
 
 
@@ -395,17 +398,35 @@ falcon_engine = Engine(
 )
 falcon_engine.plot_velocity_distribution()
 falcon_engine.plot_small_engine()
-print(calculate_needed_fuel(falcon_engine, 30000, 59757))
-print(launch_rocket(falcon_engine, 165000, escape_velocity, dt=1))
 print(
-    f"Thrust: {falcon_engine.thrust}, initial newton/kg: {falcon_engine.thrust / 165000 + dry_rocket_mass}"
+    f"Task 1D: Simplified calculation of needed fuel: {calculate_needed_fuel(falcon_engine, 30000, 59757)}"
 )
-print(f"Total fuel constant: {falcon_engine.total_fuel_constant}")
+
+launch_results = launch_rocket(falcon_engine, 165000, escape_velocity, dt=1)
+(
+    altitude,
+    vertical_velocity,
+    total_time,
+    fuel_weight,
+    solar_x_pos,
+    solar_y_pos,
+    solar_x_vel,
+    solar_y_vel,
+) = launch_results
 print(
-    f"Thrust/total fuel constant: {falcon_engine.thrust / falcon_engine.total_fuel_constant}"
+    f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
 )
-print(f"Simulated pressure: {falcon_engine.simulated_average_pressure}")
-print(f"Expected pressure: {falcon_engine.analytical_expected_pressure}")
-print(f"Simulated total energy: {falcon_engine.simulated_total_energy}")
-print(f"Simulated average energy: {falcon_engine.simulated_average_energy}")
-print(f"Analytical expected energy: {falcon_engine.analytical_expected_energy}")
+print(f"---------------\nEngine performance:\nThrust (N): {falcon_engine.thrust:.3f}")
+print(
+    f"Initial thrust/kg (N/kg): {falcon_engine.thrust / 165000 + dry_rocket_mass:.3f}"
+)
+print(f"Total fuel constant (kg/s): {falcon_engine.total_fuel_constant:.3f}")
+print(
+    f"Thrust/total fuel constant (Ns/kg): {falcon_engine.thrust / falcon_engine.total_fuel_constant:.3f}"
+)
+print(f"Simulated pressure (pa): {falcon_engine.simulated_average_pressure:.3f}")
+print(f"Expected pressure (pa): {falcon_engine.analytical_expected_pressure:.3f}")
+print(f"Simulated total energy (J): {falcon_engine.simulated_total_energy}")
+print(f"Simulated energy (J): {falcon_engine.simulated_average_energy}")
+print(f"Analytical expected energy(J): {falcon_engine.analytical_expected_energy}")
+print(f"Density (N / (m**3) = {falcon_engine.n:.3f}\n-----------------------")
