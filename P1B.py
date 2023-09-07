@@ -5,7 +5,6 @@ import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
-import math
 from scipy.stats import norm
 
 seed = 57063
@@ -15,34 +14,16 @@ utils.check_for_newer_version()
 # @jit(nopython = True) #Optimalisering(?)
 
 """Parametre"""
-# L = 10e-7  # Bredde på boksen i meter
-# T = 3000  # Gassens temperatur i kelvin
-# N = 10**4  # Antall partikler
-# t_c = 10e-9  # Tid
-# dt = 10e-12  # Tids intervall i s'
-# t = np.arange(0, t_c, dt)  # Tidsarray definert vha Tid og tidssteg
-
 m_H2 = const.m_H2
 k_B = const.k_B
-# MB = np.sqrt(const.k_B * T / const.m_H2)
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 G = 6.6743 * (10 ** (-11))  # Gravitational constant
 dry_rocket_mass = mission.spacecraft_mass
 crosssection_rocket = mission.spacecraft_area
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
-# print(system.__dir__())  ### get a list of attribute-commands
-# print(homeplanet_radius)
-# print(homeplanet_mass)
-# for planet_idx in range(system.number_of_planets):
-#     print(
-#         f"Planet index{planet_idx}, type {system.types[planet_idx]} has mass {system._masses[planet_idx]} and radius {system._radii[planet_idx]}"
-#     )
-
-
-### Må confirme escape velocity ###############
 escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)
-
+# print(system.__dir__())  ### get a list of attribute-commands
 
 """Kode for 1B og 1C."""
 
@@ -64,7 +45,7 @@ class Engine:
         self._simulate_small_engine()  # function is called by constructer
 
     def _simulate_small_engine(self):
-        """Simulate small engine performance."""
+        """Simulate small engine performance. Stores results as class-attributes."""
         N = self.N
         L = self.L
         n_A = self.n_A
@@ -106,8 +87,8 @@ class Engine:
             z2 = np.where(pos[2] <= 0)[0]
 
             for m in range(len(z2)):
-                if (
-                    d < pos[0][z2[m]] < (L - d)
+                if d < pos[0][z2[m]] < (L - d) and d < pos[1][z2[m]] < (
+                    L - d
                 ):  # Sjekker om kollisjonene for z2(xy-planet) egentlig er i utgangshullet
                     if d < pos[1][z2[m]] < (L - d):
                         a.append(
@@ -158,6 +139,7 @@ class Engine:
         self.F = -self.P / t_c  # F = mv / dt
 
         ## Utregning av total thrust og total fuel-constant
+        self.number_of_engines = crosssection_rocket * 10 / (L**2)
         self.number_of_engines = crosssection_rocket * 10 / (L**2)
         self.thrust = self.number_of_engines * self.F
         self.total_fuel_constant = self.fuel_cons * self.number_of_engines
@@ -234,6 +216,7 @@ class Engine:
         MB = self.MB
         l = L * np.sqrt(n_A)
         d = (L - l) / 2
+        dt = self.dt
 
         fig = plt.figure()
         ax = plt.axes(projection="3d")  # For 3d plotting av rakettmotoren
@@ -284,22 +267,22 @@ class Engine:
                         pos[2][m] = L  # toppen av boksen, med samme vel.
                         if z2[m] not in nr:  # Brukes til plotting
                             nr.append(z2[m])
-            # z2 = list(z2)
-            # x1 = list(x1)
-            # x2 = list(x2)
-            # y1 = list(y1)
-            # y2 = list(y2)
-            # for i in range(len(nr)):  # For plotting
-            #     if nr[i] in z2:       # Av at partiklene fyker ut av boksen
-            #         z2.remove(nr[i])
-            #     if nr[i] in x1:
-            #         x1.remove(nr[i])
-            #     if nr[i] in x2:
-            #         x2.remove(nr[i])
-            #     if nr[i] in y1:
-            #         y1.remove(nr[i])
-            #     if nr[i] in y2:
-            #         y2.remove(nr[i])
+            z2 = list(z2)
+            x1 = list(x1)
+            x2 = list(x2)
+            y1 = list(y1)
+            y2 = list(y2)
+            for i in range(len(nr)):  # For plotting
+                if nr[i] in z2:  # Av at partiklene fyker ut av boksen
+                    z2.remove(nr[i])
+                if nr[i] in x1:
+                    x1.remove(nr[i])
+                if nr[i] in x2:
+                    x2.remove(nr[i])
+                if nr[i] in y1:
+                    y1.remove(nr[i])
+                if nr[i] in y2:
+                    y2.remove(nr[i])
 
             vel[0][x1] = -vel[0][x1]
             vel[0][x2] = -vel[0][x2]  # Elastisk støt ved å snu
