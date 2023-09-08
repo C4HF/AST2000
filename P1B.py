@@ -418,7 +418,7 @@ print(
 )
 print(f"---------------\nEngine performance:\nThrust (N): {falcon_engine.thrust:.3f}")
 print(
-    f"Initial thrust/kg (N/kg): {falcon_engine.thrust / 165000 + dry_rocket_mass:.3f}"
+    f"Initial thrust/kg (N/kg): {falcon_engine.thrust / (165000 + dry_rocket_mass):.3f}"
 )
 print(f"Total fuel constant (kg/s): {falcon_engine.total_fuel_constant:.3f}")
 print(
