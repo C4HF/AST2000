@@ -28,3 +28,25 @@ initial_positions = (system.initial_positions) #[[ 0.06585422  0.06084753  0.322
 #[ 0.          0.05664844 -0.14879135  0.02126361 -0.14086084  0.061803490.03104138]] 
 initial_velocities = (system.initial_velocities) #[[  0.          -7.37808042   2.31451309  -0.68985302   6.50085578 -0.48817572 -11.61944718]
 #[ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
+
+class SolarSystem:
+    def analytical_plot():
+        T = 1000
+        N = 10000
+        t = np.linspace(0,T,N)
+        rx = np.zeros(N)
+        ry = np.zeros(N)
+        CM = np.zeros(N)
+
+        rx[0] = initial_positions[0]
+        ry[0] = initial_positions[1]
+        for i in range(N):
+            rm = np.array([np.sum(masses * rx), np.sum(masses * ry)])
+            CM[i] = rm / (star_mass + np.sum(masses)) #sum of m_i * r_i  / M.  Sola er i origo
+            #Leapfrog
+
+        plt.legend()
+        plt.show()
+SolarSystem.analytical_plot()
+
+
