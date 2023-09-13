@@ -48,33 +48,35 @@ initial_velocities = (
 )  # [[  0.          -7.37808042   2.31451309  -0.68985302   6.50085578 -0.48817572 -11.61944718]
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
 G = 6.6743 * 10 ** (-11)
+SM = 1.9891 * 10 ** (30)
 
 
-class SolarSystem:
-    def analytical_plot():
-        T = 1000
-        N = 10000
-        t = np.linspace(0, T, N)
-        rx = np.zeros(N)
-        ry = np.zeros(N)
-        CM = np.zeros(N)
+# class SolarSystem:
+#     def analytical_plot():
+#         T = 1000
+#         N = 10000
+#         t = np.linspace(0, T, N)
+#         rx = np.zeros(N)
+#         ry = np.zeros(N)
+#         CM = np.zeros(N)
 
-        rx[0] = initial_positions[0]
-        ry[0] = initial_positions[1]
-        for i in range(N):
-            rm = np.array([np.sum(masses * rx), np.sum(masses * ry)])
-            CM[i] = rm / (
-                star_mass + np.sum(masses)
-            )  # sum of m_i * r_i  / M.  Sola er i origo
-            # Leapfrog
+#         rx[0] = initial_positions[0]
+#         ry[0] = initial_positions[1]
+#         for i in range(N):
+#             rm = np.array([np.sum(masses * rx), np.sum(masses * ry)])
+#             CM[i] = rm / (
+#                 star_mass + np.sum(masses)
+#             )  # sum of m_i * r_i  / M.  Sola er i origo
+#             # Leapfrog
 
-        plt.legend()
-        plt.show()
-
-
-SolarSystem.analytical_plot()
+#         plt.legend()
+#         plt.show()
 
 
+# SolarSystem.analytical_plot()
+
+
+@njit
 def simulate_orbit(
     initial_pos_x,
     initial_pos_y,
@@ -82,10 +84,8 @@ def simulate_orbit(
     initial_vel_y,
     initial_angle,
     m,
-    A,
-    omega,
-    dt=0.1,
-    T=10000,
+    dt=1,
+    T=1000,
 ):
     t_array = np.arange(0, T, dt)
     x_pos = np.zeros(len(t_array))
@@ -129,3 +129,15 @@ def simulate_orbit(
         r_array[i] = np.sqrt(x_pos[i] ** 2 + y_pos[i] ** 2)
 
     return x_pos, y_pos, x_vel, y_vel
+
+
+x_pos, y_pos, x_vel, y_vel = simulate_orbit(
+    initial_positions[0][0],
+    initial_positions[1][0],
+    initial_velocities[0][0],
+    initial_velocities[1][0],
+    aphelion_angles[0],
+    masses[0] * SM,
+)
+plt.plot(x_pos, y_pos)
+plt.show()
