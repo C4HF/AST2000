@@ -47,6 +47,7 @@ initial_velocities = (
     system.initial_velocities
 )  # [[  0.          -7.37808042   2.31451309  -0.68985302   6.50085578 -0.48817572 -11.61944718]
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
+G = 6.6743 * 10 ** (-11)
 
 
 class SolarSystem:
@@ -74,12 +75,57 @@ class SolarSystem:
 SolarSystem.analytical_plot()
 
 
-def solve_two_body_problem(r, m, A, theta, x_vel, y_vel, omega):
-    v = np.sqrt(x_vel**2 + y_vel**2)
-    d_theta = v / r
-    h = (r**2) * d_theta
-    p = h**2 / m
-    e = (A * h**2) / m
-    f = theta - omega
-    r = p / (1 + e * np.cos(f))
-    return r
+def simulate_orbit(
+    initial_pos_x,
+    initial_pos_y,
+    initial_vel_x,
+    initial_vel_y,
+    initial_angle,
+    m,
+    A,
+    omega,
+    dt=0.1,
+    T=10000,
+):
+    t_array = np.arange(0, T, dt)
+    x_pos = np.zeros(len(t_array))
+    y_pos = np.zeros(len(t_array))
+    x_vel = np.zeros(len(t_array))
+    y_vel = np.zeros(len(t_array))
+    x_acc = np.zeros(len(t_array))
+    y_acc = np.zeros(len(t_array))
+    r_array = np.zeros(len(t_array))
+    v_array = np.zeros(len(t_array))
+    theta_array = np.zeros(len(t_array))
+    delta_theta_array = np.zeros(len(t_array))
+    # theta_acc = np.zeros(len(t_array))
+    f_array = np.zeros(len(t_array))
+
+    x_pos[0] = initial_pos_x
+    y_pos[0] = initial_pos_y
+    x_vel[0] = initial_vel_x
+    y_pos[0] = initial_vel_y
+    r_array[0] = np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)
+    v_array[0] = np.sqrt(x_vel[0] ** 2 + y_vel[0] ** 2)
+    theta_array[0] = initial_angle
+    delta_theta_array = np.sqrt(x_vel[0] ** 2 + y_vel[0] ** 2) / np.sqrt(
+        x_pos[0] ** 2 + y_pos[0] ** 2
+    )
+    f_array[0] = (G * star_mass * m) / (r_array[0] ** 2)
+    x_acc[0] = f_array[0] * np.cos(theta_array[0]) / m
+    y_acc[0] = f_array[0] * np.sin(theta_array[0]) / m
+    # theta_acc[0] = f_array[0]/m
+
+    # leapfrog method
+    for i in range(1, len(t_array)):
+        x_pos[i] = x_pos[i - 1] + x_vel[i - 1] * dt + 1 / 2 * x_acc[i - 1] * dt**2
+        y_pos[i] = y_pos[i - 1] + y_vel[i - 1] * dt + 1 / 2 * y_acc[i - 1] * dt**2
+        theta_array[i] = theta_array[i - 1] + delta_theta_array[0] * dt
+        f_array[i] = (G * star_mass * m) / (np.sqrt(x_pos[i] ** 2 + y_pos[i] ** 2)) ** 2
+        x_acc[i] = f_array[i] * np.cos(theta_array[i]) / m
+        y_acc[i] = f_array[i] * np.sin(theta_array[i]) / m
+        x_vel[i] = x_vel[i - 1] + x_vel[i - 1] + 1 / 2 * (x_acc[i - 1] + x_acc[i])
+        y_vel[i] = y_vel[i - 1] + y_vel[i - 1] + 1 / 2 * (y_acc[i - 1] + y_acc[i])
+        r_array[i] = np.sqrt(x_pos[i] ** 2 + y_pos[i] ** 2)
+
+    return x_pos, y_pos, x_vel, y_vel
