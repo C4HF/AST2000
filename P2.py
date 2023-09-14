@@ -74,12 +74,12 @@ class SolarSystem:
         # fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
         # ax.scatter(0,0, label = 'Sun')
         # ax.scatter(CMt, CMr, label = 'CM')
-        plt.scatter(0,0, label = 'Sun')
+        plt.scatter(0,0, label = 'Sun', s = 100)
         plt.scatter(CM[0], CM[1], label = 'CM')
 
         for i in range(number_of_planets):
             # ax.scatter(f[i] , np.sqrt(initial_positions[0][i]**2 + initial_positions[1][i]**2))
-            plt.scatter(initial_positions[0][i], initial_positions[1][i])
+            plt.scatter(initial_positions[0][i], initial_positions[1][i], s = 20)
             for j in range(N):
                 r[i][j] = a[i] * (1-e[i]**2) / (1 + e[i]* np.cos(t[j]))
             # ax.plot(t,r[i], label = f'{[i]}')
