@@ -108,48 +108,33 @@ def simulate_orbit(
     initial_vel_y,
     initial_angle,
     m,
-    dt=0.01,
-    T=1000,
+    dt=0.1,
+    T=20,
 ):
     t_array = np.arange(0, T, dt)
-    # Kartesisk
     x_pos = np.zeros(len(t_array))
     y_pos = np.zeros(len(t_array))
     x_vel = np.zeros(len(t_array))
     y_vel = np.zeros(len(t_array))
-    # x_acc = np.zeros(len(t_array))
-    # y_acc = np.zeros(len(t_array))
-    # Sfærisk
-    # r_array = np.zeros(len(t_array))
-    # v_array = np.zeros(len(t_array))
-    # theta_array = np.zeros(len(t_array))
-    # delta_theta_array = np.zeros(len(t_array))
-    # dd_theta_array = np.zeros(len(t_array))
-
-    # theta_acc = np.zeros(len(t_array))
-    # f_array = np.zeros(len(t_array))
 
     x_pos[0] = initial_pos_x
     y_pos[0] = initial_pos_y
     x_vel[0] = initial_vel_x
     y_pos[0] = initial_vel_y
-    # r_array[0] = np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)
-    # v_array[0] = np.sqrt(x_vel[0] ** 2 + y_vel[0] ** 2)
-    # theta_array[0] = initial_angle
-    # delta_theta_array = np.sqrt(x_vel[0] ** 2 + y_vel[0] ** 2) / np.sqrt(
-    # x_pos[0] ** 2 + y_pos[0] ** 2
-    # )
-    # f_array[0] = (G * star_mass * m) / (r_array[0] ** 2)
-    x_acc_old = (G * star_mass) / (x_pos[0] ** 2)
-    y_acc_old = (G * star_mass) / (y_pos[0] ** 2)
-    # dd_theta_array[0] = np.sqrt(x_acc[0]**2 + y_acc[0]**2)/(m*np.sqrt(x_pos[0]**2 + y_pos[0]**2))
+    gamma = -G * star_mass
+    x_acc_old = (gamma / ((x_pos[0] ** 2 + y_pos[0] ** 2) ** (3 / 2))) * x_pos[0]
+    y_acc_old = (gamma / ((x_pos[0] ** 2 + y_pos[0] ** 2) ** (3 / 2))) * y_pos[0]
 
     # leapfrog method
     for i in range(1, len(t_array)):
         x_pos[i] = x_pos[i - 1] + x_vel[i - 1] * dt + 1 / 2 * x_acc_old * dt**2
         y_pos[i] = y_pos[i - 1] + y_vel[i - 1] * dt + 1 / 2 * y_acc_old * dt**2
-        x_acc_new = (G * star_mass) / (x_pos[i - 1] ** 2)
-        y_acc_new = (G * star_mass) / (x_pos[i - 1] ** 2)
+        x_acc_new = (
+            gamma / ((x_pos[i - 1] ** 2 + y_pos[i - 1] ** 2) ** (3 / 2))
+        ) * x_pos[i - 1]
+        y_acc_new = (
+            gamma / ((x_pos[i - 1] ** 2 + y_pos[i - 1] ** 2) ** (3 / 2))
+        ) * y_pos[i - 1]
         x_vel[i] = x_vel[i - 1] + 1 / 2 * (x_acc_old + x_acc_new) * dt
         y_vel[i] = y_vel[i - 1] + 1 / 2 * (y_acc_old + y_acc_new) * dt
         x_acc_old = x_acc_new
