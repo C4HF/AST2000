@@ -48,8 +48,7 @@ initial_velocities = (
     system.initial_velocities
 )  # [[  0.          -7.37808042   2.31451309  -0.68985302   6.50085578 -0.48817572 -11.61944718]
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
-G = 6.6743 * 10 ** (-11)
-SM = 1.9891 * 10 ** (30)
+G = 4 * (np.pi) ** 2
 
 
 class SolarSystem:
@@ -98,7 +97,7 @@ class SolarSystem:
         plt.show()
 
 
-SolarSystem.analytical_plot()
+# SolarSystem.analytical_plot()
 
 
 @njit
@@ -109,7 +108,7 @@ def simulate_orbit(
     initial_vel_y,
     initial_angle,
     m,
-    dt=1,
+    dt=0.01,
     T=1000,
 ):
     t_array = np.arange(0, T, dt)
@@ -151,8 +150,8 @@ def simulate_orbit(
         y_pos[i] = y_pos[i - 1] + y_vel[i - 1] * dt + 1 / 2 * y_acc_old * dt**2
         x_acc_new = (G * star_mass) / (x_pos[i - 1] ** 2)
         y_acc_new = (G * star_mass) / (x_pos[i - 1] ** 2)
-        x_vel[i] = x_vel[i - 1] + x_vel[i - 1] + 1 / 2 * (x_acc_old + x_acc_new)
-        y_vel[i] = y_vel[i - 1] + y_vel[i - 1] + 1 / 2 * (y_acc_old + y_acc_new)
+        x_vel[i] = x_vel[i - 1] + 1 / 2 * (x_acc_old + x_acc_new) * dt
+        y_vel[i] = y_vel[i - 1] + 1 / 2 * (y_acc_old + y_acc_new) * dt
         x_acc_old = x_acc_new
         y_acc_old = y_acc_new
     return x_pos, y_pos, t_array
@@ -164,7 +163,7 @@ x_pos, y_pos, t_array = simulate_orbit(
     initial_velocities[0][0],
     initial_velocities[1][0],
     aphelion_angles[0],
-    masses[0] * SM,
+    masses[0],
 )
 # print(x_pos)
 plt.plot(x_pos, y_pos)
