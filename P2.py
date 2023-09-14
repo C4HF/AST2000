@@ -126,6 +126,7 @@ def simulate_orbit(
         y_acc[i] = f_array[i] * np.sin(theta_array[i]) / m
         x_vel[i] = x_vel[i - 1] + x_vel[i - 1] + 1 / 2 * (x_acc[i - 1] + x_acc[i])
         y_vel[i] = y_vel[i - 1] + y_vel[i - 1] + 1 / 2 * (y_acc[i - 1] + y_acc[i])
+        delta_theta_array[i] = 
         r_array[i] = np.sqrt(x_pos[i] ** 2 + y_pos[i] ** 2)
 
     return x_pos, y_pos, x_vel, y_vel
