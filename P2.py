@@ -142,5 +142,8 @@ for i in range(len(initial_positions[0])):
         initial_velocities[0][i],
         initial_velocities[1][i],
     )
-    plt.plot(x_pos, y_pos)
+    plt.plot(x_pos, y_pos, label=f"Planet idx: {i}")
+
+plt.legend()
+plt.grid()
 plt.show()
