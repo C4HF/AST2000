@@ -8,6 +8,8 @@ from ast2000tools.solar_system import SolarSystem
 from scipy.stats import norm
 import numba as nb
 from numba import njit
+import multiprocessing
+import time
 
 utils.check_for_newer_version()
 
@@ -101,7 +103,7 @@ class SolarSystem:
 
 
 @njit
-def simulate_orbit(
+def simulate_orbits(
     initial_pos_x, initial_pos_y, initial_vel_x, initial_vel_y, dt=0.000001, T=1
 ):
     t_array = np.arange(0, T, dt)
@@ -120,8 +122,8 @@ def simulate_orbit(
 
     # leapfrog method
     for i in range(1, len(t_array)):
-        x_pos[i] = x_pos[i - 1] + (x_vel[i - 1] * dt) + (x_acc_old * dt**2 / 2)
-        y_pos[i] = y_pos[i - 1] + (y_vel[i - 1] * dt) + (y_acc_old * dt**2 / 2)
+        x_pos[i] = x_pos[i - 1] + (x_vel[i - 1] * dt) + ((x_acc_old * dt**2) / 2)
+        y_pos[i] = y_pos[i - 1] + (y_vel[i - 1] * dt) + ((y_acc_old * dt**2) / 2)
         x_acc_new = (gamma * x_pos[i - 1]) / (
             np.sqrt((x_pos[i - 1] ** 2) + (y_pos[i - 1] ** 2))
         ) ** 3
@@ -135,15 +137,18 @@ def simulate_orbit(
     return x_pos, y_pos, t_array
 
 
-for i in range(len(initial_positions[0])):
-    x_pos, y_pos, t_array = simulate_orbit(
-        initial_positions[0][i],
-        initial_positions[1][i],
-        initial_velocities[0][i],
-        initial_velocities[1][i],
-    )
-    plt.plot(x_pos, y_pos, label=f"Planet idx: {i}")
+def plot_orbits():
+    for i in range(len(initial_positions[0])):
+        x_pos, y_pos, t_array = simulate_orbits(
+            initial_positions[0][i],
+            initial_positions[1][i],
+            initial_velocities[0][i],
+            initial_velocities[1][i],
+        )
+        plt.plot(x_pos, y_pos, label=f"Planet idx: {i}")
+    plt.legend()
+    plt.grid()
+    plt.show()
 
-plt.legend()
-plt.grid()
-plt.show()
+
+plot_orbits()
