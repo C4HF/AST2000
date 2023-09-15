@@ -81,12 +81,12 @@ class SolarSystem:
         # fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
         # ax.scatter(0,0, label = 'Sun')
         # ax.scatter(CMt, CMr, label = 'CM')
-        plt.scatter(0, 0, label="Sun", s = 100)
+        plt.scatter(0, 0, label="Sun", s=100)
         plt.scatter(CM[0], CM[1], label="CM")
 
         for i in range(number_of_planets):
             # ax.scatter(f[i] , np.sqrt(initial_positions[0][i]**2 + initial_positions[1][i]**2))
-            plt.scatter(initial_positions[0][i], initial_positions[1][i], s = 20)
+            plt.scatter(initial_positions[0][i], initial_positions[1][i], s=20)
             for j in range(N):
                 r[i][j] = a[i] * (1 - e[i] ** 2) / (1 + e[i] * np.cos(t[j]))
             # ax.plot(t,r[i], label = f'{[i]}')
@@ -102,14 +102,7 @@ class SolarSystem:
 
 @njit
 def simulate_orbit(
-    initial_pos_x,
-    initial_pos_y,
-    initial_vel_x,
-    initial_vel_y,
-    initial_angle,
-    m,
-    dt=0.1,
-    T=20,
+    initial_pos_x, initial_pos_y, initial_vel_x, initial_vel_y, dt=0.000001, T=1
 ):
     t_array = np.arange(0, T, dt)
     x_pos = np.zeros(len(t_array))
@@ -120,36 +113,34 @@ def simulate_orbit(
     x_pos[0] = initial_pos_x
     y_pos[0] = initial_pos_y
     x_vel[0] = initial_vel_x
-    y_pos[0] = initial_vel_y
+    y_vel[0] = initial_vel_y
     gamma = -G * star_mass
-    x_acc_old = (gamma / ((x_pos[0] ** 2 + y_pos[0] ** 2) ** (3 / 2))) * x_pos[0]
-    y_acc_old = (gamma / ((x_pos[0] ** 2 + y_pos[0] ** 2) ** (3 / 2))) * y_pos[0]
+    x_acc_old = (gamma * x_pos[0]) / (np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)) ** 3
+    y_acc_old = (gamma * y_pos[0]) / (np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)) ** 3
 
     # leapfrog method
     for i in range(1, len(t_array)):
-        x_pos[i] = x_pos[i - 1] + x_vel[i - 1] * dt + 1 / 2 * x_acc_old * dt**2
-        y_pos[i] = y_pos[i - 1] + y_vel[i - 1] * dt + 1 / 2 * y_acc_old * dt**2
-        x_acc_new = (
-            gamma / ((x_pos[i - 1] ** 2 + y_pos[i - 1] ** 2) ** (3 / 2))
-        ) * x_pos[i - 1]
-        y_acc_new = (
-            gamma / ((x_pos[i - 1] ** 2 + y_pos[i - 1] ** 2) ** (3 / 2))
-        ) * y_pos[i - 1]
-        x_vel[i] = x_vel[i - 1] + 1 / 2 * (x_acc_old + x_acc_new) * dt
-        y_vel[i] = y_vel[i - 1] + 1 / 2 * (y_acc_old + y_acc_new) * dt
+        x_pos[i] = x_pos[i - 1] + (x_vel[i - 1] * dt) + (x_acc_old * dt**2 / 2)
+        y_pos[i] = y_pos[i - 1] + (y_vel[i - 1] * dt) + (y_acc_old * dt**2 / 2)
+        x_acc_new = (gamma * x_pos[i - 1]) / (
+            np.sqrt((x_pos[i - 1] ** 2) + (y_pos[i - 1] ** 2))
+        ) ** 3
+        y_acc_new = (gamma * y_pos[i - 1]) / (
+            np.sqrt(x_pos[i - 1] ** 2 + y_pos[i - 1] ** 2)
+        ) ** 3
+        x_vel[i] = x_vel[i - 1] + (1 / 2) * (x_acc_old + x_acc_new) * dt
+        y_vel[i] = y_vel[i - 1] + (1 / 2) * (y_acc_old + y_acc_new) * dt
         x_acc_old = x_acc_new
         y_acc_old = y_acc_new
     return x_pos, y_pos, t_array
 
 
-x_pos, y_pos, t_array = simulate_orbit(
-    initial_positions[0][0],
-    initial_positions[1][0],
-    initial_velocities[0][0],
-    initial_velocities[1][0],
-    aphelion_angles[0],
-    masses[0],
-)
-# print(x_pos)
-plt.plot(x_pos, y_pos)
+for i in range(len(initial_positions[0])):
+    x_pos, y_pos, t_array = simulate_orbit(
+        initial_positions[0][i],
+        initial_positions[1][i],
+        initial_velocities[0][i],
+        initial_velocities[1][i],
+    )
+    plt.plot(x_pos, y_pos)
 plt.show()
