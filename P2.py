@@ -102,18 +102,50 @@ class SolarSystem:
 # SolarSystem.analytical_plot()
 @njit
 def analytical_orbits(
-    initial_pos_x, initial_pos_y, initial_vel_x, initial_vel_y, dt=0.000001, T=1
+    initial_pos_x,
+    initial_pos_y,
+    initial_vel_x,
+    initial_vel_y,
+    theta_0,
+    m,
+    e,
+    omega,
+    dt=0.000001,
+    T=1,
 ):
     t_array = np.arange(0, T, dt)
-    x_pos = np.zeros(len(t_array))
-    y_pos = np.zeros(len(t_array))
-    x_vel = np.zeros(len(t_array))
-    y_vel = np.zeros(len(t_array))
+    N = len(t_array)
+    theta_array = np.arange(theta_0, 2 * np.pi + theta_0, 2 * np.pi / N)
+    r_array = np.zeros(len(t_array))
+    r_0 = (initial_pos_x, initial_pos_y)
+    v_0 = (initial_vel_x, initial_vel_y)
+    h = np.sqrt(r_0[0] ** 2 + r_0[1] ** 2)
+    p = (h**2) / m
+    for i in range(len(t_array)):
+        f = theta_array[i] - omega
+        r_array[i] = p / (1 + e * np.cos(f))
+    x_pos = np.cos(theta_array) * r_array
+    y_pos = np.sin(theta_array) * r_array
+    print(x_pos)
+    # print(y_pos)
+    return x_pos, y_pos
 
-    x_pos[0] = initial_pos_x
-    y_pos[0] = initial_pos_y
-    x_vel[0] = initial_vel_x
-    y_vel[0] = initial_vel_y
+
+x_pos, y_pos = analytical_orbits(
+    initial_positions[0][0],
+    initial_positions[1][0],
+    initial_velocities[0][0],
+    initial_velocities[1][0],
+    initial_orbital_angles[0],
+    masses[0],
+    eccentricities[0],
+    omega=aphelion_angles[0],
+    dt=0.000001,
+    T=1,
+)
+
+plt.plot(x_pos, y_pos)
+plt.show()
 
 
 @njit
@@ -153,16 +185,31 @@ def simulate_orbits(
 
 def plot_orbits():
     for i in range(len(initial_positions[0])):
-        x_pos, y_pos, t_array = simulate_orbits(
+        sx_pos, sy_pos, t_array = simulate_orbits(
             initial_positions[0][i],
             initial_positions[1][i],
             initial_velocities[0][i],
             initial_velocities[1][i],
         )
-        plt.plot(x_pos, y_pos, label=f"Planet idx: {i}")
+        plt.plot(sx_pos, sy_pos, label=f"Planet idx: {i}")
+
+    for i in range(len(initial_positions)):
+        ax_pos, ay_pos, t_array = analytical_orbits(
+            initial_positions[0][i],
+            initial_positions[1][i],
+            initial_velocities[0][i],
+            initial_velocities[1][i],
+            aphelion_angles[i],
+            masses[i],
+            A=1,
+            omega=0,
+            dt=0.000001,
+            T=1,
+        )
+        plt.plot(ax_pos, ay_pos, label=f"Analytical idx: {i}")
     plt.legend()
     plt.grid()
     plt.show()
 
 
-plot_orbits()
+# plot_orbits()
