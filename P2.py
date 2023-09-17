@@ -108,7 +108,6 @@ def analytical_orbits(
     initial_pos_y,
     initial_vel_x,
     initial_vel_y,
-    theta_0,
     m,
     e,
     omega,
@@ -122,8 +121,8 @@ def analytical_orbits(
     r_0 = np.sqrt(initial_pos_x**2 + initial_pos_y**2)
     v_0 = np.sqrt(initial_vel_x**2 + initial_vel_y**2)
     h = r_0 * v_0 * (initial_vel_y / v_0)
-    mu = G * (star_mass + m)
-    p = (h**2) / mu
+    M = G * ((star_mass + m))
+    p = (h**2) / M
     for i in range(len(t_array)):
         f = theta_array[i] - omega
         r_array[i] = p / (1 + e * np.cos(f))
@@ -183,12 +182,9 @@ def plot_orbits():
             initial_positions[1][i],
             initial_velocities[0][i],
             initial_velocities[1][i],
-            initial_orbital_angles[i],
             masses[i],
             eccentricities[i],
             omega=aphelion_angles[i],
-            dt=0.000001,
-            T=1,
         )
         plt.plot(ax_pos, ay_pos, "--", label=f"Analytical idx: {i}")
     plt.legend(loc="upper right")
