@@ -116,7 +116,7 @@ def analytical_orbits(
 ):
     t_array = np.arange(0, T, dt)
     N = len(t_array)
-    theta_array = np.arange(0, 2 * np.pi, 2 * np.pi / N)
+    theta_array = np.linspace(0, 2 * np.pi, N)
     r_array = np.zeros(len(t_array))
     r_0 = np.sqrt(initial_pos_x**2 + initial_pos_y**2)
     v_0 = np.sqrt(initial_vel_x**2 + initial_vel_y**2)
@@ -128,7 +128,7 @@ def analytical_orbits(
         r_array[i] = p / (1 + e * np.cos(f))
     x_pos = np.cos(theta_array) * r_array
     y_pos = np.sin(theta_array) * r_array
-    return x_pos, y_pos
+    return x_pos, y_pos, r_array, t_array, theta_array
 
 
 @njit
@@ -177,7 +177,7 @@ def plot_orbits():
         plt.plot(sx_pos, sy_pos, label=f"Planet idx: {i}")
 
     for i in range(len(initial_positions[0])):
-        ax_pos, ay_pos = analytical_orbits(
+        ax_pos, ay_pos, r_array, t_array, theta_array = analytical_orbits(
             initial_positions[0][i],
             initial_positions[1][i],
             initial_velocities[0][i],
@@ -192,4 +192,24 @@ def plot_orbits():
     plt.show()
 
 
-plot_orbits()
+# Task B #
+x_pos, y_pos, r_array, t_array, theta_array = analytical_orbits(
+    initial_positions[0][0],
+    initial_positions[1][0],
+    initial_velocities[0][0],
+    initial_velocities[1][0],
+    masses[0],
+    eccentricities[0],
+    omega=aphelion_angles[0],
+)
+# idx_range1 = np.where()
+# test = np.asarray([3, 2, 1, 2, 3, 6, 8, 9, 10, 111, 1])
+# idx = np.asarray(np.where((1 < test) & (test < 9)))
+# print(idx[0])
+
+idx_range1 = np.where((0 <= theta_array) & (theta_array <= 0 + np.pi / 100))[0]
+idx_range2 = np.where((np.pi <= theta_array) & (theta_array <= np.pi + np.pi / 100))[0]
+
+
+print(len(idx_range1))
+print(len(idx_range2))
