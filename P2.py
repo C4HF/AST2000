@@ -100,6 +100,20 @@ class SolarSystem:
 
 
 # SolarSystem.analytical_plot()
+@njit
+def analytical_orbits(
+    initial_pos_x, initial_pos_y, initial_vel_x, initial_vel_y, dt=0.000001, T=1
+):
+    t_array = np.arange(0, T, dt)
+    x_pos = np.zeros(len(t_array))
+    y_pos = np.zeros(len(t_array))
+    x_vel = np.zeros(len(t_array))
+    y_vel = np.zeros(len(t_array))
+
+    x_pos[0] = initial_pos_x
+    y_pos[0] = initial_pos_y
+    x_vel[0] = initial_vel_x
+    y_vel[0] = initial_vel_y
 
 
 @njit
