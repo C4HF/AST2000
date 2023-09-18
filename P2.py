@@ -51,6 +51,7 @@ initial_velocities = (
 )  # [[  0.          -7.37808042   2.31451309  -0.68985302   6.50085578 -0.48817572 -11.61944718]
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
 G = 4 * (np.pi) ** 2
+planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
 
 
 class SolarSystem:
@@ -102,29 +103,29 @@ class SolarSystem:
 # SolarSystem.analytical_plot()
 
 
-@njit
 def analytical_orbits(
     initial_pos_x,
     initial_pos_y,
     initial_vel_x,
     initial_vel_y,
+    initial_theta,
     m,
     e,
     omega,
-    dt=0.000001,
+    dt=10e-9,
     T=1,
 ):
     t_array = np.arange(0, T, dt)
     N = len(t_array)
-    theta_array = np.linspace(0, 2 * np.pi, N)
+    theta_array = np.linspace(initial_theta, 2 * np.pi + initial_theta, N)
     r_array = np.zeros(len(t_array))
-    r_0 = np.sqrt(initial_pos_x**2 + initial_pos_y**2)
-    v_0 = np.sqrt(initial_vel_x**2 + initial_vel_y**2)
-    h = r_0 * v_0 * (initial_vel_y / v_0)
+    r_0 = (initial_pos_x, initial_pos_y)
+    v_0 = (initial_vel_x, initial_vel_y)
+    h = np.abs(np.cross(r_0, v_0))
     M = G * ((star_mass + m))
     p = (h**2) / M
     for i in range(len(t_array)):
-        f = theta_array[i] - omega
+        f = theta_array[i] - omega + np.pi
         r_array[i] = p / (1 + e * np.cos(f))
     x_pos = np.cos(theta_array) * r_array
     y_pos = np.sin(theta_array) * r_array
@@ -133,7 +134,7 @@ def analytical_orbits(
 
 @njit
 def simulate_orbits(
-    initial_pos_x, initial_pos_y, initial_vel_x, initial_vel_y, dt=0.000001, T=1
+    initial_pos_x, initial_pos_y, initial_vel_x, initial_vel_y, dt=10e-9, T=1
 ):
     t_array = np.arange(0, T, dt)
     x_pos = np.zeros(len(t_array))
@@ -145,14 +146,18 @@ def simulate_orbits(
     y_pos[0] = initial_pos_y
     x_vel[0] = initial_vel_x
     y_vel[0] = initial_vel_y
+    initial_theta = np.arctan(initial_pos_y / initial_pos_x)
     gamma = -G * star_mass
     x_acc_old = (gamma * x_pos[0]) / (np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)) ** 3
     y_acc_old = (gamma * y_pos[0]) / (np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)) ** 3
-
+    count_revolutions = 0
     # leapfrog method
     for i in range(1, len(t_array)):
         x_pos[i] = x_pos[i - 1] + (x_vel[i - 1] * dt) + ((x_acc_old * dt**2) / 2)
         y_pos[i] = y_pos[i - 1] + (y_vel[i - 1] * dt) + ((y_acc_old * dt**2) / 2)
+
+        if (y_pos[i] > 0) & (y_pos[i - 1] < 0):
+            count_revolutions += 1
         x_acc_new = (gamma * x_pos[i - 1]) / (
             np.sqrt((x_pos[i - 1] ** 2) + (y_pos[i - 1] ** 2))
         ) ** 3
@@ -163,18 +168,21 @@ def simulate_orbits(
         y_vel[i] = y_vel[i - 1] + (1 / 2) * (y_acc_old + y_acc_new) * dt
         x_acc_old = x_acc_new
         y_acc_old = y_acc_new
-    return x_pos, y_pos, t_array
+
+    return x_pos, y_pos, t_array, count_revolutions
 
 
-def plot_orbits():
+def plot_orbits(T, dt):
     for i in range(len(initial_positions[0])):
-        sx_pos, sy_pos, t_array = simulate_orbits(
+        sx_pos, sy_pos, t_array, count_revolutions = simulate_orbits(
             initial_positions[0][i],
             initial_positions[1][i],
             initial_velocities[0][i],
             initial_velocities[1][i],
+            T=T,
+            dt=dt,
         )
-        plt.plot(sx_pos, sy_pos, label=f"Planet idx: {i}")
+        plt.plot(sx_pos, sy_pos, label=f"Planet: {i}, revolutions: {count_revolutions}")
 
     for i in range(len(initial_positions[0])):
         ax_pos, ay_pos, r_array, t_array, theta_array = analytical_orbits(
@@ -182,34 +190,60 @@ def plot_orbits():
             initial_positions[1][i],
             initial_velocities[0][i],
             initial_velocities[1][i],
+            initial_orbital_angles[i],
             masses[i],
             eccentricities[i],
             omega=aphelion_angles[i],
+            T=T,
+            dt=dt,
         )
-        plt.plot(ax_pos, ay_pos, "--", label=f"Analytical idx: {i}")
+        plt.plot(
+            ax_pos,
+            ay_pos,
+            linestyle="dotted",
+            color="black",
+            alpha=0.5,
+        )
+
+    for i in range(len(initial_positions[0])):
+        if planet_types[i] == "rock":
+            color = "blue"
+        else:
+            color = "red"
+        plt.scatter(
+            initial_positions[0][i],
+            initial_positions[1][i],
+            color=f"{color}",
+            s=radii[i] * 0.05,
+        )
+    plt.xlabel("Au")
+    plt.ylabel("Au")
     plt.legend(loc="upper right")
     plt.grid()
+    plt.title(f"Analytical vs. simulated orbits (T={T}, dt = {dt})")
     plt.show()
 
 
+plot_orbits(T=1, dt=10e-8)
+
 # Task B #
-x_pos, y_pos, r_array, t_array, theta_array = analytical_orbits(
-    initial_positions[0][0],
-    initial_positions[1][0],
-    initial_velocities[0][0],
-    initial_velocities[1][0],
-    masses[0],
-    eccentricities[0],
-    omega=aphelion_angles[0],
-)
+# x_pos, y_pos, r_array, t_array, theta_array = analytical_orbits(
+#     initial_positions[0][0],
+#     initial_positions[1][0],
+#     initial_velocities[0][0],
+#     initial_velocities[1][0],
+#     masses[0],
+#     eccentricities[0],
+#     omega=aphelion_angles[0],
+# )
 # idx_range1 = np.where()
 # test = np.asarray([3, 2, 1, 2, 3, 6, 8, 9, 10, 111, 1])
 # idx = np.asarray(np.where((1 < test) & (test < 9)))
 # print(idx[0])
 
-idx_range1 = np.where((0 <= theta_array) & (theta_array <= 0 + np.pi / 100))[0]
-idx_range2 = np.where((np.pi <= theta_array) & (theta_array <= np.pi + np.pi / 100))[0]
+# idx_range1 = np.where((0 <= theta_array) & (theta_array <= 0 + np.pi / 100))[0]
+# idx_range2 = np.where((np.pi <= theta_array) & (theta_array <= np.pi + np.pi / 100))[0]
 
 
-print(len(idx_range1))
-print(len(idx_range2))
+# print(len(idx_range1))
+# print(len(idx_range2))
