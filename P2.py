@@ -224,7 +224,7 @@ def plot_orbits(T, dt):
     plt.show()
 
 
-plot_orbits(T=1, dt=10e-8)
+plot_orbits(T=1, dt=2e-6)
 
 # Task B #
 # x_pos, y_pos, r_array, t_array, theta_array = analytical_orbits(
