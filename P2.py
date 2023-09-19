@@ -10,6 +10,7 @@ import numba as nb
 from numba import njit
 import multiprocessing
 import time
+import math
 
 utils.check_for_newer_version()
 
@@ -167,6 +168,7 @@ def simulate_orbits(
         np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)
     ) ** 3  # initial acceleration y-direction (Newtons-Gravitational law y-component)
     count_revolutions = 0
+    round_timer = []
     # leapfrog method
     for i in range(1, len(t_array)):
         x_pos[i] = (
@@ -176,10 +178,12 @@ def simulate_orbits(
             y_pos[i - 1] + (y_vel[i - 1] * dt) + ((y_acc_old * dt**2) / 2)
         )  # updating y-pos
 
-        if (y_pos[i] > 0) & (
-            y_pos[i - 1] < 0
+        if (y_pos[i] > initial_pos_y) & (
+            y_pos[i - 1] < initial_pos_y
         ):  # counting number of revolutions by checking if planet has crossed x-axis in this dt
             count_revolutions += 1
+            round_timer.append(t_array[i])
+
         x_acc_new = (gamma * x_pos[i - 1]) / (
             np.sqrt((x_pos[i - 1] ** 2) + (y_pos[i - 1] ** 2))
         ) ** 3  # setting new x-acceleration using the position of in the last iteration
@@ -194,8 +198,10 @@ def simulate_orbits(
         )  # updating y-velocity
         x_acc_old = x_acc_new  # setting old x-aceleration to new x-acceleration to prepare for next iteration
         y_acc_old = y_acc_new  # setting old y-aceleration to new y-acceleration to prepare for next iteration
-
-    return x_pos, y_pos, t_array, count_revolutions
+        round_timer_array = np.asarray(round_timer)
+        delta_round_timer = np.diff(round_timer_array)
+        period = delta_round_timer[0]
+    return x_pos, y_pos, t_array, count_revolutions, period
 
 
 def plot_orbits(T, dt):
@@ -205,7 +211,7 @@ def plot_orbits(T, dt):
     of planet (rock vs gas). Takes T (number of earth-years) and dt (timestep). Small dt increases accuracy.
     """
     for i in range(len(initial_positions[0])):
-        sx_pos, sy_pos, t_array, count_revolutions = simulate_orbits(
+        sx_pos, sy_pos, t_array, count_revolutions, period = simulate_orbits(
             initial_positions[0][i],
             initial_positions[1][i],
             initial_velocities[0][i],
@@ -213,7 +219,11 @@ def plot_orbits(T, dt):
             T=T,
             dt=dt,
         )
-        plt.plot(sx_pos, sy_pos, label=f"Planet: {i}, revolutions: {count_revolutions}")
+        plt.plot(
+            sx_pos,
+            sy_pos,
+            label=f"Planet: {i}, revolutions: {count_revolutions}, period: {period:.2f}",
+        )
 
     for i in range(len(initial_positions[0])):
         ax_pos, ay_pos, r_array, t_array, theta_array = analytical_orbits(
@@ -255,33 +265,65 @@ def plot_orbits(T, dt):
     plt.show()
 
 
-# plot_orbits(T=1, dt=10e-8)
+# plot_orbits(T=1, dt=10e-7)
 
 
-# Task B # not finished #######
-def test_kepler_laws():
+# Task B # not finished
+def test_kepler_laws(T, dt):
     """Function to test if simulated orbits obey Keplers-Laws."""
-    x_pos, y_pos, t_array, revolutions = simulate_orbits(
-        initial_positions[0][0],
-        initial_positions[1][0],
-        initial_velocities[0][0],
-        initial_velocities[1][0],
-    )
-    # test = np.asarray([3, 2, 1, 2, 3, 6, 8, 9, 10, 111, 1])
-    # idx = np.asarray(np.where((1 < test) & (test < 9)))
-    n = len(t_array / revolutions)
-    r_array = (x_pos, y_pos)
-    area1 = 0
-    for i in range(0, n / 10):
-        area1 += (
-            1
-            / 2
-            * np.abs(
-                np.cross(
-                    r_array[i],
-                )
-            )
+    for p in range(len(masses)):
+        x_pos, y_pos, t_array, revolutions, period = simulate_orbits(
+            initial_positions[0][p],
+            initial_positions[1][p],
+            initial_velocities[0][p],
+            initial_velocities[1][p],
+            T=T,
+            dt=dt,
         )
+        sm_axes = semi_major_axes[p]
+        n = len(t_array) // revolutions
+        dn = n // 10
+        area1 = 0
+        distance1 = 0
+        time1 = 0
+        for i in range(0, dn):
+            delta_r = (
+                x_pos[i + 1] - x_pos[i],
+                y_pos[i + 1] - y_pos[i],
+            )
+            r_vec = (x_pos[i], y_pos[i])
+            area1 += (1 / 2) * np.linalg.norm(r_vec) * np.linalg.norm((delta_r))
+            distance1 += np.linalg.norm(delta_r)
+            time1 += dt
+        area2 = 0
+        distance2 = 0
+        time2 = 0
+        for i in range(n // 2, (n // 2) + (dn)):
+            delta_r = (
+                x_pos[i + 1] - x_pos[i],
+                y_pos[i + 1] - y_pos[i],
+            )
+            r_vec = (x_pos[i], y_pos[i])
+            area2 += (1 / 2) * np.linalg.norm(r_vec) * np.linalg.norm((delta_r))
+            distance2 += np.linalg.norm(delta_r)
+            time2 += dt
+        mean_vel1 = distance1 / time1
+        mean_vel2 = distance2 / time2
+        print(f"----- Planet: {p} -------")
+        print(f"estimated mean_vel: {mean_vel1}")
+        print(f"estimated period: {((2*np.pi*sm_axes))/mean_vel1}")
+        print(f"sim period: {period}")
+
+        # assert math.isclose(
+        #     area1, area2, abs_tol=1e-7
+        # ), f"Nr. {p} failed Keplers sweeping-law"
+        print(f"estimated period squared:{(((2*np.pi*sm_axes))/mean_vel1)**2}")
+        print(f"period squared:{period**2}")
+        print(f"sm-axes cubed:{sm_axes**3}")
+        # assert math.isclose(
+        #     period**2, sm_axes**3, abs_tol=1e-7
+        # ), f"Nr.{p} failed Keplers third law"
+        print(f"Planet {p} passed Keplers Laws! (Not) ")
 
 
-# test_kepler_laws()
+# test_kepler_laws(1, 10e-9)
