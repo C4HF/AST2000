@@ -115,20 +115,29 @@ def analytical_orbits(
     dt=10e-9,
     T=1,
 ):
+    """Calculate analytical orbits using the general solution of the two-body-problem.
+    Takes initial position x/y, initial velocitie x/y, initial orbital angle (initial_theta), mass (m),
+    eccentricites and aphelian angle (omega) of one planet. Calculates orbit and returns arrays of
+    x_pos, y_pos, r_array, t_array, and theta_array."""
     t_array = np.arange(0, T, dt)
     N = len(t_array)
     theta_array = np.linspace(initial_theta, 2 * np.pi + initial_theta, N)
     r_array = np.zeros(len(t_array))
     r_0 = (initial_pos_x, initial_pos_y)
     v_0 = (initial_vel_x, initial_vel_y)
-    h = np.abs(np.cross(r_0, v_0))
+    h = np.abs(np.cross(r_0, v_0))  # calculate angular-momentum (constant)
     M = G * ((star_mass + m))
     p = (h**2) / M
+    # for-loop loops over theta_array and calculates radius r for each step using general solution of two-body-problem
     for i in range(len(t_array)):
         f = theta_array[i] - omega + np.pi
         r_array[i] = p / (1 + e * np.cos(f))
-    x_pos = np.cos(theta_array) * r_array
-    y_pos = np.sin(theta_array) * r_array
+    x_pos = (
+        np.cos(theta_array) * r_array
+    )  # convert theta/radius to cartesian x-coordinate
+    y_pos = (
+        np.sin(theta_array) * r_array
+    )  # convert theta/radius to cartesian y-coordinate
     return x_pos, y_pos, r_array, t_array, theta_array
 
 
@@ -136,43 +145,65 @@ def analytical_orbits(
 def simulate_orbits(
     initial_pos_x, initial_pos_y, initial_vel_x, initial_vel_y, dt=10e-9, T=1
 ):
+    """Simulate orbits using newtons gravitational law. Takes initial position x/y,
+    initial velocity x/y. Calculates orbit and returns arrays of
+    x_pos, y_pos, t_array, and number of revolutions per earth-year."""
+    # creating empty arrays
     t_array = np.arange(0, T, dt)
     x_pos = np.zeros(len(t_array))
     y_pos = np.zeros(len(t_array))
     x_vel = np.zeros(len(t_array))
     y_vel = np.zeros(len(t_array))
-
+    # setting initial parameters
     x_pos[0] = initial_pos_x
     y_pos[0] = initial_pos_y
     x_vel[0] = initial_vel_x
     y_vel[0] = initial_vel_y
-    initial_theta = np.arctan(initial_pos_y / initial_pos_x)
-    gamma = -G * star_mass
-    x_acc_old = (gamma * x_pos[0]) / (np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)) ** 3
-    y_acc_old = (gamma * y_pos[0]) / (np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)) ** 3
+    gamma = -G * star_mass  # setting constant
+    x_acc_old = (gamma * x_pos[0]) / (
+        np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)
+    ) ** 3  # initial acceleration x-direction (Newtons-Gravitational law x-component)
+    y_acc_old = (gamma * y_pos[0]) / (
+        np.sqrt(x_pos[0] ** 2 + y_pos[0] ** 2)
+    ) ** 3  # initial acceleration y-direction (Newtons-Gravitational law y-component)
     count_revolutions = 0
     # leapfrog method
     for i in range(1, len(t_array)):
-        x_pos[i] = x_pos[i - 1] + (x_vel[i - 1] * dt) + ((x_acc_old * dt**2) / 2)
-        y_pos[i] = y_pos[i - 1] + (y_vel[i - 1] * dt) + ((y_acc_old * dt**2) / 2)
+        x_pos[i] = (
+            x_pos[i - 1] + (x_vel[i - 1] * dt) + ((x_acc_old * dt**2) / 2)
+        )  # updating x-pos
+        y_pos[i] = (
+            y_pos[i - 1] + (y_vel[i - 1] * dt) + ((y_acc_old * dt**2) / 2)
+        )  # updating y-pos
 
-        if (y_pos[i] > 0) & (y_pos[i - 1] < 0):
+        if (y_pos[i] > 0) & (
+            y_pos[i - 1] < 0
+        ):  # counting number of revolutions by checking if planet has crossed x-axis in this dt
             count_revolutions += 1
         x_acc_new = (gamma * x_pos[i - 1]) / (
             np.sqrt((x_pos[i - 1] ** 2) + (y_pos[i - 1] ** 2))
-        ) ** 3
+        ) ** 3  # setting new x-acceleration using the position of in the last iteration
         y_acc_new = (gamma * y_pos[i - 1]) / (
             np.sqrt(x_pos[i - 1] ** 2 + y_pos[i - 1] ** 2)
-        ) ** 3
-        x_vel[i] = x_vel[i - 1] + (1 / 2) * (x_acc_old + x_acc_new) * dt
-        y_vel[i] = y_vel[i - 1] + (1 / 2) * (y_acc_old + y_acc_new) * dt
-        x_acc_old = x_acc_new
-        y_acc_old = y_acc_new
+        ) ** 3  # setting new y-acceleration using the position of in the last iteration
+        x_vel[i] = (
+            x_vel[i - 1] + (1 / 2) * (x_acc_old + x_acc_new) * dt
+        )  # updating x-velocity
+        y_vel[i] = (
+            y_vel[i - 1] + (1 / 2) * (y_acc_old + y_acc_new) * dt
+        )  # updating y-velocity
+        x_acc_old = x_acc_new  # setting old x-aceleration to new x-acceleration to prepare for next iteration
+        y_acc_old = y_acc_new  # setting old y-aceleration to new y-acceleration to prepare for next iteration
 
     return x_pos, y_pos, t_array, count_revolutions
 
 
 def plot_orbits(T, dt):
+    """A simple function that iterates over all planet indexes to plot the
+    analytical and simulated orbit of each planet aswell as dots illustrating
+    the initial positions of each planet, their relative readius-lengths and the type
+    of planet (rock vs gas). Takes T (number of earth-years) and dt (timestep). Small dt increases accuracy.
+    """
     for i in range(len(initial_positions[0])):
         sx_pos, sy_pos, t_array, count_revolutions = simulate_orbits(
             initial_positions[0][i],
@@ -215,7 +246,7 @@ def plot_orbits(T, dt):
             initial_positions[1][i],
             color=f"{color}",
             s=radii[i] * 0.05,
-        )
+        )  # scatterplot with size of dot = 0.05 * radius of planet
     plt.xlabel("Au")
     plt.ylabel("Au")
     plt.legend(loc="upper right")
@@ -224,26 +255,33 @@ def plot_orbits(T, dt):
     plt.show()
 
 
-plot_orbits(T=1, dt=2e-6)
-
-# Task B #
-# x_pos, y_pos, r_array, t_array, theta_array = analytical_orbits(
-#     initial_positions[0][0],
-#     initial_positions[1][0],
-#     initial_velocities[0][0],
-#     initial_velocities[1][0],
-#     masses[0],
-#     eccentricities[0],
-#     omega=aphelion_angles[0],
-# )
-# idx_range1 = np.where()
-# test = np.asarray([3, 2, 1, 2, 3, 6, 8, 9, 10, 111, 1])
-# idx = np.asarray(np.where((1 < test) & (test < 9)))
-# print(idx[0])
-
-# idx_range1 = np.where((0 <= theta_array) & (theta_array <= 0 + np.pi / 100))[0]
-# idx_range2 = np.where((np.pi <= theta_array) & (theta_array <= np.pi + np.pi / 100))[0]
+# plot_orbits(T=1, dt=10e-8)
 
 
-# print(len(idx_range1))
-# print(len(idx_range2))
+# Task B # not finished #######
+def test_kepler_laws():
+    """Function to test if simulated orbits obey Keplers-Laws."""
+    x_pos, y_pos, t_array, revolutions = simulate_orbits(
+        initial_positions[0][0],
+        initial_positions[1][0],
+        initial_velocities[0][0],
+        initial_velocities[1][0],
+    )
+    # test = np.asarray([3, 2, 1, 2, 3, 6, 8, 9, 10, 111, 1])
+    # idx = np.asarray(np.where((1 < test) & (test < 9)))
+    n = len(t_array / revolutions)
+    r_array = (x_pos, y_pos)
+    area1 = 0
+    for i in range(0, n / 10):
+        area1 += (
+            1
+            / 2
+            * np.abs(
+                np.cross(
+                    r_array[i],
+                )
+            )
+        )
+
+
+# test_kepler_laws()
