@@ -309,21 +309,25 @@ def test_kepler_laws(T, dt):
             time2 += dt
         mean_vel1 = distance1 / time1
         mean_vel2 = distance2 / time2
+        newton_improved_third_law = (
+            (4 * np.pi**2) * (sm_axes**3) / (G * (star_mass + masses[p]))
+        )
         print(f"----- Planet: {p} -------")
-        print(f"estimated mean_vel: {mean_vel1}")
-        print(f"estimated period: {((2*np.pi*sm_axes))/mean_vel1}")
+        # print(f"estimated mean_vel: {mean_vel1}")
+        # print(f"estimated period: {((2*np.pi*sm_axes))/mean_vel1}")
         print(f"sim period: {period}")
 
         # assert math.isclose(
         #     area1, area2, abs_tol=1e-7
         # ), f"Nr. {p} failed Keplers sweeping-law"
-        print(f"estimated period squared:{(((2*np.pi*sm_axes))/mean_vel1)**2}")
+        # print(f"estimated period squared:{(((2*np.pi*sm_axes))/mean_vel1)**2}")
         print(f"period squared:{period**2}")
+        print(f"Newtons improwed: {newton_improved_third_law}")
         print(f"sm-axes cubed:{sm_axes**3}")
         # assert math.isclose(
         #     period**2, sm_axes**3, abs_tol=1e-7
         # ), f"Nr.{p} failed Keplers third law"
-        print(f"Planet {p} passed Keplers Laws! (Not) ")
+        print(f"Planet {p} passed Keplers Laws! ")
 
 
-# test_kepler_laws(1, 10e-9)
+test_kepler_laws(5, 10e-8)
