@@ -169,6 +169,7 @@ def simulate_orbits(
     ) ** 3  # initial acceleration y-direction (Newtons-Gravitational law y-component)
     count_revolutions = 0
     round_timer = []
+    crossing_idx = []
     # leapfrog method
     for i in range(1, len(t_array)):
         x_pos[i] = (
@@ -183,6 +184,7 @@ def simulate_orbits(
         ):  # counting number of revolutions by checking if planet has crossed x-axis in this dt
             count_revolutions += 1
             round_timer.append(t_array[i])
+            crossing_idx.append(i)
 
         x_acc_new = (gamma * x_pos[i - 1]) / (
             np.sqrt((x_pos[i - 1] ** 2) + (y_pos[i - 1] ** 2))
@@ -198,10 +200,30 @@ def simulate_orbits(
         )  # updating y-velocity
         x_acc_old = x_acc_new  # setting old x-aceleration to new x-acceleration to prepare for next iteration
         y_acc_old = y_acc_new  # setting old y-aceleration to new y-acceleration to prepare for next iteration
+        ## Calculating period
         round_timer_array = np.asarray(round_timer)
         delta_round_timer = np.diff(round_timer_array)
         period = delta_round_timer[0]
-    return x_pos, y_pos, t_array, count_revolutions, period
+        crossings_r = []
+        ## Calculating displacement per period
+        for c in crossing_idx:
+            crossings_r.append(np.sqrt((x_pos[c] ** 2 + y_pos[c] ** 2)))
+        crossing_r_array = np.asarray(crossings_r)
+        if len(crossing_r_array) == 0:
+            displacement = "-"
+        else:
+            diff = 0
+            for i in range(len(crossing_r_array)):
+                diff = 
+
+            displacement = np.sum(np.diff(crossing_r_array)) / len(crossing_r_array)
+
+        # displacement = np.diff(crossing_r_array)
+        relative_displacement = displacement / (
+            np.sqrt(initial_pos_x**2 + initial_pos_y**2)
+        )
+
+    return x_pos, y_pos, t_array, count_revolutions, period, relative_displacement
 
 
 def plot_orbits(T, dt):
@@ -211,7 +233,14 @@ def plot_orbits(T, dt):
     of planet (rock vs gas). Takes T (number of earth-years) and dt (timestep). Small dt increases accuracy.
     """
     for i in range(len(initial_positions[0])):
-        sx_pos, sy_pos, t_array, count_revolutions, period = simulate_orbits(
+        (
+            sx_pos,
+            sy_pos,
+            t_array,
+            count_revolutions,
+            period,
+            relative_displacement,
+        ) = simulate_orbits(
             initial_positions[0][i],
             initial_positions[1][i],
             initial_velocities[0][i],
@@ -222,7 +251,7 @@ def plot_orbits(T, dt):
         plt.plot(
             sx_pos,
             sy_pos,
-            label=f"Planet: {i}, revolutions: {count_revolutions}, period: {period:.2f}",
+            label=f"Planet: {i}, revolutions: {count_revolutions}, period: {period:.2f}, displacement: {relative_displacement}",
         )
 
     for i in range(len(initial_positions[0])):
@@ -265,7 +294,8 @@ def plot_orbits(T, dt):
     plt.show()
 
 
-# plot_orbits(T=1, dt=10e-7)
+plot_orbits(T=3, dt=10e-5)
+# plot_orbits(T=3, dt=10e-8)
 
 
 # Task B # not finished
@@ -330,4 +360,4 @@ def test_kepler_laws(T, dt):
         print(f"Planet {p} passed Keplers Laws! ")
 
 
-test_kepler_laws(5, 10e-8)
+# test_kepler_laws(5, 10e-8)
