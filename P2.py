@@ -257,15 +257,16 @@ def plot_orbits(T, dt):
             color=f"{color}",
             s=radii[i] * 0.05,
         )  # scatterplot with size of dot = 0.05 * radius of planet
-    plt.xlabel("Au")
-    plt.ylabel("Au")
-    plt.legend(loc="upper right")
+    plt.xlabel("Au", fontsize=25)
+    plt.ylabel("Au", fontsize=25)
+    plt.xticks(fontsize=23)
+    plt.yticks(fontsize=23)
+    plt.legend(loc="upper right", fontsize=15)
     plt.grid()
-    plt.title(f"Analytical vs. simulated orbits (T={T}, dt = {dt})")
+    plt.title(f"Analytical vs. simulated orbits (T={T}, dt = {dt})", fontsize=25)
     plt.show()
 
-
-# plot_orbits(T=1, dt=10e-7)
+plot_orbits(T=1, dt=10e-8)
 
 
 # Task B # not finished
@@ -330,4 +331,4 @@ def test_kepler_laws(T, dt):
         print(f"Planet {p} passed Keplers Laws! ")
 
 
-test_kepler_laws(5, 10e-8)
+#test_kepler_laws(5, 10e-8)
