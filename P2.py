@@ -204,24 +204,13 @@ def simulate_orbits(
         round_timer_array = np.asarray(round_timer)
         delta_round_timer = np.diff(round_timer_array)
         period = delta_round_timer[0]
+        # Calculating displacement
         crossings_r = []
-        ## Calculating displacement per period
         for c in crossing_idx:
             crossings_r.append(np.sqrt((x_pos[c] ** 2 + y_pos[c] ** 2)))
         crossing_r_array = np.asarray(crossings_r)
-        if len(crossing_r_array) == 0:
-            displacement = "-"
-        else:
-            diff = 0
-            for i in range(len(crossing_r_array)):
-                diff = 
-
-            displacement = np.sum(np.diff(crossing_r_array)) / len(crossing_r_array)
-
-        # displacement = np.diff(crossing_r_array)
-        relative_displacement = displacement / (
-            np.sqrt(initial_pos_x**2 + initial_pos_y**2)
-        )
+        initial_r = np.sqrt(initial_pos_x**2 + initial_pos_y**2)
+        relative_displacement = crossing_r_array[0] / initial_r
 
     return x_pos, y_pos, t_array, count_revolutions, period, relative_displacement
 
@@ -286,6 +275,9 @@ def plot_orbits(T, dt):
             color=f"{color}",
             s=radii[i] * 0.05,
         )  # scatterplot with size of dot = 0.05 * radius of planet
+        plt.annotate(
+            f"{masses[i]:.4E}", (initial_positions[0][i], initial_positions[1][i])
+        )
     plt.xlabel("Au")
     plt.ylabel("Au")
     plt.legend(loc="upper right")
@@ -294,15 +286,21 @@ def plot_orbits(T, dt):
     plt.show()
 
 
-plot_orbits(T=3, dt=10e-5)
-# plot_orbits(T=3, dt=10e-8)
+# plot_orbits(T=3, dt=10e-7)
 
 
-# Task B # not finished
+# Task B
 def test_kepler_laws(T, dt):
     """Function to test if simulated orbits obey Keplers-Laws."""
     for p in range(len(masses)):
-        x_pos, y_pos, t_array, revolutions, period = simulate_orbits(
+        (
+            x_pos,
+            y_pos,
+            t_array,
+            revolutions,
+            period,
+            relative_displacement,
+        ) = simulate_orbits(
             initial_positions[0][p],
             initial_positions[1][p],
             initial_velocities[0][p],
@@ -343,21 +341,17 @@ def test_kepler_laws(T, dt):
             (4 * np.pi**2) * (sm_axes**3) / (G * (star_mass + masses[p]))
         )
         print(f"----- Planet: {p} -------")
-        # print(f"estimated mean_vel: {mean_vel1}")
-        # print(f"estimated period: {((2*np.pi*sm_axes))/mean_vel1}")
-        print(f"sim period: {period}")
 
-        # assert math.isclose(
-        #     area1, area2, abs_tol=1e-7
-        # ), f"Nr. {p} failed Keplers sweeping-law"
-        # print(f"estimated period squared:{(((2*np.pi*sm_axes))/mean_vel1)**2}")
-        print(f"period squared:{period**2}")
-        print(f"Newtons improwed: {newton_improved_third_law}")
-        print(f"sm-axes cubed:{sm_axes**3}")
-        # assert math.isclose(
-        #     period**2, sm_axes**3, abs_tol=1e-7
-        # ), f"Nr.{p} failed Keplers third law"
-        print(f"Planet {p} passed Keplers Laws! ")
+        print(f"Sim period: {period}")
+        print(f"Number of periodd: {revolutions}")
+        print(f"Relative r displacement per period: {relative_displacement}")
+        print(f"Period squared:{period**2}")
+        print(f"Newtons improved: {newton_improved_third_law}")
+        print(f"SM-axes cubed:{sm_axes**3}")
+        print("\n")
 
 
-# test_kepler_laws(5, 10e-8)
+# test_kepler_laws(3, 10e-9)
+
+
+# Task C
