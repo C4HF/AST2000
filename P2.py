@@ -221,6 +221,7 @@ def plot_orbits(T, dt):
     the initial positions of each planet, their relative readius-lengths and the type
     of planet (rock vs gas). Takes T (number of earth-years) and dt (timestep). Small dt increases accuracy.
     """
+    # Calling simulate_orbit() for every planet and plotting result
     for i in range(len(initial_positions[0])):
         (
             sx_pos,
@@ -242,7 +243,7 @@ def plot_orbits(T, dt):
             sy_pos,
             label=f"Planet: {i}, revolutions: {count_revolutions}, period: {period:.2f}, displacement: {relative_displacement}",
         )
-
+    # Calling analytic_orbits() for every planet and plotting result
     for i in range(len(initial_positions[0])):
         ax_pos, ay_pos, r_array, t_array, theta_array = analytical_orbits(
             initial_positions[0][i],
@@ -263,7 +264,8 @@ def plot_orbits(T, dt):
             color="black",
             alpha=0.5,
         )
-
+    # Plotting initial_position of every planet, with relative radius represented in the size of the dot,
+    # aswell as color red representing either gas-planet and blur representing rock-planet. Also annotates mass of each planet
     for i in range(len(initial_positions[0])):
         if planet_types[i] == "rock":
             color = "blue"
@@ -275,8 +277,9 @@ def plot_orbits(T, dt):
             color=f"{color}",
             s=radii[i] * 0.05,
         )  # scatterplot with size of dot = 0.05 * radius of planet
+
         plt.annotate(
-            f"{masses[i]:.4E}", (initial_positions[0][i], initial_positions[1][i])
+            f"{masses[i]:.2E}", (initial_positions[0][i], initial_positions[1][i])
         )
     plt.xlabel("Au", fontsize=25)
     plt.ylabel("Au", fontsize=25)
@@ -294,6 +297,7 @@ def plot_orbits(T, dt):
 # Task B
 def test_kepler_laws(T, dt):
     """Function to test if simulated orbits obey Keplers-Laws."""
+    # simulating the orbit of each planet by calling simulate_orbits().
     for p in range(len(masses)):
         (
             x_pos,
@@ -310,21 +314,33 @@ def test_kepler_laws(T, dt):
             T=T,
             dt=dt,
         )
-        sm_axes = semi_major_axes[p]
-        n = len(t_array) // revolutions
-        dn = n // 10
-        area1 = 0
-        distance1 = 0
-        time1 = 0
+        sm_axes = semi_major_axes[
+            p
+        ]  # storing the value of the Semi-Major-axis for later calculations
+        n = (
+            len(t_array) // revolutions
+        )  # finding the number of timesteps n per revolution
+        dn = n // 10  # choosing the delta_step to be n/10 - used in later calculation
+        # calculating the area sweeped in area1, the positions from starting pos 0 to dn.
+        area1 = 0  # created variable to update in loop
+        distance1 = 0  # created variable to update in loop
+        time1 = 0  # created variable to update in loop
         for i in range(0, dn):
             delta_r = (
                 x_pos[i + 1] - x_pos[i],
                 y_pos[i + 1] - y_pos[i],
-            )
+            )  # delta_r is the distance between r[i+1] and r[i]. Here we approximate
+            # the curvature of the circle to be a short straight line (because the delta_n is so small)
             r_vec = (x_pos[i], y_pos[i])
-            area1 += (1 / 2) * np.linalg.norm(r_vec) * np.linalg.norm((delta_r))
-            distance1 += np.linalg.norm(delta_r)
-            time1 += dt
+            area1 += (
+                (1 / 2) * np.linalg.norm(r_vec) * np.linalg.norm((delta_r))
+            )  # calculating the area of the triangle with base r_vec and height delta_r
+            distance1 += np.linalg.norm(
+                delta_r
+            )  # the approximated distance traveled in this step is delta_r
+            time1 += dt  # keeping track of time
+        # Now doing the excact same thing for area2, from half revolution n/2 to n/2 + dn.
+        # This is to compare the area_sweeped on tho opposite sides of the ellipse
         area2 = 0
         distance2 = 0
         time2 = 0
@@ -337,39 +353,44 @@ def test_kepler_laws(T, dt):
             area2 += (1 / 2) * np.linalg.norm(r_vec) * np.linalg.norm((delta_r))
             distance2 += np.linalg.norm(delta_r)
             time2 += dt
+        # Calculating mean velocity on the two opposing sides of the ellipse
         mean_vel1 = distance1 / time1
         mean_vel2 = distance2 / time2
         newton_improved_third_law = (
             (4 * np.pi**2) * (sm_axes**3) / (G * (star_mass + masses[p]))
-        )
-        print(f"----- Planet: {p} -------")
-
+        )  # calculating newtons improved version of Keplers third law-
+        # Printing out the results found for each planet:
+        print(f"----- Planet: {p} ----- ")
         print(f"Sim period: {period}")
         print(f"Number of periodd: {revolutions}")
         print(f"Relative r displacement per period: {relative_displacement}")
         print(f"Period squared:{period**2}")
         print(f"Newtons improved: {newton_improved_third_law}")
         print(f"SM-axes cubed:{sm_axes**3}")
+        print("-------------------- ")
         print("\n")
 
 
-#test_kepler_laws(3, 10e-7)
+# test_kepler_laws(3, 10e-7)
 
 # for i in range(len(masses)):  #Checks which planet gives the most shift in the centre of mass.
 #     CM = (1 / (star_mass + masses[i])) * ((masses[i] * np.array([initial_positions[0][i], initial_positions[1][i]])))
 #     print(np.linalg.norm(CM)) #Gets planet nr.2, which we now will use in MovingTheSun function.
 
-# Task C. Using planet 0
-def MovingTheSun(T, dt): 
-    #T er lengden år
-    #dt er tidssteg per år
+
+# Task C. Using planet 2
+def moving_the_sun(T, dt):
+    # T er lengden år
+    # dt er tidssteg per år
     planet_mass = masses[2]
     planet_pos = np.array([initial_positions[0][2], initial_positions[1][2]])
     planet_vel = np.array([initial_velocities[0][2], initial_velocities[1][2]])
-    star_pos = np.array([0,0])    #Star starts in the origin
-    star_vel = np.array([0,0])    #Star starts with 0 velocity
-    M = star_mass + planet_mass #sum of masses
-    CM = ((1 / (M)) * ((planet_mass * planet_pos) + (star_mass * star_pos))) #Finds CM, which we now will use as the origin, as it will be fixed to the origin.
+    star_pos = np.array([0, 0])  # Star starts in the origin
+    star_vel = np.array([0, 0])  # Star starts with 0 velocity
+    M = star_mass + planet_mass  # sum of masses
+    CM = (1 / (M)) * (
+        (planet_mass * planet_pos) + (star_mass * star_pos)
+    )  # Finds CM, which we now will use as the origin, as it will be fixed to the origin.
     # print(planet_pos, star_pos, CM)
     # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the value for CM makes sense
     # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
@@ -377,7 +398,7 @@ def MovingTheSun(T, dt):
     # plt.legend()
     # plt.axis('equal')
     # plt.show()
-    star_pos = -CM     #Star and planet are moved according to the CM.
+    star_pos = -CM  # Star and planet are moved according to the CM.
     planet_pos = planet_pos - CM
     # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the new value for CM is at the origin
     # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
@@ -385,27 +406,33 @@ def MovingTheSun(T, dt):
     # plt.legend()
     # plt.axis('equal')
     # plt.show()
-    N = int(T // dt)        #Definerer verdier til loopen
-    star_pos_a = np.zeros((N,2))
+    N = int(T // dt)  # Definerer verdier til loopen
+    star_pos_a = np.zeros((N, 2))
     star_pos_a[0] = star_pos
-    planet_pos_a = np.zeros((N,2))
+    planet_pos_a = np.zeros((N, 2))
     planet_pos_a[0] = planet_pos
     r = planet_pos - star_pos
-    a_star = ((-G*planet_mass*r) / np.linalg.norm(r)**3)    #Akselerasjon fra start 
-    a_planet = ((-G*star_mass*r) / np.linalg.norm(r)**3)
-    for i in range(N-1):  #Leapfrog integration using Newton
-        CM = ((1 / (M)) * ((planet_mass * planet_pos_a[i]) + (star_mass * star_pos_a[i])))
-        star_pos_a[i+1] = star_pos_a[i] + star_vel * dt + 0.5 * a_star * dt**2 -CM  #Trekker fra bevegelsen til CM slik at den ikke beveger seg
-        planet_pos_a[i+1] = planet_pos_a[i] + planet_vel * dt + 0.5 * a_planet * dt**2 -CM
-        r = planet_pos_a[i+1] - star_pos_a[i+1]
-        a_star_next = ((-G*planet_mass*r) / np.linalg.norm(r)**3)
-        a_planet_next = ((-G*star_mass*r) / np.linalg.norm(r)**3)
+    a_star = (-G * planet_mass * r) / np.linalg.norm(r) ** 3  # Akselerasjon fra start
+    a_planet = (-G * star_mass * r) / np.linalg.norm(r) ** 3
+    for i in range(N - 1):  # Leapfrog integration using Newton
+        CM = (1 / (M)) * ((planet_mass * planet_pos_a[i]) + (star_mass * star_pos_a[i]))
+        star_pos_a[i + 1] = (
+            star_pos_a[i] + star_vel * dt + 0.5 * a_star * dt**2 - CM
+        )  # Trekker fra bevegelsen til CM slik at den ikke beveger seg
+        planet_pos_a[i + 1] = (
+            planet_pos_a[i] + planet_vel * dt + 0.5 * a_planet * dt**2 - CM
+        )
+        r = planet_pos_a[i + 1] - star_pos_a[i + 1]
+        a_star_next = (-G * planet_mass * r) / np.linalg.norm(r) ** 3
+        a_planet_next = (-G * star_mass * r) / np.linalg.norm(r) ** 3
         star_vel = star_vel + 0.5 * (a_star + a_star_next) * dt
         planet_vel = planet_vel + 0.5 * (a_planet + a_planet_next) * dt
         a_star = a_star_next
         a_planet = a_planet_next
-    plt.plot(star_pos_a[:,0], star_pos_a[:,1], label = 'Star')
-    plt.plot(planet_pos_a[:,0], planet_pos_a[:,1], label = 'Planet')
+    plt.plot(star_pos_a[:, 0], star_pos_a[:, 1], label="Star")
+    plt.plot(planet_pos_a[:, 0], planet_pos_a[:, 1], label="Planet")
     plt.legend()
     plt.show()
-MovingTheSun(T = 1, dt = 10e-6)
+
+
+moving_the_sun(T=1, dt=10e-6)
