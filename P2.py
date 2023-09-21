@@ -377,8 +377,7 @@ def MovingTheSun(T, dt):
     # plt.legend()
     # plt.axis('equal')
     # plt.show()
-    CM_origin = np.array([0,0]) #The new CM is now at the origin
-    star_pos = -CM              #Star and planet are moved according to the CM.
+    star_pos = -CM     #Star and planet are moved according to the CM.
     planet_pos = planet_pos - CM
     # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the new value for CM is at the origin
     # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
@@ -386,24 +385,27 @@ def MovingTheSun(T, dt):
     # plt.legend()
     # plt.axis('equal')
     # plt.show()
-    N = int(T // dt) 
+    N = int(T // dt)        #Definerer verdier til loopen
     star_pos_a = np.zeros((N,2))
     star_pos_a[0] = star_pos
     planet_pos_a = np.zeros((N,2))
     planet_pos_a[0] = planet_pos
-    a_star = ((-G*M*star_pos_a[0]) / np.linalg.norm(star_pos_a[0])**3)
-    a_planet = ((-G*M*planet_pos_a[0]) / np.linalg.norm(planet_pos_a[0])**3)
-    for i in range(N):  #Leapfrog integration using Newton
-        star_pos_a[i+1] = star_pos_a[i] + star_vel * dt + 0.5 * a_star * dt**2
-        planet_pos_a[i+1] = planet_pos_a[i] + planet_vel * dt + 0.5 * a_planet * dt**2
-        a_star_next = ((-G*M*star_pos_a[i+1]) / np.linalg.norm(star_pos_a[i+1])**3)
-        a_planet_next = ((-G*M*planet_pos_a[i+1]) / np.linalg.norm(planet_pos_a[i+1])**3)
+    r = planet_pos - star_pos
+    a_star = ((-G*planet_mass*r) / np.linalg.norm(r)**3)    #Akselerasjon fra start 
+    a_planet = ((-G*star_mass*r) / np.linalg.norm(r)**3)
+    for i in range(N-1):  #Leapfrog integration using Newton
+        CM = ((1 / (M)) * ((planet_mass * planet_pos_a[i]) + (star_mass * star_pos_a[i])))
+        star_pos_a[i+1] = star_pos_a[i] + star_vel * dt + 0.5 * a_star * dt**2 -CM  #Trekker fra bevegelsen til CM slik at den ikke beveger seg
+        planet_pos_a[i+1] = planet_pos_a[i] + planet_vel * dt + 0.5 * a_planet * dt**2 -CM
+        r = planet_pos_a[i+1] - star_pos_a[i+1]
+        a_star_next = ((-G*planet_mass*r) / np.linalg.norm(r)**3)
+        a_planet_next = ((-G*star_mass*r) / np.linalg.norm(r)**3)
         star_vel = star_vel + 0.5 * (a_star + a_star_next) * dt
-        planet_vel = star_vel + 0.5 * (a_planet + a_planet_next) * dt
+        planet_vel = planet_vel + 0.5 * (a_planet + a_planet_next) * dt
         a_star = a_star_next
         a_planet = a_planet_next
-    plt.plot(star_pos_a[0], star_pos_a[1], label = 'Star')
-    plt.plot(planet_pos_a[0], planet_pos_a[1], label = 'Planet')
+    plt.plot(star_pos_a[:,0], star_pos_a[:,1], label = 'Star')
+    plt.plot(planet_pos_a[:,0], planet_pos_a[:,1], label = 'Planet')
     plt.legend()
     plt.show()
-MovingTheSun(T = 1, dt = 10e-7)
+MovingTheSun(T = 1, dt = 10e-6)
