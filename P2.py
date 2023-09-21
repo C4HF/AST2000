@@ -355,17 +355,21 @@ def test_kepler_laws(T, dt):
 
 #test_kepler_laws(3, 10e-7)
 
+# for i in range(len(masses)):  #Checks which planet gives the most shift in the centre of mass.
+#     CM = (1 / (star_mass + masses[i])) * ((masses[i] * np.array([initial_positions[0][i], initial_positions[1][i]])))
+#     print(np.linalg.norm(CM)) #Gets planet nr.2, which we now will use in MovingTheSun function.
 
 # Task C. Using planet 0
 def MovingTheSun(T, dt): 
     #T er lengden år
     #dt er tidssteg per år
-    planet_mass = masses[0]
-    planet_pos = np.array([initial_positions[0][0], initial_positions[1][0]])
-    planet_vel = np.array([initial_velocities[0][0], initial_velocities[1][0]])
+    planet_mass = masses[2]
+    planet_pos = np.array([initial_positions[0][2], initial_positions[1][2]])
+    planet_vel = np.array([initial_velocities[0][2], initial_velocities[1][2]])
     star_pos = np.array([0,0])    #Star starts in the origin
     star_vel = np.array([0,0])    #Star starts with 0 velocity
-    CM = ((1 / (star_mass + planet_mass)) * (planet_mass * planet_pos) + (star_mass * star_pos)) #Finds CM, which we now will use as the origin, as it will be fixed to the origin.
+    M = star_mass + planet_mass #sum of masses
+    CM = ((1 / (M)) * ((planet_mass * planet_pos) + (star_mass * star_pos))) #Finds CM, which we now will use as the origin, as it will be fixed to the origin.
     # print(planet_pos, star_pos, CM)
     # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the value for CM makes sense
     # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
@@ -376,8 +380,30 @@ def MovingTheSun(T, dt):
     CM_origin = np.array([0,0]) #The new CM is now at the origin
     star_pos = -CM              #Star and planet are moved according to the CM.
     planet_pos = planet_pos - CM
-    N = dt / T
-    for i in range(N):  #Leapfrog integration
-        
-
-MovingTheSun(1,100)
+    # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the new value for CM is at the origin
+    # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
+    # plt.scatter(CM_origin[0], CM_origin[1], label = 'CM')
+    # plt.legend()
+    # plt.axis('equal')
+    # plt.show()
+    N = int(T // dt) 
+    star_pos_a = np.zeros((N,2))
+    star_pos_a[0] = star_pos
+    planet_pos_a = np.zeros((N,2))
+    planet_pos_a[0] = planet_pos
+    a_star = ((-G*M*star_pos_a[0]) / np.linalg.norm(star_pos_a[0])**3)
+    a_planet = ((-G*M*planet_pos_a[0]) / np.linalg.norm(planet_pos_a[0])**3)
+    for i in range(N):  #Leapfrog integration using Newton
+        star_pos_a[i+1] = star_pos_a[i] + star_vel * dt + 0.5 * a_star * dt**2
+        planet_pos_a[i+1] = planet_pos_a[i] + planet_vel * dt + 0.5 * a_planet * dt**2
+        a_star_next = ((-G*M*star_pos_a[i+1]) / np.linalg.norm(star_pos_a[i+1])**3)
+        a_planet_next = ((-G*M*planet_pos_a[i+1]) / np.linalg.norm(planet_pos_a[i+1])**3)
+        star_vel = star_vel + 0.5 * (a_star + a_star_next) * dt
+        planet_vel = star_vel + 0.5 * (a_planet + a_planet_next) * dt
+        a_star = a_star_next
+        a_planet = a_planet_next
+    plt.plot(star_pos_a[0], star_pos_a[1], label = 'Star')
+    plt.plot(planet_pos_a[0], planet_pos_a[1], label = 'Planet')
+    plt.legend()
+    plt.show()
+MovingTheSun(T = 1, dt = 10e-7)
