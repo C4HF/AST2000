@@ -353,7 +353,31 @@ def test_kepler_laws(T, dt):
         print("\n")
 
 
-test_kepler_laws(3, 10e-9)
+#test_kepler_laws(3, 10e-7)
 
 
-# Task C
+# Task C. Using planet 0
+def MovingTheSun(T, dt): 
+    #T er lengden år
+    #dt er tidssteg per år
+    planet_mass = masses[0]
+    planet_pos = np.array([initial_positions[0][0], initial_positions[1][0]])
+    planet_vel = np.array([initial_velocities[0][0], initial_velocities[1][0]])
+    star_pos = np.array([0,0])    #Star starts in the origin
+    star_vel = np.array([0,0])    #Star starts with 0 velocity
+    CM = ((1 / (star_mass + planet_mass)) * (planet_mass * planet_pos) + (star_mass * star_pos)) #Finds CM, which we now will use as the origin, as it will be fixed to the origin.
+    # print(planet_pos, star_pos, CM)
+    # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the value for CM makes sense
+    # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
+    # plt.scatter(CM[0], CM[1], label = 'CM')
+    # plt.legend()
+    # plt.axis('equal')
+    # plt.show()
+    CM_origin = np.array([0,0]) #The new CM is now at the origin
+    star_pos = -CM              #Star and planet are moved according to the CM.
+    planet_pos = planet_pos - CM
+    N = dt / T
+    for i in range(N):  #Leapfrog integration
+        
+
+MovingTheSun(1,100)
