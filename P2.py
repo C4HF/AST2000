@@ -481,11 +481,13 @@ def moving_the_sun(T, dt):
         np.sqrt(planet_pos_x**2 + planet_pos_y**2)
         + np.sqrt(star_pos_x**2 + star_pos_y**2)
     )
-    return star_pos_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array
+    return star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array
 
 
 def plot_energy(T, dt):
-    star_pos_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(T=T, dt=dt)
+    star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
+        T=T, dt=dt
+    )
     plt.plot(t_array, E_cm, label="Total E CM")
     plt.plot(t_array, Ek_cm, label="Kineting E CM")
     plt.plot(t_array, Eu_cm, label="Potensial E CM")
@@ -501,4 +503,26 @@ def plot_energy(T, dt):
     plt.show()
 
 
-plot_energy(T=1, dt=10e-8)
+# plot_energy(T=1, dt=10e-8)
+
+
+def radial_velocity(pos_x, pos_y, pec_vel, i=np.pi / 2, T=3, dt=10e-8):
+    star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
+        T=T, dt=dt
+    )
+    los = np.asarray([pos_x, pos_y]) - star_pos_a  # los = line of sight
+
+    theta = np.zeros(len(t_array))
+    v_array = np.zeros(len(t_array))
+    for i in range(len(los)):
+        los_direction = los[i] / np.linalg.norm(los[i])
+        star_vel_direction = star_vel_a[i] / np.linalg.norm(star_vel_a[i])
+        theta[i] = np.arccos(np.dot(los_direction, star_vel_direction))
+        v_array[i] = np.linalg.norm(star_vel_a[i])
+    vr = v_array * np.cos(theta) * np.random.normal(loc=0, scale=1.0)
+    plt.plot(t_array, vr)
+    plt.show()
+    return
+
+
+radial_velocity(1000, 0, 0.2, T=1, dt=10e-6)
