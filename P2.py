@@ -453,11 +453,40 @@ def moving_the_sun(T, dt):
     E_star = ((1 / 2) * (mu) * (np.sqrt(star_vel_x**2 + star_vel_y**2)) ** 2) - (
         G * M * mu
     ) / (np.sqrt(star_pos_x**2 + star_pos_y**2))
-    plt.plot(t_array[:], E_planet, label="E planet")
-    plt.plot(t_array[:], E_star, label="E star")
+    # E_cm = E_planet + E_star
+    E_cm = (
+        (1 / 2)
+        * (mu)
+        * (
+            np.sqrt(planet_vel_x**2 + planet_vel_y**2)
+            + np.sqrt(star_vel_x**2 + star_vel_y**2)
+        )
+        ** 2
+    ) - (G * M * mu) / (
+        np.sqrt(planet_pos_x**2 + planet_pos_y**2)
+        + np.sqrt(star_pos_x**2 + star_pos_y**2)
+    )
+    Ek_cm = (
+        (1 / 2)
+        * (mu)
+        * (
+            np.sqrt(planet_vel_x**2 + planet_vel_y**2)
+            + np.sqrt(star_vel_x**2 + star_vel_y**2)
+        )
+        ** 2
+    )
+    Eu_cm = -(G * M * mu) / (
+        np.sqrt(planet_pos_x**2 + planet_pos_y**2)
+        + np.sqrt(star_pos_x**2 + star_pos_y**2)
+    )
+    # plt.plot(t_array[:-1], E_planet, label="E planet")
+    # plt.plot(t_array[:-1], E_star, label="E star")
+    plt.plot(t_array[:-1], E_cm, label="E CM")
+    plt.plot(t_array[:-1], Ek_cm, label="Kineting E CM")
+    plt.plot(t_array[:-1], Eu_cm, label="Potensial E CM")
     plt.title("Total energy of star and planet")
     plt.legend()
     plt.show()
 
 
-# moving_the_sun(T=1, dt=10e-8)
+moving_the_sun(T=1, dt=10e-7)
