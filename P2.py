@@ -382,6 +382,7 @@ def test_kepler_laws(T, dt):
 def moving_the_sun(T, dt):
     # T er lengden år
     # dt er tidssteg per år
+    t_array = np.arange(0, T, dt)
     planet_mass = masses[2]
     planet_pos = np.array([initial_positions[0][2], initial_positions[1][2]])
     planet_vel = np.array([initial_velocities[0][2], initial_velocities[1][2]])
@@ -411,27 +412,52 @@ def moving_the_sun(T, dt):
     star_pos_a[0] = star_pos
     planet_pos_a = np.zeros((N, 2))
     planet_pos_a[0] = planet_pos
+    planet_vel_a = np.zeros((N, 2))
+    star_vel_a = np.zeros((N, 2))
+    planet_vel_a[0] = planet_vel
+    star_vel_a[0] = star_vel
     r = planet_pos - star_pos
     a_star = (-G * planet_mass * r) / np.linalg.norm(r) ** 3  # Akselerasjon fra start
     a_planet = (-G * star_mass * r) / np.linalg.norm(r) ** 3
     for i in range(N - 1):  # Leapfrog integration using Newton
         CM = (1 / (M)) * ((planet_mass * planet_pos_a[i]) + (star_mass * star_pos_a[i]))
         star_pos_a[i + 1] = (
-            star_pos_a[i] + star_vel * dt + 0.5 * a_star * dt**2 - CM
+            star_pos_a[i] + star_vel_a[i] * dt + 0.5 * a_star * dt**2 - CM
         )  # Trekker fra bevegelsen til CM slik at den ikke beveger seg
         planet_pos_a[i + 1] = (
-            planet_pos_a[i] + planet_vel * dt + 0.5 * a_planet * dt**2 - CM
+            planet_pos_a[i] + planet_vel_a[i] * dt + 0.5 * a_planet * dt**2 - CM
         )
         r = planet_pos_a[i + 1] - star_pos_a[i + 1]
         a_star_next = (-G * planet_mass * r) / np.linalg.norm(r) ** 3
         a_planet_next = (-G * star_mass * r) / np.linalg.norm(r) ** 3
-        star_vel = star_vel + 0.5 * (a_star + a_star_next) * dt
-        planet_vel = planet_vel + 0.5 * (a_planet + a_planet_next) * dt
+        star_vel_a[i + 1] = star_vel_a[i] + 0.5 * (a_star + a_star_next) * dt
+        planet_vel_a[i + 1] = planet_vel_a[i] + 0.5 * (a_planet + a_planet_next) * dt
         a_star = a_star_next
         a_planet = a_planet_next
-    plt.plot(star_pos_a[:, 0], star_pos_a[:, 1], label="Star")
-    plt.plot(planet_pos_a[:, 0], planet_pos_a[:, 1], label="Planet")
+    # plt.plot(star_pos_a[:, 0], star_pos_a[:, 1], label="Star")
+    # plt.plot(planet_pos_a[:, 0], planet_pos_a[:, 1], label="Planet")
+    # plt.legend()
+    # plt.show()
+    mu = (planet_mass * star_mass) / (planet_mass + star_mass)
+    star_pos_x = star_pos_a[:, 0]
+    star_pos_y = star_pos_a[:, 1]
+    planet_pos_x = planet_pos_a[:, 0]
+    planet_pos_y = planet_pos_a[:, 1]
+    star_vel_x = star_vel_a[:, 0]
+    star_vel_y = star_vel_a[:, 1]
+    planet_vel_x = planet_vel_a[:, 0]
+    planet_vel_y = planet_vel_a[:, 1]
+    E_planet = (
+        (1 / 2) * (mu) * (np.sqrt(planet_vel_x**2 + planet_vel_y**2)) ** 2
+    ) - (G * M * mu) / (np.sqrt(planet_pos_x**2 + planet_pos_y**2))
+    E_star = ((1 / 2) * (mu) * (np.sqrt(star_vel_x**2 + star_vel_y**2)) ** 2) - (
+        G * M * mu
+    ) / (np.sqrt(star_pos_x**2 + star_pos_y**2))
+    plt.plot(t_array[:], E_planet, label="E planet")
+    plt.plot(t_array[:], E_star, label="E star")
+    plt.title("Total energy of star and planet")
     plt.legend()
     plt.show()
 
-moving_the_sun(T=2, dt=10e-6)
+
+# moving_the_sun(T=1, dt=10e-8)
