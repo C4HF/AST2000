@@ -434,5 +434,4 @@ def moving_the_sun(T, dt):
     plt.legend()
     plt.show()
 
-
-moving_the_sun(T=1, dt=10e-6)
+moving_the_sun(T=2, dt=10e-6)
