@@ -484,7 +484,7 @@ def moving_the_sun(T, dt):
     plt.plot(t_array[:-1], E_cm, label="E CM")
     plt.plot(t_array[:-1], Ek_cm, label="Kineting E CM")
     plt.plot(t_array[:-1], Eu_cm, label="Potensial E CM")
-    plt.title("Total energy of star and planet")
+    plt.title("Total energy of CM")
     plt.legend()
     plt.show()
 
