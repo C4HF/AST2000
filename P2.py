@@ -379,6 +379,7 @@ def test_kepler_laws(T, dt):
 
 
 # Task C. Using planet 2
+@njit
 def moving_the_sun(T, dt):
     # T er lengden år
     # dt er tidssteg per år
@@ -407,7 +408,8 @@ def moving_the_sun(T, dt):
     # plt.legend()
     # plt.axis('equal')
     # plt.show()
-    N = int(T // dt)  # Definerer verdier til loopen
+    # N = int(T // dt)  # Definerer verdier til loopen
+    N = len(t_array)
     star_pos_a = np.zeros((N, 2))
     star_pos_a[0] = star_pos
     planet_pos_a = np.zeros((N, 2))
@@ -479,12 +481,15 @@ def moving_the_sun(T, dt):
         np.sqrt(planet_pos_x**2 + planet_pos_y**2)
         + np.sqrt(star_pos_x**2 + star_pos_y**2)
     )
-    # plt.plot(t_array[:-1], E_planet, label="E planet")
-    # plt.plot(t_array[:-1], E_star, label="E star")
-    plt.plot(t_array[:-1], E_cm, label="E CM")
-    plt.plot(t_array[:-1], Ek_cm, label="Kineting E CM")
-    plt.plot(t_array[:-1], Eu_cm, label="Potensial E CM")
-    plt.xlabel("t", fontsize=25)
+    return star_pos_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array
+
+
+def plot_energy(T, dt):
+    star_pos_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(T=T, dt=dt)
+    plt.plot(t_array, E_cm, label="Total E CM")
+    plt.plot(t_array, Ek_cm, label="Kineting E CM")
+    plt.plot(t_array, Eu_cm, label="Potensial E CM")
+    plt.xlabel("yr", fontsize=25)
     plt.ylabel("J", fontsize=25)
     plt.xticks(fontsize=23)
     plt.yticks(fontsize=23)
@@ -496,4 +501,4 @@ def moving_the_sun(T, dt):
     plt.show()
 
 
-moving_the_sun(T=1, dt=10e-6)
+plot_energy(T=1, dt=10e-8)
