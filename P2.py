@@ -500,30 +500,21 @@ def plot_energy(T, dt):
 # plot_energy(T=1, dt=10e-8)
 
 
-def radial_velocity(pos_x, pos_y, pec_vel, i=np.pi / 2, T=3, dt=10e-8):
+def radial_velocity(T, dt):
     star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
-        T=T, dt=dt
-    )
-    los = np.asarray([pos_x, pos_y]) - star_pos_a  # los = line of sight
-
-    theta = np.zeros(len(t_array))      #Defines arrays to be filled in the loop
-    v_array = np.zeros(len(t_array))
-    for i in range(len(los)):      #Loops over the movement of the sun
-        los_direction = los[i] / np.linalg.norm(los[i])     
-        star_vel_direction = star_vel_a[i] / np.linalg.norm(star_vel_a[i])
-        theta[i] = np.arccos(np.dot(los_direction, star_vel_direction))
-        v_array[i] = np.linalg.norm(star_vel_a[i])
-    vr = v_array * np.cos(theta) * np.random.normal(loc=0, scale=1.0)
+        T=T, dt=dt)
+    t = t_array #Time array for plotting
+    vx = star_vel_a[:,0]    #Gathers the x-values for the velocities of the sun.
     mean = 0        #Defines values for the noise. Mean = 0 due to the noise being equal on both sides of the curve.
-    std = 0.2 * np.nanmax(vr)   #Std = 1/5 of the maximum value of the radial velocity
-    GaussianNoise = np.random.normal(mean, std, size = (len(t_array)))  #Normal distribution using values defined above
-    vr_GaussianNoise  = vr + GaussianNoise  #Adding the noise to the radial velocity
-    plt.plot(t_array, vr_GaussianNoise, label = 'v_r')
+    std = 0.2 * max(vx)   #Std = 1/5 of the maximum value of the velocity
+    GaussianNoise = np.random.normal(mean, std, size = (len(t)))  #Normal distribution using values defined above
+    vx_GaussianNoise  = vx + GaussianNoise  #Adding the noise to the velocity
+    plt.plot(t, vx_GaussianNoise, label = 'v')
     plt.legend(fontsize = 20)
-    plt.xlabel('t', fontsize = 20)
-    plt.ylabel('v', fontsize = 20)
+    plt.xlabel('t (år)', fontsize = 20)
+    plt.ylabel('v (AU / år)', fontsize = 20)
     plt.xticks(fontsize = 20)
     plt.yticks(fontsize = 20)
     plt.show()
 
-radial_velocity(1000, 0, 0.2, T=1, dt=10e-6)
+radial_velocity(T=1, dt=10e-7)
