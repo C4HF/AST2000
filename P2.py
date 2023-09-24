@@ -518,9 +518,12 @@ def radial_velocity(pos_x, pos_y, pec_vel, i=np.pi / 2, T=3, dt=10e-8):
     std = 0.2 * np.nanmax(vr)   #Std = 1/5 of the maximum value of the radial velocity
     GaussianNoise = np.random.normal(mean, std, size = (len(t_array)))  #Normal distribution using values defined above
     vr_GaussianNoise  = vr + GaussianNoise  #Adding the noise to the radial velocity
-    plt.plot(t_array, vr)
-    plt.plot(t_array, vr_GaussianNoise)
+    plt.plot(t_array, vr_GaussianNoise, label = 'v_r')
+    plt.legend(fontsize = 20)
+    plt.xlabel('t', fontsize = 20)
+    plt.ylabel('v', fontsize = 20)
+    plt.xticks(fontsize = 20)
+    plt.yticks(fontsize = 20)
     plt.show()
-    return()
 
 radial_velocity(1000, 0, 0.2, T=1, dt=10e-6)
