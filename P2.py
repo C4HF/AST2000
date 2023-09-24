@@ -381,8 +381,8 @@ def test_kepler_laws(T, dt):
 # Task C. Using planet 2
 @njit
 def moving_the_sun(T, dt):
-    # T er lengden år
-    # dt er tidssteg per år
+    # T is the amount of time in years
+    # dt is the timestep per year
     t_array = np.arange(0, T, dt)
     planet_mass = masses[2]
     planet_pos = np.array([initial_positions[0][2], initial_positions[1][2]])
@@ -455,20 +455,14 @@ def moving_the_sun(T, dt):
     E_star = ((1 / 2) * (mu) * (np.sqrt(star_vel_x**2 + star_vel_y**2)) ** 2) - (
         G * M * mu
     ) / (np.sqrt(star_pos_x**2 + star_pos_y**2))
-    # E_cm = E_planet + E_star
-    E_cm = (
-        (1 / 2)
-        * (mu)
-        * (
+    # E_cm = E_planet + E_star. Using analytic solution showed in the pdf.
+    E_cm = (1 / 2)* (mu) * (            #Energy of the center of mass
             np.sqrt(planet_vel_x**2 + planet_vel_y**2)
-            + np.sqrt(star_vel_x**2 + star_vel_y**2)
-        )
-        ** 2
-    ) - (G * M * mu) / (
+            + np.sqrt(star_vel_x**2 + star_vel_y**2))** 2 - (G * M * mu) / (
         np.sqrt(planet_pos_x**2 + planet_pos_y**2)
         + np.sqrt(star_pos_x**2 + star_pos_y**2)
     )
-    Ek_cm = (
+    Ek_cm = (           #Kinetic energy of the center of mass
         (1 / 2)
         * (mu)
         * (
@@ -477,7 +471,7 @@ def moving_the_sun(T, dt):
         )
         ** 2
     )
-    Eu_cm = -(G * M * mu) / (
+    Eu_cm = -(G * M * mu) / (           #Potential energy of the center of mass
         np.sqrt(planet_pos_x**2 + planet_pos_y**2)
         + np.sqrt(star_pos_x**2 + star_pos_y**2)
     )
@@ -512,10 +506,10 @@ def radial_velocity(pos_x, pos_y, pec_vel, i=np.pi / 2, T=3, dt=10e-8):
     )
     los = np.asarray([pos_x, pos_y]) - star_pos_a  # los = line of sight
 
-    theta = np.zeros(len(t_array))
+    theta = np.zeros(len(t_array))      #Defines arrays to be filled in the loop
     v_array = np.zeros(len(t_array))
-    for i in range(len(los)):
-        los_direction = los[i] / np.linalg.norm(los[i])
+    for i in range(len(los)):      #Loops over the movement of the sun
+        los_direction = los[i] / np.linalg.norm(los[i])     
         star_vel_direction = star_vel_a[i] / np.linalg.norm(star_vel_a[i])
         theta[i] = np.arccos(np.dot(los_direction, star_vel_direction))
         v_array[i] = np.linalg.norm(star_vel_a[i])
@@ -523,6 +517,5 @@ def radial_velocity(pos_x, pos_y, pec_vel, i=np.pi / 2, T=3, dt=10e-8):
     plt.plot(t_array, vr)
     plt.show()
     return
-
 
 radial_velocity(1000, 0, 0.2, T=1, dt=10e-6)
