@@ -484,9 +484,12 @@ def moving_the_sun(T, dt):
     plt.plot(t_array[:-1], E_cm, label="E CM")
     plt.plot(t_array[:-1], Ek_cm, label="Kineting E CM")
     plt.plot(t_array[:-1], Eu_cm, label="Potensial E CM")
-    plt.title("Total energy of CM")
-    plt.legend()
+    plt.title("Total energy of CM", fontsize = 18)
+    plt.xticks(fontsize = 18)
+    plt.yticks(fontsize = 18)
+    plt.xlabel('År', fontsize = 18)
+    plt.ylabel('Energi', fontsize = 18)
+    plt.legend(fontsize = 20)
     plt.show()
-
 
 moving_the_sun(T=1, dt=10e-6)
