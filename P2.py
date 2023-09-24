@@ -379,6 +379,7 @@ def test_kepler_laws(T, dt):
 
 
 # Task C. Using planet 2
+@njit
 def moving_the_sun(T, dt):
     # T er lengden år
     # dt er tidssteg per år
@@ -407,7 +408,8 @@ def moving_the_sun(T, dt):
     # plt.legend()
     # plt.axis('equal')
     # plt.show()
-    N = int(T // dt)  # Definerer verdier til loopen
+    # N = int(T // dt)  # Definerer verdier til loopen
+    N = len(t_array)
     star_pos_a = np.zeros((N, 2))
     star_pos_a[0] = star_pos
     planet_pos_a = np.zeros((N, 2))
@@ -479,17 +481,48 @@ def moving_the_sun(T, dt):
         np.sqrt(planet_pos_x**2 + planet_pos_y**2)
         + np.sqrt(star_pos_x**2 + star_pos_y**2)
     )
-    # plt.plot(t_array[:-1], E_planet, label="E planet")
-    # plt.plot(t_array[:-1], E_star, label="E star")
-    plt.plot(t_array[:-1], E_cm, label="E CM")
-    plt.plot(t_array[:-1], Ek_cm, label="Kineting E CM")
-    plt.plot(t_array[:-1], Eu_cm, label="Potensial E CM")
-    plt.title("Total energy of CM", fontsize = 18)
-    plt.xticks(fontsize = 18)
-    plt.yticks(fontsize = 18)
-    plt.xlabel('År', fontsize = 18)
-    plt.ylabel('Energi', fontsize = 18)
-    plt.legend(fontsize = 20)
+    return star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array
+
+
+def plot_energy(T, dt):
+    star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
+        T=T, dt=dt
+    )
+    plt.plot(t_array, E_cm, label="Total E CM")
+    plt.plot(t_array, Ek_cm, label="Kineting E CM")
+    plt.plot(t_array, Eu_cm, label="Potensial E CM")
+    plt.xlabel("År", fontsize=25)
+    plt.ylabel("Energi", fontsize=25)
+    plt.xticks(fontsize=23)
+    plt.yticks(fontsize=23)
+    plt.legend(loc="upper right", fontsize=15)
+    plt.grid()
+    plt.title(
+        f"Total-, kinetic- and potensial energy of CM (T={T}, dt={dt})", fontsize=25
+    )
     plt.show()
 
-moving_the_sun(T=1, dt=10e-6)
+
+# plot_energy(T=1, dt=10e-8)
+
+
+def radial_velocity(pos_x, pos_y, pec_vel, i=np.pi / 2, T=3, dt=10e-8):
+    star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
+        T=T, dt=dt
+    )
+    los = np.asarray([pos_x, pos_y]) - star_pos_a  # los = line of sight
+
+    theta = np.zeros(len(t_array))
+    v_array = np.zeros(len(t_array))
+    for i in range(len(los)):
+        los_direction = los[i] / np.linalg.norm(los[i])
+        star_vel_direction = star_vel_a[i] / np.linalg.norm(star_vel_a[i])
+        theta[i] = np.arccos(np.dot(los_direction, star_vel_direction))
+        v_array[i] = np.linalg.norm(star_vel_a[i])
+    vr = v_array * np.cos(theta) * np.random.normal(loc=0, scale=1.0)
+    plt.plot(t_array, vr)
+    plt.show()
+    return
+
+
+radial_velocity(1000, 0, 0.2, T=1, dt=10e-6)
