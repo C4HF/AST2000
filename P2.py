@@ -55,55 +55,6 @@ G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
 
 
-class SolarSystem:
-    def analytical_plot():
-        N = 1000
-        theta = 2 * np.pi
-        t = np.linspace(0, theta, N)
-        aX = semi_major_axes
-        a = np.zeros(number_of_planets)
-        e = eccentricities
-        f = aphelion_angles + np.pi
-        r = np.zeros((number_of_planets, N))
-
-        M = np.sum(masses + star_mass)
-        CM = (
-            np.array(
-                [
-                    np.sum(masses * initial_positions[0]),
-                    np.sum(masses * initial_positions[1]),
-                ]
-            )
-            / M
-        )
-        # CMr = np.sqrt(sum(CM**2))
-        # CMt = np.arccos(CM[0] / CMr)
-        for i in range(number_of_planets):
-            mu = (masses[i] * star_mass) / (masses[i] + star_mass)
-            a[i] = mu * aX[i] / masses[i]
-
-        # fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-        # ax.scatter(0,0, label = 'Sun')
-        # ax.scatter(CMt, CMr, label = 'CM')
-        plt.scatter(0, 0, label="Sun", s=100)
-        plt.scatter(CM[0], CM[1], label="CM")
-
-        for i in range(number_of_planets):
-            # ax.scatter(f[i] , np.sqrt(initial_positions[0][i]**2 + initial_positions[1][i]**2))
-            plt.scatter(initial_positions[0][i], initial_positions[1][i], s=20)
-            for j in range(N):
-                r[i][j] = a[i] * (1 - e[i] ** 2) / (1 + e[i] * np.cos(t[j]))
-            # ax.plot(t,r[i], label = f'{[i]}')
-            plt.plot(r[i] * np.cos(t), r[i] * np.sin(t), label=f"{[i]}")
-        plt.xlabel("AU")
-        plt.ylabel("AU")
-        plt.legend()
-        plt.show()
-
-
-# SolarSystem.analytical_plot()
-
-
 def analytical_orbits(
     initial_pos_x,
     initial_pos_y,
