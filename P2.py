@@ -242,7 +242,7 @@ def plot_orbits(T, dt):
     plt.show()
 
 
-# plot_orbits(T=3, dt=10e-7)
+plot_orbits(T=3, dt=10e-7)
 
 
 # Task B
@@ -324,16 +324,15 @@ def test_kepler_laws(T, dt):
         print("\n")
 
 
-# test_kepler_laws(3, 10e-7)
-
-# for i in range(len(masses)):  #Checks which planet gives the most shift in the centre of mass.
-#     CM = (1 / (star_mass + masses[i])) * ((masses[i] * np.array([initial_positions[0][i], initial_positions[1][i]])))
-#     print(np.linalg.norm(CM)) #Gets planet nr.2, which we now will use in MovingTheSun function.
+test_kepler_laws(3, 10e-7)
 
 
 # Task C. Using planet 2
 @njit
 def moving_the_sun(T, dt):
+    """Function simulates new orbits for sun and planet with reference to
+    center of mass usin leapfrog with Newtons law of gravitation. With this orbits
+    it also calculates the potential and kinetic energy. Returns arrays with results."""
     # T is the amount of time in years
     # dt is the timestep per year
     t_array = np.arange(0, T, dt)
@@ -346,22 +345,8 @@ def moving_the_sun(T, dt):
     CM = (1 / (M)) * (
         (planet_mass * planet_pos) + (star_mass * star_pos)
     )  # Finds CM, which we now will use as the origin, as it will be fixed to the origin.
-    # print(planet_pos, star_pos, CM)
-    # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the value for CM makes sense
-    # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
-    # plt.scatter(CM[0], CM[1], label = 'CM')
-    # plt.legend()
-    # plt.axis('equal')
-    # plt.show()
     star_pos = -CM  # Star and planet are moved according to the CM.
     planet_pos = planet_pos - CM
-    # plt.scatter(star_pos[0], star_pos[1], label = 'Star')         #Checks tha the new value for CM is at the origin
-    # plt.scatter(planet_pos[0], planet_pos[1], label = 'Planet')
-    # plt.scatter(CM_origin[0], CM_origin[1], label = 'CM')
-    # plt.legend()
-    # plt.axis('equal')
-    # plt.show()
-    # N = int(T // dt)  # Definerer verdier til loopen
     N = len(t_array)
     star_pos_a = np.zeros((N, 2))
     star_pos_a[0] = star_pos
@@ -389,6 +374,7 @@ def moving_the_sun(T, dt):
         planet_vel_a[i + 1] = planet_vel_a[i] + 0.5 * (a_planet + a_planet_next) * dt
         a_star = a_star_next
         a_planet = a_planet_next
+    ## Plot star pos and planet pos ##
     # plt.plot(star_pos_a[:, 0], star_pos_a[:, 1], label="Star")
     # plt.plot(planet_pos_a[:, 0], planet_pos_a[:, 1], label="Planet")
     # plt.legend()
@@ -433,6 +419,7 @@ def moving_the_sun(T, dt):
 
 
 def plot_energy(T, dt):
+    """Simple function that plots the energy of the new orbits."""
     star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
         T=T, dt=dt
     )
@@ -451,10 +438,12 @@ def plot_energy(T, dt):
     plt.show()
 
 
-# plot_energy(T=1, dt=10e-8)
+plot_energy(T=1, dt=10e-8)
 
 
 def radial_velocity(T, dt):
+    """Function creates a plot of the stars radial-velocity as seen from outside our solar-system,
+    in the x/y-plane. Adds Gaussian-noise to simulate signal-disturbances."""
     star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
         T=T, dt=dt
     )
@@ -477,7 +466,7 @@ def radial_velocity(T, dt):
     plt.show()
 
 
-# radial_velocity(T=1, dt=10e-7)
+radial_velocity(T=1, dt=10e-7)
 
 
 def calculate_exoplanet_mass(m_s, v_r, P, i=np.pi / 2):
@@ -494,6 +483,8 @@ def calculate_exoplanet_mass(m_s, v_r, P, i=np.pi / 2):
 
 
 def light_curve(T=0.000003, dt=10e-11):
+    """Function creates a plot showing the relative changement in flux when a star
+    is passed by a planet."""
     dia_planet = 2 * (radii[2] / Au)
     dia_star = 2 * (star_radius / Au)
     mean_vel = (5.08333400535115 + 5.37349607140599) / 2
@@ -517,17 +508,23 @@ def light_curve(T=0.000003, dt=10e-11):
         (max_flux_array1, low_flux_array, max_flux_array2), axis=None
     )
     mean = 0  # Defines values for the noise. Mean = 0 due to the noise being equal on both sides of the curve.
-    std = (
-        1 * (1 - (area_planet / area_star)) * 10 ** (-4)
-    )  # Std = 1/5 of the maximum value of the velocity
+    std = 10 ** (-4)  # Std = 10^4
     gaussian_noise = np.random.normal(
         mean, std, size=(len(flux_array))
     )  # Normal distribution using values defined above
-    plt.plot(t_array, flux_array + gaussian_noise, color="orange", label="Flux")
-    plt.xlabel("Time [yr]", fontsize=20)
+    hours_pr_year = 24 * 365
+    plt.plot(
+        t_array * hours_pr_year,
+        flux_array + gaussian_noise,
+        color="orange",
+        label="Flux",
+    )
+    plt.xlabel("Time [hours]", fontsize=20)
     plt.ylabel("Relative flux [F_r]", fontsize=20)
-    plt.title("Relative flux while planet passes", fontsize=20)
-    plt.grid()
+    plt.title("Relative flux passing planet", fontsize=20)
+    plt.minorticks_on()
+    plt.grid(which="major", color="#DDDDDD", linewidth=0.8)
+    plt.grid(which="minor", color="#EEEEEE", linestyle="--", linewidth=0.5)
     plt.legend(fontsize=20)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
@@ -535,3 +532,19 @@ def light_curve(T=0.000003, dt=10e-11):
 
 
 light_curve()
+
+
+def calculate_exoplanet_density():
+    """Function calculates and return explanet radius (r) and mean density (rho)"""
+    v_r = 0.000004
+    m_p = calculate_exoplanet_mass(m_s=3.660552991847526, v_r=0.000004, P=8.6)
+    m_s = 3.660552991847526
+    v_p = (v_r * m_s) / (m_p)
+    delta_t = 0.8 / (24 * 365)
+    r = (v_r + v_p) * (delta_t / 2) * (Au / 1000)
+    rho = (m_p * SM) / (4 * np.pi * r**3 / 3)
+    print(f"Planet radius [Km]: {r}")
+    print(f"Planet mean-density [kg/km**3]: {rho}")
+
+
+# calculate_exoplanet_density()
