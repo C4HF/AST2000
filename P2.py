@@ -367,6 +367,8 @@ def test_kepler_laws(T, dt):
         print(f"Period squared:{period**2}")
         print(f"Newtons improved: {newton_improved_third_law}")
         print(f"SM-axes cubed:{sm_axes**3}")
+        print(f"Mean velocity 1: {mean_vel1}")
+        print(f"Mean velocity 2: {mean_vel2}")
         print("-------------------- ")
         print("\n")
 
@@ -456,13 +458,14 @@ def moving_the_sun(T, dt):
         G * M * mu
     ) / (np.sqrt(star_pos_x**2 + star_pos_y**2))
     # E_cm = E_planet + E_star. Using analytic solution showed in the pdf.
-    E_cm = (1 / 2)* (mu) * (            #Energy of the center of mass
-            np.sqrt(planet_vel_x**2 + planet_vel_y**2)
-            + np.sqrt(star_vel_x**2 + star_vel_y**2))** 2 - (G * M * mu) / (
+    E_cm = (1 / 2) * (mu) * (  # Energy of the center of mass
+        np.sqrt(planet_vel_x**2 + planet_vel_y**2)
+        + np.sqrt(star_vel_x**2 + star_vel_y**2)
+    ) ** 2 - (G * M * mu) / (
         np.sqrt(planet_pos_x**2 + planet_pos_y**2)
         + np.sqrt(star_pos_x**2 + star_pos_y**2)
     )
-    Ek_cm = (           #Kinetic energy of the center of mass
+    Ek_cm = (  # Kinetic energy of the center of mass
         (1 / 2)
         * (mu)
         * (
@@ -471,7 +474,7 @@ def moving_the_sun(T, dt):
         )
         ** 2
     )
-    Eu_cm = -(G * M * mu) / (           #Potential energy of the center of mass
+    Eu_cm = -(G * M * mu) / (  # Potential energy of the center of mass
         np.sqrt(planet_pos_x**2 + planet_pos_y**2)
         + np.sqrt(star_pos_x**2 + star_pos_y**2)
     )
@@ -502,21 +505,82 @@ def plot_energy(T, dt):
 
 def radial_velocity(T, dt):
     star_pos_a, star_vel_a, planet_pos_a, E_cm, Ek_cm, Eu_cm, t_array = moving_the_sun(
-        T=T, dt=dt)
-    t = t_array #Time array for plotting
-    vx = star_vel_a[:,0]    #Gathers the x-values for the velocities of the sun.
-    mean = 0        #Defines values for the noise. Mean = 0 due to the noise being equal on both sides of the curve.
-    std = 0.2 * max(vx)   #Std = 1/5 of the maximum value of the velocity
-    GaussianNoise = np.random.normal(mean, std, size = (len(t)))  #Normal distribution using values defined above
-    vx_GaussianNoise  = vx + GaussianNoise  #Adding the noise to the velocity
-    plt.plot(t, vx_GaussianNoise, label = 'v med støy')
-    plt.plot(t, vx, label = 'Original v')
+        T=T, dt=dt
+    )
+    t = t_array  # Time array for plotting
+    vx = star_vel_a[:, 0]  # Gathers the x-values for the velocities of the sun.
+    mean = 0  # Defines values for the noise. Mean = 0 due to the noise being equal on both sides of the curve.
+    std = 0.2 * max(vx)  # Std = 1/5 of the maximum value of the velocity
+    GaussianNoise = np.random.normal(
+        mean, std, size=(len(t))
+    )  # Normal distribution using values defined above
+    vx_GaussianNoise = vx + GaussianNoise  # Adding the noise to the velocity
+    plt.plot(t, vx_GaussianNoise, label="v med støy")
+    plt.plot(t, vx, label="Original v")
 
-    plt.legend(fontsize = 20)
-    plt.xlabel('t (år)', fontsize = 20)
-    plt.ylabel('v (AU / år)', fontsize = 20)
-    plt.xticks(fontsize = 20)
-    plt.yticks(fontsize = 20)
+    plt.legend(fontsize=20)
+    plt.xlabel("t (år)", fontsize=20)
+    plt.ylabel("v (AU / år)", fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
     plt.show()
 
-radial_velocity(T=1, dt=10e-7)
+
+# radial_velocity(T=1, dt=10e-7)
+
+
+def calculate_exoplanet_mass(m_s, v_r, P, i=np.pi / 2):
+    """Simple function that calculates the estimated mass of a planet using mass of star (m_s),
+    radial_velocity (v_r) and period (P). Returns mass of planet (mp)."""
+    mp = (m_s ** (2 / 3) * v_r * P ** (1 / 3)) / (
+        (2 * np.pi * G) ** (1 / 3) * np.sin(i)
+    )
+    return mp
+
+
+# print(calculate_exoplanet_mass(m_s=3.660552991847526, v_r=0.000004, P=8.6))
+# print((3.097971410491892e-6) / (3.290e-06))
+
+
+def light_curve(T=0.000003, dt=10e-11):
+    dia_planet = 2 * (radii[2] / Au)
+    dia_star = 2 * (star_radius / Au)
+    mean_vel = (5.08333400535115 + 5.37349607140599) / 2
+    dt_t = dia_planet / mean_vel
+    dt_lf = dia_star / mean_vel
+    area_planet = np.pi * radii[2] ** 2
+    area_star = np.pi * star_radius**2
+    t_maxflux_array1 = np.arange(0, (T / 3), dt)
+    t_transition_array = np.arange((T / 3) + dt_t, (T / 3) + dt_t + dt_lf, dt)
+    t_maxflux_array2 = np.arange((T / 3) + dt_t + dt_lf + dt_t, T, dt)
+    t_array = np.concatenate(
+        (t_maxflux_array1, t_transition_array, t_maxflux_array2), axis=None
+    )
+    max_flux_array1 = np.zeros(len(t_maxflux_array1))
+    max_flux_array1.fill(1)
+    max_flux_array2 = np.zeros(len(t_maxflux_array2))
+    max_flux_array2.fill(1)
+    low_flux_array = np.zeros(len(t_transition_array))
+    low_flux_array.fill(1 * (1 - (area_planet / area_star)))
+    flux_array = np.concatenate(
+        (max_flux_array1, low_flux_array, max_flux_array2), axis=None
+    )
+    mean = 0  # Defines values for the noise. Mean = 0 due to the noise being equal on both sides of the curve.
+    std = (
+        1 * (1 - (area_planet / area_star)) * 10 ** (-4)
+    )  # Std = 1/5 of the maximum value of the velocity
+    gaussian_noise = np.random.normal(
+        mean, std, size=(len(flux_array))
+    )  # Normal distribution using values defined above
+    plt.plot(t_array, flux_array + gaussian_noise, color="orange", label="Flux")
+    plt.xlabel("Time [yr]", fontsize=20)
+    plt.ylabel("Relative flux [F_r]", fontsize=20)
+    plt.title("Relative flux while planet passes", fontsize=20)
+    plt.grid()
+    plt.legend(fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.show()
+
+
+light_curve()
