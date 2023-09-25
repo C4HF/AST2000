@@ -509,7 +509,9 @@ def radial_velocity(T, dt):
     std = 0.2 * max(vx)   #Std = 1/5 of the maximum value of the velocity
     GaussianNoise = np.random.normal(mean, std, size = (len(t)))  #Normal distribution using values defined above
     vx_GaussianNoise  = vx + GaussianNoise  #Adding the noise to the velocity
-    plt.plot(t, vx_GaussianNoise, label = 'v')
+    plt.plot(t, vx_GaussianNoise, label = 'v med støy')
+    plt.plot(t, vx, label = 'Original v')
+
     plt.legend(fontsize = 20)
     plt.xlabel('t (år)', fontsize = 20)
     plt.ylabel('v (AU / år)', fontsize = 20)
