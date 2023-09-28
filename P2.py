@@ -11,6 +11,8 @@ from numba import njit
 import multiprocessing
 import time
 import math
+import h5py
+
 
 utils.check_for_newer_version()
 
@@ -163,7 +165,44 @@ def simulate_orbits(
         initial_r = np.sqrt(initial_pos_x**2 + initial_pos_y**2)
         relative_displacement = crossing_r_array[0] / initial_r
 
-    return x_pos, y_pos, t_array, count_revolutions, period, relative_displacement
+    return (
+        x_pos,
+        y_pos,
+        x_vel,
+        y_vel,
+        t_array,
+        count_revolutions,
+        period,
+        relative_displacement,
+    )
+
+
+# def save_orbits_to_file(T, dt):
+#     """Function to save simulated orbits in -file."""
+#     for i in range(len(initial_positions[0])):
+#         (
+#             x_pos,
+#             y_pos,
+#             x_vel,
+#             y_vel,
+#             t_array,
+#             count_revolutions,
+#             period,
+#             relative_displacement,
+#         ) = simulate_orbits(
+#             initial_positions[0][i],
+#             initial_positions[1][i],
+#             initial_velocities[0][i],
+#             initial_velocities[1][i],
+#             T=T,
+#             dt=dt,
+#         )
+#         h5f = h5py.File(f"orbit{i}.h5", "w")
+#         h5f.create_dataset("dataset_1", data=[t_array, x_pos, y_pos, x_vel, y_vel])
+#         h5f.close()
+
+
+# save_orbits_to_file(T=3, dt=10e-7)
 
 
 def plot_orbits(T, dt):
@@ -242,7 +281,7 @@ def plot_orbits(T, dt):
     plt.show()
 
 
-plot_orbits(T=3, dt=10e-7)
+# plot_orbits(T=3, dt=10e-7)
 
 
 # Task B
@@ -324,7 +363,7 @@ def test_kepler_laws(T, dt):
         print("\n")
 
 
-test_kepler_laws(3, 10e-7)
+# test_kepler_laws(3, 10e-7)
 
 
 # Task C. Using planet 2
@@ -438,7 +477,7 @@ def plot_energy(T, dt):
     plt.show()
 
 
-plot_energy(T=1, dt=10e-8)
+# plot_energy(T=1, dt=10e-8)
 
 
 def radial_velocity(T, dt):
@@ -466,7 +505,7 @@ def radial_velocity(T, dt):
     plt.show()
 
 
-radial_velocity(T=1, dt=10e-7)
+# radial_velocity(T=1, dt=10e-7)
 
 
 def calculate_exoplanet_mass(m_s, v_r, P, i=np.pi / 2):
@@ -531,7 +570,7 @@ def light_curve(T=0.000003, dt=10e-11):
     plt.show()
 
 
-light_curve()
+# light_curve()
 
 
 def calculate_exoplanet_density():
