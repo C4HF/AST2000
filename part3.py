@@ -58,6 +58,17 @@ initial_velocities = (
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
 
+# Code to calculate orbits ##
+# def Planet_temperatures():
+#     r = np.sqrt((initial_positions[0])**2 + (initial_positions[1])**2) * Au #initial_positions is in Au
+#     T_P = star_temperature * np.sqrt((star_radius * 1000) / (2 * r)) #star_radius is in km
+#     list = []
+#     for i in range(number_of_planets):
+#         list.append([i, T_P[i], r[i]/1000000, radii[i]])
+
+#     return list
+# print(Planet_temperatures())
+
 """Parametre"""
 m_H2 = const.m_H2
 k_B = const.k_B
