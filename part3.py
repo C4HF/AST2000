@@ -102,7 +102,7 @@ escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
 
 
 def create_orbits(T, dt):
-    """Creates orbits, packed like: x_pos, y_pos, x_vel, y_vel, t_array, count_revolutions,period, relative_displacement,"""
+    """Simulates orbits, packed like: x_pos, y_pos, x_vel, y_vel, t_array, count_revolutions,period, relative_displacement,"""
     for i in range(1):
         globals()[f"orbit_{i}"] = simulate_orbits(
             initial_positions[0][i],
