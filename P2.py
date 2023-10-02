@@ -200,11 +200,11 @@ def save_orbits_to_file(T, dt):
             dt=dt,
         )
         h5f = h5py.File(f"orbit{i}.h5", "w")
-        h5f.create_dataset("dataset_1", data=[t_array, x_pos, y_pos, x_vel, y_vel])
+        h5f.create_dataset("dataset_1", data=[t_array, x_pos, y_pos])
         h5f.close()
 
 
-# save_orbits_to_file(T=3, dt=10e-9)
+# save_orbits_to_file(T=1, dt=10e-9)
 
 
 def plot_orbits(T, dt):

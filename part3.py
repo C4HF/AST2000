@@ -154,8 +154,16 @@ def generalized_launch_rocket(
             * np.sin(launch_phi)
         )
     )  # Au
-    solar_x_vel = orbit_0[3][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
-    solar_y_vel = orbit_0[4][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
+    solar_x_vel = (
+        (orbit_0[1][idx + 1] - orbit_0[1][idx]) / 10e-9
+    ) + rotational_velocity * (
+        -np.sin(launch_phi)
+    )  # Au/yr
+    solar_y_vel = (
+        (orbit_0[2][idx + 1] - orbit_0[2][idx]) / 10e-9
+    ) + rotational_velocity * np.cos(
+        launch_phi
+    )  # Au/yr
 
     altitude = 0  # m
     vertical_velocity = 0  # m/s
@@ -244,10 +252,33 @@ mission.set_launch_parameters(
     time_of_launch=0,
 )
 mission.launch_rocket()
-# mission.verify_launch_result([0.06590558104879912, 0.0001757721767597041])
+# mission.verify_launch_result([0.06590558088415449, 0.0001757721767597041])
 # mission.verify_launch_result([0.06590558104879912, 0.00017314474043751045])
-mission.verify_planet_positions(
-    simulation_duration=3,
+# mission.verify_planet_positions(
+#     simulation_duration=1,
+# planet_positions=[
+#     [
+#         orbit_0[1],
+#         orbit_1[1],
+#         orbit_2[1],
+#         orbit_3[1],
+#         orbit_4[1],
+#         orbit_5[1],
+#         orbit_6[1],
+#     ],
+#     [
+#         orbit_0[2],
+#         orbit_1[2],
+#         orbit_2[2],
+#         orbit_3[2],
+#         orbit_4[2],
+#         orbit_5[2],
+#         orbit_6[2],
+#     ],
+# ],
+# )
+mission.generate_orbit_video(
+    times=orbit_0[0],
     planet_positions=[
         [
             orbit_0[1],
@@ -269,7 +300,6 @@ mission.verify_planet_positions(
         ],
     ],
 )
-
 # (
 #     altitude2,
 #     vertical_velocity2,
@@ -311,7 +341,7 @@ print(f"Simulated energy (J): {falcon_engine.simulated_average_energy}")
 print(f"Analytical expected energy(J): {falcon_engine.analytical_expected_energy}")
 print(f"Density (N / (m**3) = {falcon_engine.n:.3f}\n-----------------------")
 # plt.plot(orbit_0[1], orbit_0[2], ls="--", label="Orbit homeplanet")
-# # plt.plot((0, solar_x_pos), (0, solar_y_pos))
+# # # plt.plot((0, solar_x_pos), (0, solar_y_pos))
 # plt.scatter(solar_x_pos, solar_y_pos, label="Rocket")
 # plt.scatter(
 #     solar_x_pos + solar_x_vel * 10e-5,
