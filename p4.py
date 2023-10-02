@@ -195,14 +195,14 @@ def spacecraft_triliteration(T, measured_distances):
         np.sin(theta_array) * planet_6_distance + planet_6_pos[1],
     )
     plt.plot(circle_1[0], circle_1[1], label="circle star")
-    # plt.plot(circle_2[0], circle_2[1], label="circle homeplanet")
-    # plt.plot(circle_3[0], circle_3[1], label="circle 3")
+    plt.plot(circle_2[0], circle_2[1], label="circle homeplanet")
+    plt.plot(circle_3[0], circle_3[1], label="circle 3")
     plt.legend()
     plt.show()
 
 
 distance_list = [0.2, 0.1, 0.4, 0.2, 0.1, 0.7, 0.9, 0.8]
-spacecraft_triliteration(2, distance_list)
+spacecraft_triliteration(0, distance_list)
 
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14

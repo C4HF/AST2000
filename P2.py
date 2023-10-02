@@ -12,6 +12,7 @@ import multiprocessing
 import time
 import math
 import h5py
+from pathlib import Path
 
 
 utils.check_for_newer_version()
@@ -177,32 +178,32 @@ def simulate_orbits(
     )
 
 
-# def save_orbits_to_file(T, dt):
-#     """Function to save simulated orbits in -file."""
-#     for i in range(len(initial_positions[0])):
-#         (
-#             x_pos,
-#             y_pos,
-#             x_vel,
-#             y_vel,
-#             t_array,
-#             count_revolutions,
-#             period,
-#             relative_displacement,
-#         ) = simulate_orbits(
-#             initial_positions[0][i],
-#             initial_positions[1][i],
-#             initial_velocities[0][i],
-#             initial_velocities[1][i],
-#             T=T,
-#             dt=dt,
-#         )
-#         h5f = h5py.File(f"orbit{i}.h5", "w")
-#         h5f.create_dataset("dataset_1", data=[t_array, x_pos, y_pos, x_vel, y_vel])
-#         h5f.close()
+def save_orbits_to_file(T, dt):
+    """Function to save simulated orbits in -file."""
+    for i in range(len(initial_positions[0])):
+        (
+            x_pos,
+            y_pos,
+            x_vel,
+            y_vel,
+            t_array,
+            count_revolutions,
+            period,
+            relative_displacement,
+        ) = simulate_orbits(
+            initial_positions[0][i],
+            initial_positions[1][i],
+            initial_velocities[0][i],
+            initial_velocities[1][i],
+            T=T,
+            dt=dt,
+        )
+        h5f = h5py.File(f"orbit{i}.h5", "w")
+        h5f.create_dataset("dataset_1", data=[t_array, x_pos, y_pos, x_vel, y_vel])
+        h5f.close()
 
 
-# save_orbits_to_file(T=3, dt=10e-7)
+# save_orbits_to_file(T=3, dt=10e-8)
 
 
 def plot_orbits(T, dt):
