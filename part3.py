@@ -18,6 +18,7 @@ import h5py
 
 utils.check_for_newer_version()
 
+np.random.seed(10)
 seed = 57063
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
@@ -97,35 +98,35 @@ escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
 # print(mission.__dir__())
 
 # Fetching data from orbit-files:
-# filenames = [
-#     "orbit0.h5",
-#     "orbit1.h5",
-#     "orbit2.h5",
-#     "orbit3.h5",
-#     "orbit4.h5",
-#     "orbit5.h5",
-#     "orbit6.h5",
-# ]
-# for i, filename in enumerate(filenames):
-#     h5f = h5py.File(filename, "r")
-#     globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
-#     h5f.close()
+filenames = [
+    "orbit0.h5",
+    "orbit1.h5",
+    "orbit2.h5",
+    "orbit3.h5",
+    "orbit4.h5",
+    "orbit5.h5",
+    "orbit6.h5",
+]
+for i, filename in enumerate(filenames):
+    h5f = h5py.File(filename, "r")
+    globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
+    h5f.close()
 
 
-def create_orbits(T, dt):
-    """Simulates orbits, packed like: x_pos, y_pos, x_vel, y_vel, t_array, count_revolutions,period, relative_displacement,"""
-    for i in range(1):
-        globals()[f"orbit_{i}"] = simulate_orbits(
-            initial_positions[0][i],
-            initial_positions[1][i],
-            initial_velocities[0][i],
-            initial_velocities[1][i],
-            T=T,
-            dt=dt,
-        )
+# def create_orbits(T, dt):
+#     """Simulates orbits, packed like: x_pos, y_pos, x_vel, y_vel, t_array, count_revolutions,period, relative_displacement,"""
+#     for i in range(1):
+#         globals()[f"orbit_{i}"] = simulate_orbits(
+#             initial_positions[0][i],
+#             initial_positions[1][i],
+#             initial_velocities[0][i],
+#             initial_velocities[1][i],
+#             T=T,
+#             dt=dt,
+#         )
 
 
-create_orbits(T=3, dt=10e-8)
+# create_orbits(T=3, dt=10e-8)
 
 
 def generalized_launch_rocket(
@@ -151,28 +152,28 @@ def generalized_launch_rocket(
     ) / (home_planet_rotational_period / 365)
 
     # finding idx of launch time
-    for i, t in enumerate(orbit_0[4]):
+    for i, t in enumerate(orbit_0[0]):
         if math.isclose(t, launch_time):
             idx = i
             break
         else:
             continue
-    solar_x_pos = orbit_0[0][idx] + (
+    solar_x_pos = orbit_0[1][idx] + (
         (
             (homeplanet_radius_Au)
             * np.cos((np.pi / 2) - launch_theta)
             * np.cos(launch_phi)
         )
     )  # Au
-    solar_y_pos = orbit_0[1][idx] + (
+    solar_y_pos = orbit_0[2][idx] + (
         (
             (homeplanet_radius_Au)
             * np.cos((np.pi / 2) - launch_theta)
             * np.sin(launch_phi)
         )
     )  # Au
-    solar_x_vel = orbit_0[2][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
-    solar_y_vel = orbit_0[3][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
+    solar_x_vel = orbit_0[3][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
+    solar_y_vel = orbit_0[4][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
 
     altitude = 0  # m
     vertical_velocity = 0  # m/s
@@ -262,7 +263,7 @@ print(
 print(
     f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"
 )
-plt.plot(orbit_0[0], orbit_0[1], ls="--", label="Orbit homeplanet")
+plt.plot(orbit_0[1], orbit_0[2], ls="--", label="Orbit homeplanet")
 # plt.plot((0, solar_x_pos), (0, solar_y_pos))
 plt.scatter(solar_x_pos, solar_y_pos, label="Rocket")
 plt.scatter(

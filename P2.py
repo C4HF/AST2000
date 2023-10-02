@@ -17,6 +17,7 @@ from pathlib import Path
 
 utils.check_for_newer_version()
 
+np.random.seed(10)
 seed = 57063
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
