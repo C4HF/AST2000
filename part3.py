@@ -170,7 +170,10 @@ def generalized_launch_rocket(
     total_time = 0  # s
 
     # While loop Euler-method with units kg, meters and seconds
-    while vertical_velocity < target_vertical_velocity:
+    while (
+        vertical_velocity + (rotational_velocity * (Au / sec_per_year))
+        < target_vertical_velocity
+    ):
         wet_rocket_mass = dry_rocket_mass + fuel_weight
         F_g = (G * homeplanet_mass * wet_rocket_mass) / (
             (homeplanet_radius) + altitude
@@ -239,21 +242,22 @@ falcon_engine = Engine(
     dt=0.0001,
 )
 
-# Setting launch parameters and checkick launch results
+"""
+# Setting launch parameters and checking launch results ##
 mission.set_launch_parameters(
     thrust=falcon_engine.thrust,
     mass_loss_rate=falcon_engine.total_fuel_constant,
     initial_fuel_mass=165000,
-    estimated_launch_duration=449.77849995873237,
+    estimated_launch_duration=448.02169995917336,
     launch_position=[
-        home_planet_initial_pos[0] + (homeplanet_radius / Au),
+        home_planet_initial_pos[0] + homeplanet_radius / Au,
         home_planet_initial_pos[1],
     ],
     time_of_launch=0,
 )
 mission.launch_rocket()
-# mission.verify_launch_result([0.06590558088415449, 0.0001757721767597041])
-# mission.verify_launch_result([0.06590558104879912, 0.00017314474043751045])
+mission.verify_launch_result([0.0659054439042343, 0.00017508562424523182])
+"""
 # mission.verify_planet_positions(
 #     simulation_duration=1,
 # planet_positions=[
@@ -277,29 +281,29 @@ mission.launch_rocket()
 #     ],
 # ],
 # )
-mission.generate_orbit_video(
-    times=orbit_0[0],
-    planet_positions=[
-        [
-            orbit_0[1],
-            orbit_1[1],
-            orbit_2[1],
-            orbit_3[1],
-            orbit_4[1],
-            orbit_5[1],
-            orbit_6[1],
-        ],
-        [
-            orbit_0[2],
-            orbit_1[2],
-            orbit_2[2],
-            orbit_3[2],
-            orbit_4[2],
-            orbit_5[2],
-            orbit_6[2],
-        ],
-    ],
-)
+# mission.generate_orbit_video(
+#     times=orbit_0[0],
+#     planet_positions=[
+#         [
+#             orbit_0[1],
+#             orbit_1[1],
+#             orbit_2[1],
+#             orbit_3[1],
+#             orbit_4[1],
+#             orbit_5[1],
+#             orbit_6[1],
+#         ],
+#         [
+#             orbit_0[2],
+#             orbit_1[2],
+#             orbit_2[2],
+#             orbit_3[2],
+#             orbit_4[2],
+#             orbit_5[2],
+#             orbit_6[2],
+#         ],
+#     ],
+# )
 # (
 #     altitude2,
 #     vertical_velocity2,

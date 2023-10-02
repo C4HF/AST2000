@@ -22,6 +22,7 @@ system = SolarSystem(seed)
 mission = SpaceMission(seed)
 Au = 149597870700  # Meters
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
+sec_per_year = 60 * 60 * 24 * 365
 star_mass = system.star_mass  # 0.25361200295275615
 star_radius = system.star_radius  # 239265.2554658649
 number_of_planets = system.number_of_planets  # 7
@@ -56,7 +57,29 @@ initial_velocities = (
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
+home_planet_initial_pos = (
+    system._initial_positions[0][0],
+    system._initial_positions[1][0],
+)  # homeplanet initial pos in Au
+homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
+# Our engine
+falcon_engine = Engine(
+    N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
+)
 
+mission.set_launch_parameters(
+    thrust=falcon_engine.thrust,
+    mass_loss_rate=falcon_engine.total_fuel_constant,
+    initial_fuel_mass=165000,
+    estimated_launch_duration=448.02169995917336,
+    launch_position=[
+        home_planet_initial_pos[0] + homeplanet_radius / Au,
+        home_planet_initial_pos[1],
+    ],
+    time_of_launch=0,
+)
+mission.launch_rocket()
+mission.verify_launch_result([0.0659054439042343, 0.00017508562424523182])
 distances = mission.measure_distances()
 
 # Fetching data from orbit-files:
@@ -78,8 +101,8 @@ for i, filename in enumerate(filenames):
 def spacecraft_triliteration(T, measured_distances):
     """Function to locate position of spacecraft using mesurements to other planets and sun."""
     # finding idx of mesurement time T
-    for i, t in enumerate(orbit_0[4]):
-        if math.isclose(t, T):
+    for i, t in enumerate(orbit_0[0]):
+        if math.isclose(t, T, rel_tol=10e-4):
             idx = i
             break
         else:
@@ -87,33 +110,64 @@ def spacecraft_triliteration(T, measured_distances):
 
     star_pos = np.asarray((0, 0))
     star_distance = measured_distances[-1]
-    planet_0_pos = np.asarray((orbit_0[0][idx], orbit_0[1][idx]))
+    planet_0_pos = np.asarray((orbit_0[1][idx], orbit_0[2][idx]))
     planet_0_distance = measured_distances[0]
-    planet_6_pos = np.asarray((orbit_6[0][idx], orbit_6[1][idx]))
+    planet_3_pos = np.asarray((orbit_3[1][idx], orbit_3[2][idx]))
+    planet_3_distance = measured_distances[3]
+    planet_6_pos = np.asarray((orbit_6[1][idx], orbit_6[2][idx]))
     planet_6_distance = measured_distances[6]
     theta_array = np.arange(0, 2 * np.pi, 10e-6)
-    circle_1 = (
-        (np.cos(theta_array) * star_distance) + star_pos[0],
-        (np.sin(theta_array) * star_distance) + star_pos[1],
+    circle_1 = np.asarray(
+        (
+            (np.cos(theta_array) * star_distance) + star_pos[0],
+            (np.sin(theta_array) * star_distance) + star_pos[1],
+        )
     )
-    circle_2 = (
-        np.cos(theta_array) * planet_0_distance + planet_0_pos[0],
-        np.sin(theta_array) * planet_0_distance + planet_0_pos[1],
+    circle_2 = np.asarray(
+        (
+            np.cos(theta_array) * planet_0_distance + planet_0_pos[0],
+            np.sin(theta_array) * planet_0_distance + planet_0_pos[1],
+        )
     )
-    circle_3 = (
-        np.cos(theta_array) * planet_6_distance + planet_6_pos[0],
-        np.sin(theta_array) * planet_6_distance + planet_6_pos[1],
+    circle_3 = np.asarray(
+        (
+            np.cos(theta_array) * planet_3_distance + planet_3_pos[0],
+            np.sin(theta_array) * planet_3_distance + planet_3_pos[1],
+        )
     )
+    circle_4 = np.asarray(
+        (
+            np.cos(theta_array) * planet_6_distance + planet_6_pos[0],
+            np.sin(theta_array) * planet_6_distance + planet_6_pos[1],
+        )
+    )
+    # print(type(circle_1), type(circle_2))
+    ## Searching arrays for intersection
+    # circles = np.asarray[circle_1, circle_2, circle_3, circle_4]
+    search_1x = np.where(np.isclose(circle_1[0], circle_2[0], rtol=10e-6))
+    search_2x = np.where(np.isclose(circle_2[0], circle_3[0], rtol=10e-6))
+    search_1y = np.where(np.isclose(circle_1[1], circle_2[1], rtol=10e-6))
+    search_2y = np.where(np.isclose(circle_2[1], circle_3[1], rtol=10e-6))
+    found_x = np.where(np.equal(search_1x, search_2x), [search_1x])
+    found_y = np.where(np.equal(search_1y, search_2y), [search_1y])
+    pos_x = circle_2[found_x]
+    pos_y = circle_2[found_y]
+    # search_3x = np.where(np.isclose(circle_3[0], circle_1[0], rtol=10e-6))
+    # search_3y = np.where(np.isclose(circle_3[1], circle_1[1], rtol=10e-6))
+
+    # for idx in search_x:
+    #     search_2x = np.where(np.isclose[circle_3[0], circle_2[0][idx]], rtol=10e-6)
+    # for idx in search_y:
+    #     search_2y = np.where(np.isclose[circle_3[1], circle_2[1][idx]], rtol=10e-6)
+
     plt.plot(circle_1[0], circle_1[1], label="circle star")
-    plt.plot(circle_2[0], circle_2[1], label="circle homeplanet")
-    plt.plot(circle_3[0], circle_3[1], label="circle 3")
+    plt.plot(circle_2[0], circle_2[1], label="circle planet 0")
+    plt.plot(circle_3[0], circle_3[1], label="circle planet 3")
+    plt.plot(circle_4[0], circle_4[1], label="circle planet 6")
+    plt.scatter(0.0659054439042343, 0.00017508562424523182, label="Rocket")
+    plt.scatter(pos_x, pos_y, "Triangulated_pos")
     plt.legend()
     plt.show()
 
 
-distance_list = [0.2, 0.1, 0.4, 0.2, 0.1, 0.7, 0.9, 0.8]
-spacecraft_triliteration(0, distance_list)
-
-falcon_engine = Engine(
-    N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
-)
+spacecraft_triliteration(448.02169995917336 / sec_per_year, distances)
