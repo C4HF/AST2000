@@ -8,12 +8,11 @@ from ast2000tools.solar_system import SolarSystem
 from scipy.stats import norm
 import numba as nb
 from numba import njit
-import multiprocessing
-import time
 import math
 from P1B import Engine
 from P2 import simulate_orbits
 import h5py
+from part3 import generalized_launch_rocket
 
 utils.check_for_newer_version()
 
@@ -58,24 +57,7 @@ initial_velocities = (
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
 
-
-# distances = mission.measure_distances()
-
-
-# def create_orbits(T, dt):
-#     """Simulates orbits, packed like: x_pos, y_pos, x_vel, y_vel, t_array, count_revolutions,period, relative_displacement,"""
-#     for i in range(7):
-#         globals()[f"orbit_{i}"] = simulate_orbits(
-#             initial_positions[0][i],
-#             initial_positions[1][i],
-#             initial_velocities[0][i],
-#             initial_velocities[1][i],
-#             T=T,
-#             dt=dt,
-#         )
-
-
-# create_orbits(T=3, dt=10e-7)
+distances = mission.measure_distances()
 
 # Fetching data from orbit-files:
 filenames = [
@@ -91,94 +73,6 @@ for i, filename in enumerate(filenames):
     h5f = h5py.File(filename, "r")
     globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
     h5f.close()
-
-
-def generalized_launch_rocket(
-    engine,
-    fuel_weight,
-    target_vertical_velocity,
-    launch_theta,
-    launch_phi,
-    launch_time,
-    dt=1,
-):
-    """Funksjonen tar inn instans av engine, start-fuel-vekt, ønsket hastighet, vinkel-posisjon mellom nordpol/sorpol (launch_theta),
-    vinkelposisjon langs ekvator på planeten med vinkel null langs x-aksen (launch-phi) og oppskytningstidspunkt T i jordår fra 0-3.
-    Regner deretter ut akselereasjon med hensyn på gravitasjon og regner ut hastighet og posisjon.
-    Funksjonen returnerer høyde over jordoverflaten, vertikal-hastighet, total-tid, resterende drivstoffvekt
-    samt xy-posisjon og xy-hastighet i forhold til stjernen i solsystemet vårt."""
-    thrust = engine.thrust
-    total_fuel_constant = engine.total_fuel_constant
-    sec_per_year = 60 * 60 * 24 * 365
-    homeplanet_radius_Au = homeplanet_radius / Au  # Converting radius in meters to Au
-    rotational_velocity = (
-        np.abs(2 * np.pi * (homeplanet_radius_Au) * np.cos((np.pi / 2) - launch_theta))
-    ) / (home_planet_rotational_period / 365)
-
-    # finding idx of launch time
-    for i, t in enumerate(orbit_0[0]):
-        if math.isclose(t, launch_time):
-            idx = i
-            break
-        else:
-            continue
-    solar_x_pos = orbit_0[1][idx] + (
-        (
-            (homeplanet_radius_Au)
-            * np.cos((np.pi / 2) - launch_theta)
-            * np.cos(launch_phi)
-        )
-    )  # Au
-    solar_y_pos = orbit_0[2][idx] + (
-        (
-            (homeplanet_radius_Au)
-            * np.cos((np.pi / 2) - launch_theta)
-            * np.sin(launch_phi)
-        )
-    )  # Au
-    solar_x_vel = orbit_0[3][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
-    solar_y_vel = orbit_0[4][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
-
-    altitude = 0  # m
-    vertical_velocity = 0  # m/s
-    total_time = 0  # s
-
-    # While loop Euler-method with units kg, meters and seconds
-    while vertical_velocity < target_vertical_velocity:
-        wet_rocket_mass = dry_rocket_mass + fuel_weight
-        F_g = (G * homeplanet_mass * wet_rocket_mass) / (
-            (homeplanet_radius) + altitude
-        ) ** 2  # The gravitational force
-        rocket_thrust_gravitation_diff = thrust - F_g  # netto-kraft
-        vertical_velocity += (
-            rocket_thrust_gravitation_diff / wet_rocket_mass
-        ) * dt  # m/s
-        altitude += vertical_velocity * dt  # m
-        # solar_x_pos += vertical_velocity * np.cos(launch_phi) * dt / Au  # Au
-        # solar_y_pos += vertical_velocity * np.sin(launch_phi) * dt / Au  # Au
-        fuel_weight -= total_fuel_constant * dt  # kg
-        total_time += dt  # s
-
-        if fuel_weight <= 0:
-            break
-        elif total_time > 1800:
-            break
-        elif altitude < 0:
-            break
-    solar_x_vel += vertical_velocity * np.cos(launch_phi) * (sec_per_year / Au)
-    solar_y_vel += vertical_velocity * np.sin(launch_phi) * (sec_per_year / Au)
-    solar_x_pos += altitude * np.cos(launch_phi) / Au
-    solar_y_pos += altitude * np.sin(launch_phi) / Au
-    return (
-        altitude,
-        vertical_velocity,
-        total_time,
-        fuel_weight,
-        solar_x_pos,
-        solar_y_pos,
-        solar_x_vel,
-        solar_y_vel,
-    )
 
 
 def spacecraft_triliteration(T, measured_distances):

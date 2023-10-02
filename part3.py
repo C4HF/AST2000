@@ -22,8 +22,6 @@ np.random.seed(10)
 seed = 57063
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
-Au = 149597870700  # Meters
-SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 star_mass = system.star_mass  # 0.25361200295275615
 star_radius = system.star_radius  # 239265.2554658649
 number_of_planets = system.number_of_planets  # 7
@@ -73,10 +71,10 @@ planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'r
 """Parametre"""
 m_H2 = const.m_H2
 k_B = const.k_B
+Au = 149597870700  # Meters
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 G = 6.6743 * (10 ** (-11))  # Gravitational constant
 # G = 4 * (np.pi) ** 2  # Gravitational constant for Au
-Au = 149597870700  # meters
 dry_rocket_mass = mission.spacecraft_mass  # kg
 crosssection_rocket = mission.spacecraft_area  # m**2
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
@@ -97,7 +95,7 @@ escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
 # print(system.__dir__())  ### get a list of attribute-commands
 # print(mission.__dir__())
 
-# Fetching data from orbit-files:
+# Fetching data from orbit-files and stores in variables in this script
 filenames = [
     "orbit0.h5",
     "orbit1.h5",
@@ -113,22 +111,6 @@ for i, filename in enumerate(filenames):
     h5f.close()
 
 
-# def create_orbits(T, dt):
-#     """Simulates orbits, packed like: x_pos, y_pos, x_vel, y_vel, t_array, count_revolutions,period, relative_displacement,"""
-#     for i in range(1):
-#         globals()[f"orbit_{i}"] = simulate_orbits(
-#             initial_positions[0][i],
-#             initial_positions[1][i],
-#             initial_velocities[0][i],
-#             initial_velocities[1][i],
-#             T=T,
-#             dt=dt,
-#         )
-
-
-# create_orbits(T=3, dt=10e-8)
-
-
 def generalized_launch_rocket(
     engine,
     fuel_weight,
@@ -136,7 +118,7 @@ def generalized_launch_rocket(
     launch_theta,
     launch_phi,
     launch_time,
-    dt=1,
+    dt=0.01,
 ):
     """Funksjonen tar inn instans av engine, start-fuel-vekt, ønsket hastighet, vinkel-posisjon mellom nordpol/sorpol (launch_theta),
     vinkelposisjon langs ekvator på planeten med vinkel null langs x-aksen (launch-phi) og oppskytningstidspunkt T i jordår fra 0-3.
@@ -190,8 +172,20 @@ def generalized_launch_rocket(
             rocket_thrust_gravitation_diff / wet_rocket_mass
         ) * dt  # m/s
         altitude += vertical_velocity * dt  # m
-        # solar_x_pos += vertical_velocity * np.cos(launch_phi) * dt / Au  # Au
-        # solar_y_pos += vertical_velocity * np.sin(launch_phi) * dt / Au  # Au
+        solar_x_vel += (
+            (rocket_thrust_gravitation_diff / wet_rocket_mass)
+            * dt
+            * np.cos(launch_phi)
+            * (sec_per_year / Au)
+        )
+        solar_y_vel += (
+            (rocket_thrust_gravitation_diff / wet_rocket_mass)
+            * dt
+            * np.sin(launch_phi)
+            * (sec_per_year / Au)
+        )
+        solar_x_pos += solar_x_vel * dt / sec_per_year  # Au
+        solar_y_pos += solar_y_vel * dt / sec_per_year  # Au
         fuel_weight -= total_fuel_constant * dt  # kg
         total_time += dt  # s
 
@@ -201,10 +195,7 @@ def generalized_launch_rocket(
             break
         elif altitude < 0:
             break
-    solar_x_vel += vertical_velocity * np.cos(launch_phi) * (sec_per_year / Au)
-    solar_y_vel += vertical_velocity * np.sin(launch_phi) * (sec_per_year / Au)
-    solar_x_pos += altitude * np.cos(launch_phi) / Au
-    solar_y_pos += altitude * np.sin(launch_phi) / Au
+
     return (
         altitude,
         vertical_velocity,
@@ -232,54 +223,110 @@ falcon_engine = Engine(
     solar_y_vel,
 ) = generalized_launch_rocket(
     falcon_engine,
-    165000,
-    escape_velocity,
-    launch_theta=0,
+    fuel_weight=165000,
+    target_vertical_velocity=escape_velocity,
+    launch_theta=np.pi / 2,
     launch_phi=0,
-    launch_time=0.1,
-    dt=1,
+    launch_time=0,
+    dt=0.0001,
 )
-(
-    altitude2,
-    vertical_velocity2,
-    total_time2,
-    fuel_weight2,
-    solar_x_pos2,
-    solar_y_pos2,
-    solar_x_vel2,
-    solar_y_vel2,
-) = generalized_launch_rocket(
-    falcon_engine,
-    165000,
-    escape_velocity,
-    launch_theta=0,
-    launch_phi=np.pi,
-    launch_time=0.1,
-    dt=1,
+
+# Setting launch parameters and checkick launch results
+mission.set_launch_parameters(
+    thrust=falcon_engine.thrust,
+    mass_loss_rate=falcon_engine.total_fuel_constant,
+    initial_fuel_mass=165000,
+    estimated_launch_duration=449.77849995873237,
+    launch_position=[
+        home_planet_initial_pos[0] + (homeplanet_radius / Au),
+        home_planet_initial_pos[1],
+    ],
+    time_of_launch=0,
 )
+mission.launch_rocket()
+# mission.verify_launch_result([0.06590558104879912, 0.0001757721767597041])
+# mission.verify_launch_result([0.06590558104879912, 0.00017314474043751045])
+mission.verify_planet_positions(
+    simulation_duration=3,
+    planet_positions=[
+        [
+            orbit_0[1],
+            orbit_1[1],
+            orbit_2[1],
+            orbit_3[1],
+            orbit_4[1],
+            orbit_5[1],
+            orbit_6[1],
+        ],
+        [
+            orbit_0[2],
+            orbit_1[2],
+            orbit_2[2],
+            orbit_3[2],
+            orbit_4[2],
+            orbit_5[2],
+            orbit_6[2],
+        ],
+    ],
+)
+
+# (
+#     altitude2,
+#     vertical_velocity2,
+#     total_time2,
+#     fuel_weight2,
+#     solar_x_pos2,
+#     solar_y_pos2,
+#     solar_x_vel2,
+#     solar_y_vel2,
+# ) = generalized_launch_rocket(
+#     falcon_engine,
+#     fuel_weight=165000,
+#     target_vertical_velocity=escape_velocity,
+#     launch_theta=0,
+#     launch_phi=np.pi,
+#     launch_time=0.1,
+#     dt=0.01,
+# )
 print(
     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
 )
+# print(
+#     f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"
+# )
+print(f"---------------\nEngine performance:\nThrust (N): {falcon_engine.thrust}")
+print("Fuel weight (kg): 165000 ")
+print("")
 print(
-    f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"
+    f"Initial thrust/kg (N/kg): {falcon_engine.thrust / (165000 + dry_rocket_mass):.3f}"
 )
-plt.plot(orbit_0[1], orbit_0[2], ls="--", label="Orbit homeplanet")
-# plt.plot((0, solar_x_pos), (0, solar_y_pos))
-plt.scatter(solar_x_pos, solar_y_pos, label="Rocket")
-plt.scatter(
-    solar_x_pos + solar_x_vel * 10e-5,
-    solar_y_pos + solar_y_vel * 10e-5,
-    label="Rocket delta",
+print(f"Total fuel constant (kg/s): {falcon_engine.total_fuel_constant}")
+print(
+    f"Thrust/total fuel constant (Ns/kg): {falcon_engine.thrust / falcon_engine.total_fuel_constant:.3f}"
 )
-# plt.plot((0, solar_x_pos2), (0, solar_y_pos2))
-plt.scatter(solar_x_pos2, solar_y_pos2, label="Rocket2")
-plt.scatter(
-    solar_x_pos2 + solar_x_vel2 * 10e-5,
-    solar_y_pos2 + solar_y_vel2 * 10e-5,
-    label="Rocket 2 delta",
-)
-plt.xlabel("Au")
-plt.ylabel("Au")
-plt.title("Testing rocket_launch codes")
-plt.legend()
-plt.show()
+print(f"Simulated pressure (pa): {falcon_engine.simulated_average_pressure:.3f}")
+print(f"Expected pressure (pa): {falcon_engine.analytical_expected_pressure:.3f}")
+print(f"Simulated total energy (J): {falcon_engine.simulated_total_energy}")
+print(f"Simulated energy (J): {falcon_engine.simulated_average_energy}")
+print(f"Analytical expected energy(J): {falcon_engine.analytical_expected_energy}")
+print(f"Density (N / (m**3) = {falcon_engine.n:.3f}\n-----------------------")
+# plt.plot(orbit_0[1], orbit_0[2], ls="--", label="Orbit homeplanet")
+# # plt.plot((0, solar_x_pos), (0, solar_y_pos))
+# plt.scatter(solar_x_pos, solar_y_pos, label="Rocket")
+# plt.scatter(
+#     solar_x_pos + solar_x_vel * 10e-5,
+#     solar_y_pos + solar_y_vel * 10e-5,
+#     label="Rocket delta",
+# )
+# # plt.plot((0, solar_x_pos2), (0, solar_y_pos2))
+# plt.scatter(solar_x_pos2, solar_y_pos2, label="Rocket2")
+# plt.scatter(
+#     solar_x_pos2 + solar_x_vel2 * 10e-5,
+#     solar_y_pos2 + solar_y_vel2 * 10e-5,
+#     label="Rocket 2 delta",
+# )
+# plt.xlabel("Au")
+# plt.ylabel("Au")
+# plt.title("Testing rocket_launch codes")
+# plt.legend()
+# plt.show()
