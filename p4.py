@@ -116,7 +116,7 @@ def spacecraft_triliteration(T, measured_distances):
     planet_3_distance = measured_distances[3]
     planet_6_pos = np.asarray((orbit_6[1][idx], orbit_6[2][idx]))
     planet_6_distance = measured_distances[6]
-    theta_array = np.arange(0, 2 * np.pi, 10e-6)
+    theta_array = np.arange(0, 2 * np.pi, 10e-8)
     circle_1 = np.asarray(
         (
             (np.cos(theta_array) * star_distance) + star_pos[0],
@@ -141,17 +141,66 @@ def spacecraft_triliteration(T, measured_distances):
             np.sin(theta_array) * planet_6_distance + planet_6_pos[1],
         )
     )
+
     # print(type(circle_1), type(circle_2))
     ## Searching arrays for intersection
     # circles = np.asarray[circle_1, circle_2, circle_3, circle_4]
-    search_1x = np.where(np.isclose(circle_1[0], circle_2[0], rtol=10e-6))
-    search_2x = np.where(np.isclose(circle_2[0], circle_3[0], rtol=10e-6))
-    search_1y = np.where(np.isclose(circle_1[1], circle_2[1], rtol=10e-6))
-    search_2y = np.where(np.isclose(circle_2[1], circle_3[1], rtol=10e-6))
-    found_x = np.where(np.equal(search_1x, search_2x), [search_1x])
-    found_y = np.where(np.equal(search_1y, search_2y), [search_1y])
-    pos_x = circle_2[found_x]
-    pos_y = circle_2[found_y]
+    diff_circle31 = circle_3 - circle_1
+    diff_circle34 = circle_3 - circle_4
+    abs_diff31 = np.sqrt(diff_circle31[0] ** 2 + diff_circle31[1] ** 2)
+    abs_diff34 = np.sqrt(diff_circle34[0] ** 2 + diff_circle34[1] ** 2)
+
+    # plt.plot(circle_3[0], circle_3[1], label="circle planet 3")
+    # plt.plot(circle_4[0], circle_4[1], label="circle planet 6")
+    # plt.show()
+    # plt.plot(
+    #     np.linspace(0, len(diff_circle34), len(diff_circle34)),
+    #     diff_circle34,
+    #     label="34",
+    # )
+    # x = np.linspace(0, len(abs_diff34), len(abs_diff34))
+    # plt.plot(x, abs_diff34)
+    # plt.legend()
+    # plt.show()
+
+    search_1 = np.where(abs_diff31 < 10e-3)[0]
+    search_2 = np.where(abs_diff34 < 10e-3)[0]
+    n = np.min((len(search_1), len(search_2)))
+    matching_position = []
+    for i in range(n):
+        possible_x1 = circle_3[0][search_1[i]]
+        possible_y1 = circle_3[1][search_1[i]]
+        for j in range(n):
+            possible_x2 = circle_3[0][search_2[j]]
+            possible_y2 = circle_3[1][search_2[j]]
+            if math.isclose(possible_x1, possible_x2, rel_tol=10e-2) and math.isclose(
+                possible_y1, possible_y2, rel_tol=10e-2
+            ):
+                matching_position.append((possible_x1, possible_y1))
+            else:
+                continue
+    # final_search = np.where(np.logical_and(search_1 == True, search_2 == True))[0]
+    # print(search_1)
+    # print(search_2)
+    print(len(search_1))
+    print(len(search_2))
+    print(len(matching_position))
+    # print(final_search)
+    # print(len(final_search))
+    # print(search_1[final_search])
+    # print(matching_idx)
+    # print(len(matching_idx))
+    # x_pos = circle_3[0][search_1[matching_idx[0]]]
+    # y_pos = circle_3[1][search_1[matching_idx[0]]]
+
+    # search_1x = np.where(np.isclose(circle_1[0], circle_2[0], rtol=10e-6))
+    # search_2x = np.where(np.isclose(circle_2[0], circle_3[0], rtol=10e-6))
+    # search_1y = np.where(np.isclose(circle_1[1], circle_2[1], rtol=10e-6))
+    # search_2y = np.where(np.isclose(circle_2[1], circle_3[1], rtol=10e-6))
+    # found_x = np.where(np.equal(search_1x, search_2x), [search_1x])
+    # found_y = np.where(np.equal(search_1y, search_2y), [search_1y])
+    # pos_x = circle_2[found_x]
+    # pos_y = circle_2[found_y]
     # search_3x = np.where(np.isclose(circle_3[0], circle_1[0], rtol=10e-6))
     # search_3y = np.where(np.isclose(circle_3[1], circle_1[1], rtol=10e-6))
 
@@ -164,8 +213,9 @@ def spacecraft_triliteration(T, measured_distances):
     plt.plot(circle_2[0], circle_2[1], label="circle planet 0")
     plt.plot(circle_3[0], circle_3[1], label="circle planet 3")
     plt.plot(circle_4[0], circle_4[1], label="circle planet 6")
+    # plt.scatter(circle_3[final])
     plt.scatter(0.0659054439042343, 0.00017508562424523182, label="Rocket")
-    plt.scatter(pos_x, pos_y, "Triangulated_pos")
+    plt.scatter(matching_position[0][0], matching_position[0][1], "Triangulated_pos")
     plt.legend()
     plt.show()
 
