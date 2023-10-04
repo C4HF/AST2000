@@ -57,17 +57,6 @@ initial_velocities = (
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
 
-# Code to calculate orbits ##
-# def Planet_temperatures():
-#     r = np.sqrt((initial_positions[0])**2 + (initial_positions[1])**2) * Au #initial_positions is in Au
-#     T_P = star_temperature * np.sqrt((star_radius * 1000) / (2 * r)) #star_radius is in km
-#     list = []
-#     for i in range(number_of_planets):
-#         list.append([i, T_P[i], r[i]/1000000, radii[i]])
-
-#     return list
-# print(Planet_temperatures())
-
 """Parametre"""
 m_H2 = const.m_H2
 k_B = const.k_B
@@ -154,16 +143,8 @@ def generalized_launch_rocket(
             * np.sin(launch_phi)
         )
     )  # Au
-    solar_x_vel = (
-        (orbit_0[1][idx + 1] - orbit_0[1][idx]) / 10e-9
-    ) + rotational_velocity * (
-        -np.sin(launch_phi)
-    )  # Au/yr
-    solar_y_vel = (
-        (orbit_0[2][idx + 1] - orbit_0[2][idx]) / 10e-9
-    ) + rotational_velocity * np.cos(
-        launch_phi
-    )  # Au/yr
+    solar_x_vel = orbit_0[3][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
+    solar_y_vel = orbit_0[4][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
 
     altitude = 0  # m
     vertical_velocity = 0  # m/s
@@ -239,10 +220,10 @@ falcon_engine = Engine(
     launch_theta=np.pi / 2,
     launch_phi=0,
     launch_time=0,
-    dt=0.0001,
+    dt=0.001,
 )
 
-"""
+
 # Setting launch parameters and checking launch results ##
 mission.set_launch_parameters(
     thrust=falcon_engine.thrust,
@@ -256,78 +237,63 @@ mission.set_launch_parameters(
     time_of_launch=0,
 )
 mission.launch_rocket()
-mission.verify_launch_result([0.0659054439042343, 0.00017508562424523182])
+mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
+
+
 """
-# mission.verify_planet_positions(
-#     simulation_duration=1,
-# planet_positions=[
-#     [
-#         orbit_0[1],
-#         orbit_1[1],
-#         orbit_2[1],
-#         orbit_3[1],
-#         orbit_4[1],
-#         orbit_5[1],
-#         orbit_6[1],
-#     ],
-#     [
-#         orbit_0[2],
-#         orbit_1[2],
-#         orbit_2[2],
-#         orbit_3[2],
-#         orbit_4[2],
-#         orbit_5[2],
-#         orbit_6[2],
-#     ],
-# ],
-# )
-# mission.generate_orbit_video(
-#     times=orbit_0[0],
-#     planet_positions=[
-#         [
-#             orbit_0[1],
-#             orbit_1[1],
-#             orbit_2[1],
-#             orbit_3[1],
-#             orbit_4[1],
-#             orbit_5[1],
-#             orbit_6[1],
-#         ],
-#         [
-#             orbit_0[2],
-#             orbit_1[2],
-#             orbit_2[2],
-#             orbit_3[2],
-#             orbit_4[2],
-#             orbit_5[2],
-#             orbit_6[2],
-#         ],
-#     ],
-# )
-# (
-#     altitude2,
-#     vertical_velocity2,
-#     total_time2,
-#     fuel_weight2,
-#     solar_x_pos2,
-#     solar_y_pos2,
-#     solar_x_vel2,
-#     solar_y_vel2,
-# ) = generalized_launch_rocket(
-#     falcon_engine,
-#     fuel_weight=165000,
-#     target_vertical_velocity=escape_velocity,
-#     launch_theta=0,
-#     launch_phi=np.pi,
-#     launch_time=0.1,
-#     dt=0.01,
-# )
+step = 1
+mission.verify_planet_positions(
+    simulation_duration=3,
+    planet_positions=[
+        [
+            orbit_0[1, ::step],
+            orbit_1[1, ::step],
+            orbit_2[1, ::step],
+            orbit_3[1, ::step],
+            orbit_4[1, ::step],
+            orbit_5[1, ::step],
+            orbit_6[1, ::step],
+        ],
+        [
+            orbit_0[2, ::step],
+            orbit_1[2, ::step],
+            orbit_2[2, ::step],
+            orbit_3[2, ::step],
+            orbit_4[2, ::step],
+            orbit_5[2, ::step],
+            orbit_6[2, ::step],
+        ],
+    ],
+)
+
+mission.generate_orbit_video(
+    times=orbit_0[0],
+    planet_positions=[
+        [
+            orbit_0[1],
+            orbit_1[1],
+            orbit_2[1],
+            orbit_3[1],
+            orbit_4[1],
+            orbit_5[1],
+            orbit_6[1],
+        ],
+        [
+            orbit_0[2],
+            orbit_1[2],
+            orbit_2[2],
+            orbit_3[2],
+            orbit_4[2],
+            orbit_5[2],
+            orbit_6[2],
+        ],
+    ],
+)
+"""
+
 print(
     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
 )
-# print(
-#     f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"
-# )
 print(f"---------------\nEngine performance:\nThrust (N): {falcon_engine.thrust}")
 print("Fuel weight (kg): 165000 ")
 print("")

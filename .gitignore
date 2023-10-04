@@ -167,3 +167,9 @@ orbit3.h5
 orbit4.h5
 orbit5.h5
 orbit6.h5
+
+# Accurate orbits
+planet_trajectories.npz
+
+# Orbit vide
+orbit_video.xml

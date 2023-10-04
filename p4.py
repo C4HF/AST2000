@@ -67,6 +67,7 @@ falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
 
+# Setting launch parameters and checking launch results ##
 mission.set_launch_parameters(
     thrust=falcon_engine.thrust,
     mass_loss_rate=falcon_engine.total_fuel_constant,
@@ -79,7 +80,7 @@ mission.set_launch_parameters(
     time_of_launch=0,
 )
 mission.launch_rocket()
-mission.verify_launch_result([0.0659054439042343, 0.00017508562424523182])
+mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
 distances = mission.measure_distances()
 
 # Fetching data from orbit-files:
@@ -102,7 +103,7 @@ def spacecraft_triliteration(T, measured_distances):
     """Function to locate position of spacecraft using mesurements to other planets and sun."""
     # finding idx of mesurement time T
     for i, t in enumerate(orbit_0[0]):
-        if math.isclose(t, T, rel_tol=10e-4):
+        if math.isclose(t, T, rel_tol=10e-1):
             idx = i
             break
         else:
@@ -110,114 +111,103 @@ def spacecraft_triliteration(T, measured_distances):
 
     star_pos = np.asarray((0, 0))
     star_distance = measured_distances[-1]
-    planet_0_pos = np.asarray((orbit_0[1][idx], orbit_0[2][idx]))
-    planet_0_distance = measured_distances[0]
-    planet_3_pos = np.asarray((orbit_3[1][idx], orbit_3[2][idx]))
-    planet_3_distance = measured_distances[3]
-    planet_6_pos = np.asarray((orbit_6[1][idx], orbit_6[2][idx]))
-    planet_6_distance = measured_distances[6]
-    theta_array = np.arange(0, 2 * np.pi, 10e-8)
-    circle_1 = np.asarray(
+    planet_2_pos = np.asarray((orbit_2[1][idx], orbit_2[2][idx]))
+    planet_2_distance = measured_distances[2]
+    planet_5_pos = np.asarray((orbit_5[1][idx], orbit_5[2][idx]))
+    planet_5_distance = measured_distances[5]
+    theta_array = np.arange(0, 2 * np.pi, 10e-7)
+    circle_star = np.asarray(
         (
             (np.cos(theta_array) * star_distance) + star_pos[0],
             (np.sin(theta_array) * star_distance) + star_pos[1],
         )
     )
-    circle_2 = np.asarray(
+    circle_planet2 = np.asarray(
         (
-            np.cos(theta_array) * planet_0_distance + planet_0_pos[0],
-            np.sin(theta_array) * planet_0_distance + planet_0_pos[1],
+            np.cos(theta_array) * planet_2_distance + planet_2_pos[0],
+            np.sin(theta_array) * planet_2_distance + planet_2_pos[1],
         )
     )
-    circle_3 = np.asarray(
+    circle_planet5 = np.asarray(
         (
-            np.cos(theta_array) * planet_3_distance + planet_3_pos[0],
-            np.sin(theta_array) * planet_3_distance + planet_3_pos[1],
-        )
-    )
-    circle_4 = np.asarray(
-        (
-            np.cos(theta_array) * planet_6_distance + planet_6_pos[0],
-            np.sin(theta_array) * planet_6_distance + planet_6_pos[1],
+            np.cos(theta_array) * planet_5_distance + planet_5_pos[0],
+            np.sin(theta_array) * planet_5_distance + planet_5_pos[1],
         )
     )
 
-    # print(type(circle_1), type(circle_2))
-    ## Searching arrays for intersection
-    # circles = np.asarray[circle_1, circle_2, circle_3, circle_4]
-    diff_circle31 = circle_3 - circle_1
-    diff_circle34 = circle_3 - circle_4
-    abs_diff31 = np.sqrt(diff_circle31[0] ** 2 + diff_circle31[1] ** 2)
-    abs_diff34 = np.sqrt(diff_circle34[0] ** 2 + diff_circle34[1] ** 2)
-
-    # plt.plot(circle_3[0], circle_3[1], label="circle planet 3")
-    # plt.plot(circle_4[0], circle_4[1], label="circle planet 6")
-    # plt.show()
-    # plt.plot(
-    #     np.linspace(0, len(diff_circle34), len(diff_circle34)),
-    #     diff_circle34,
-    #     label="34",
-    # )
-    # x = np.linspace(0, len(abs_diff34), len(abs_diff34))
-    # plt.plot(x, abs_diff34)
-    # plt.legend()
-    # plt.show()
-
-    search_1 = np.where(abs_diff31 < 10e-3)[0]
-    search_2 = np.where(abs_diff34 < 10e-3)[0]
-    n = np.min((len(search_1), len(search_2)))
+    diff_2_star = np.asarray(
+        [
+            np.abs(circle_planet2[0] - star_pos[0]),
+            np.abs(circle_planet2[1] - star_pos[1]),
+        ]
+    )
+    diff_5_star = np.asarray(
+        [
+            np.abs(circle_planet5[0] - star_pos[0]),
+            np.abs(circle_planet5[1] - star_pos[1]),
+        ]
+    )
+    abs_diff_2 = np.sqrt(diff_2_star[0] ** 2 + diff_2_star[1] ** 2)
+    abs_diff_5 = np.sqrt(diff_5_star[0] ** 2 + diff_5_star[1] ** 2)
+    search_2 = np.where(np.abs((abs_diff_2 - star_distance)) < 10e-7)[0]
+    search_5 = np.where((np.abs(abs_diff_5 - star_distance)) < 10e-7)[0]
+    n = len(search_2)
+    m = len(search_5)
     matching_position = []
     for i in range(n):
-        possible_x1 = circle_3[0][search_1[i]]
-        possible_y1 = circle_3[1][search_1[i]]
-        for j in range(n):
-            possible_x2 = circle_3[0][search_2[j]]
-            possible_y2 = circle_3[1][search_2[j]]
+        possible_x1 = circle_planet2[0][search_2[i]]
+        possible_y1 = circle_planet2[1][search_2[i]]
+        for j in range(m):
+            possible_x2 = circle_planet5[0][search_5[j]]
+            possible_y2 = circle_planet5[1][search_5[j]]
             if math.isclose(possible_x1, possible_x2, rel_tol=10e-2) and math.isclose(
                 possible_y1, possible_y2, rel_tol=10e-2
             ):
-                matching_position.append((possible_x1, possible_y1))
+                matching_position.append(
+                    ((possible_x1, possible_y1), (possible_x2, possible_y2))
+                )
             else:
                 continue
-    # final_search = np.where(np.logical_and(search_1 == True, search_2 == True))[0]
-    # print(search_1)
-    # print(search_2)
-    print(len(search_1))
-    print(len(search_2))
-    print(len(matching_position))
-    # print(final_search)
-    # print(len(final_search))
-    # print(search_1[final_search])
-    # print(matching_idx)
-    # print(len(matching_idx))
-    # x_pos = circle_3[0][search_1[matching_idx[0]]]
-    # y_pos = circle_3[1][search_1[matching_idx[0]]]
+    possible_position_array = np.asarray(matching_position)
+    least_diff = 10
+    most_accurate_idx = 0
+    for k in range(len(possible_position_array)):
+        diff_x = possible_position_array[k, 0, 0] - possible_position_array[k, 1, 0]
+        diff_y = possible_position_array[k, 0, 1] - possible_position_array[k, 1, 1]
+        diff = np.sqrt(diff_x**2 + diff_y**2)
+        if diff < least_diff:
+            least_diff = diff
+            most_accurate_idx = k
+    found_x_pos = float(
+        (
+            possible_position_array[most_accurate_idx, 0, 0]
+            + possible_position_array[most_accurate_idx, 1, 0]
+        )
+        / 2
+    )
+    found_y_pos = float(
+        (
+            possible_position_array[most_accurate_idx, 0, 1]
+            + possible_position_array[most_accurate_idx, 1, 1]
+        )
+        / 2
+    )
+    # Kode for å visualisere trilateriring
+    # print(type(found_x_pos))
+    # print(type(found_y_pos))
+    # plt.plot(circle_star[0], circle_star[1], label="circle star")
+    # plt.plot(circle_planet2[0], circle_planet2[1], label="circle planet 2")
+    # plt.plot(circle_planet5[0], circle_planet5[1], label="circle planet 5")
+    # plt.scatter(
+    #     0.06590544416834804, 0.00017508613228451168, label="Rocket after launch"
+    # )
+    # plt.scatter(found_x_pos, found_y_pos, label="Triangulated_pos")
+    # plt.xlabel("Au")
+    # plt.ylabel("Au")
+    # plt.title("Visualisering av trilaterering")
+    # plt.legend()
+    # plt.show()
+    return found_x_pos, found_y_pos
 
-    # search_1x = np.where(np.isclose(circle_1[0], circle_2[0], rtol=10e-6))
-    # search_2x = np.where(np.isclose(circle_2[0], circle_3[0], rtol=10e-6))
-    # search_1y = np.where(np.isclose(circle_1[1], circle_2[1], rtol=10e-6))
-    # search_2y = np.where(np.isclose(circle_2[1], circle_3[1], rtol=10e-6))
-    # found_x = np.where(np.equal(search_1x, search_2x), [search_1x])
-    # found_y = np.where(np.equal(search_1y, search_2y), [search_1y])
-    # pos_x = circle_2[found_x]
-    # pos_y = circle_2[found_y]
-    # search_3x = np.where(np.isclose(circle_3[0], circle_1[0], rtol=10e-6))
-    # search_3y = np.where(np.isclose(circle_3[1], circle_1[1], rtol=10e-6))
 
-    # for idx in search_x:
-    #     search_2x = np.where(np.isclose[circle_3[0], circle_2[0][idx]], rtol=10e-6)
-    # for idx in search_y:
-    #     search_2y = np.where(np.isclose[circle_3[1], circle_2[1][idx]], rtol=10e-6)
-
-    plt.plot(circle_1[0], circle_1[1], label="circle star")
-    plt.plot(circle_2[0], circle_2[1], label="circle planet 0")
-    plt.plot(circle_3[0], circle_3[1], label="circle planet 3")
-    plt.plot(circle_4[0], circle_4[1], label="circle planet 6")
-    # plt.scatter(circle_3[final])
-    plt.scatter(0.0659054439042343, 0.00017508562424523182, label="Rocket")
-    plt.scatter(matching_position[0][0], matching_position[0][1], "Triangulated_pos")
-    plt.legend()
-    plt.show()
-
-
-spacecraft_triliteration(448.02169995917336 / sec_per_year, distances)
+# spacecraft_triliteration(448.02169995917336 / sec_per_year, distances)
