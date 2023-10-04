@@ -100,15 +100,19 @@ for i, filename in enumerate(filenames):
 
 
 def spacecraft_triliteration(T, measured_distances):
-    """Function to locate position of spacecraft using mesurements to other planets and sun."""
-    # finding idx of mesurement time T
+    """Function to locate position of spacecraft using mesured distance to other planets and sun.
+    Takes in time of mesurements T, and a list of mesured_distances on the form:
+    mesured_distances = [distance to planet 0, distance to planet 1, (...), distance to sun].
+    Returns estimated x and y pos of rocket.
+    """
+    """finding idx of mesurement time T"""
     for i, t in enumerate(orbit_0[0]):
         if math.isclose(t, T, rel_tol=10e-1):
             idx = i
             break
         else:
             continue
-
+    """Storing mesured distance to star, planet 2 and planet 5"""
     star_pos = np.asarray((0, 0))
     star_distance = measured_distances[-1]
     planet_2_pos = np.asarray((orbit_2[1][idx], orbit_2[2][idx]))
@@ -116,6 +120,7 @@ def spacecraft_triliteration(T, measured_distances):
     planet_5_pos = np.asarray((orbit_5[1][idx], orbit_5[2][idx]))
     planet_5_distance = measured_distances[5]
     theta_array = np.arange(0, 2 * np.pi, 10e-7)
+    """Parametrizing circles around star, planet 2 and planet 5 at time T, with radius = mesured distance"""
     circle_star = np.asarray(
         (
             (np.cos(theta_array) * star_distance) + star_pos[0],
@@ -134,7 +139,9 @@ def spacecraft_triliteration(T, measured_distances):
             np.sin(theta_array) * planet_5_distance + planet_5_pos[1],
         )
     )
-
+    """Checking when distance from parametrized circle around planet 2 and planet 5 
+    is equal to the distance mesured from the star. This is the point where the three
+     circles intercect. """
     diff_2_star = np.asarray(
         [
             np.abs(circle_planet2[0] - star_pos[0]),
@@ -147,13 +154,21 @@ def spacecraft_triliteration(T, measured_distances):
             np.abs(circle_planet5[1] - star_pos[1]),
         ]
     )
+
     abs_diff_2 = np.sqrt(diff_2_star[0] ** 2 + diff_2_star[1] ** 2)
     abs_diff_5 = np.sqrt(diff_5_star[0] ** 2 + diff_5_star[1] ** 2)
-    search_2 = np.where(np.abs((abs_diff_2 - star_distance)) < 10e-7)[0]
-    search_5 = np.where((np.abs(abs_diff_5 - star_distance)) < 10e-7)[0]
+    search_2 = np.where(np.abs((abs_diff_2 - star_distance)) < 10e-7)[
+        0
+    ]  # narrowing down possible idx-points on circle 2
+    search_5 = np.where((np.abs(abs_diff_5 - star_distance)) < 10e-7)[
+        0
+    ]  # narrowing down possible idx-points on circle 5
     n = len(search_2)
     m = len(search_5)
     matching_position = []
+    """Looping over all the possible x/y-positions from search 2 and search 5 and
+     check if they are around the same circle-intersection. Circles intersect at two points, but
+     the possible x/y positions from the two searches are only close in the same intersection."""
     for i in range(n):
         possible_x1 = circle_planet2[0][search_2[i]]
         possible_y1 = circle_planet2[1][search_2[i]]
@@ -171,6 +186,7 @@ def spacecraft_triliteration(T, measured_distances):
     possible_position_array = np.asarray(matching_position)
     least_diff = 10
     most_accurate_idx = 0
+    """Looping over possible intersection positions and finding the most accurate."""
     for k in range(len(possible_position_array)):
         diff_x = possible_position_array[k, 0, 0] - possible_position_array[k, 1, 0]
         diff_y = possible_position_array[k, 0, 1] - possible_position_array[k, 1, 1]
@@ -192,7 +208,7 @@ def spacecraft_triliteration(T, measured_distances):
         )
         / 2
     )
-    # Kode for å visualisere trilateriring
+    # Code to visualize trilateration:
     # print(type(found_x_pos))
     # print(type(found_y_pos))
     # plt.plot(circle_star[0], circle_star[1], label="circle star")
