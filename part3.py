@@ -239,7 +239,6 @@ mission.set_launch_parameters(
 mission.launch_rocket()
 mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
 
-
 """
 step = 1
 mission.verify_planet_positions(
