@@ -211,13 +211,50 @@ def spacecraft_triliteration(T, measured_distances):
     # Code to visualize trilateration:
     # print(type(found_x_pos))
     # print(type(found_y_pos))
-    # plt.plot(circle_star[0], circle_star[1], label="circle star")
-    # plt.plot(circle_planet2[0], circle_planet2[1], label="circle planet 2")
-    # plt.plot(circle_planet5[0], circle_planet5[1], label="circle planet 5")
+    # plt.plot(circle_star[0], circle_star[1], ls="-", label="circle star")
+    # plt.plot(circle_planet2[0], circle_planet2[1], ls="-", label="circle planet 2")
+    # plt.plot(circle_planet5[0], circle_planet5[1], ls="-", label="circle planet 5")
+    # plt.plot(
+    #     orbit_2[1],
+    #     orbit_2[2],
+    #     alpha=0.2,
+    #     ls="--",
+    #     dashes=(10, 20),
+    #     label="Orbit planet 2",
+    # )
+    # plt.plot(
+    #     orbit_5[1],
+    #     orbit_5[2],
+    #     alpha=0.2,
+    #     ls="--",
+    #     dashes=(10, 20),
+    #     label="Orbit planet 5",
+    # )
+    # plt.plot(
+    #     (star_pos[0], star_pos[0] + star_distance),
+    #     (star_pos[1], star_pos[1]),
+    #     ls="-",
+    #     label="Mesured distance star",
+    # )
+    # plt.plot(
+    #     (planet_2_pos[0], planet_2_pos[0] + planet_2_distance),
+    #     (planet_2_pos[1], planet_2_pos[1]),
+    #     ls="-",
+    #     label="Mesured distance planet 2",
+    # )
+    # plt.plot(
+    #     (planet_5_pos[0], planet_5_pos[0] + planet_5_distance),
+    #     (planet_5_pos[1], planet_5_pos[1]),
+    #     ls="-",
+    #     label="Mesured distance planet 5",
+    # )
     # plt.scatter(
     #     0.06590544416834804, 0.00017508613228451168, label="Rocket after launch"
     # )
     # plt.scatter(found_x_pos, found_y_pos, label="Triangulated_pos")
+    # plt.scatter(star_pos[0], star_pos[1], label="Star")
+    # plt.scatter(planet_2_pos[0], planet_2_pos[1], label="Planet 2")
+    # plt.scatter(planet_5_pos[0], planet_5_pos[1], label="Planet 5")
     # plt.xlabel("Au")
     # plt.ylabel("Au")
     # plt.title("Visualisering av trilaterering")
