@@ -12,11 +12,14 @@ import multiprocessing
 import time
 import math
 import h5py
+from pathlib import Path
 
 
 utils.check_for_newer_version()
 
+np.random.seed(10)
 seed = 57063
+# seed = 57023
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
 Au = 149597870700  # Meters
@@ -139,11 +142,11 @@ def simulate_orbits(
             round_timer.append(t_array[i])
             crossing_idx.append(i)
 
-        x_acc_new = (gamma * x_pos[i - 1]) / (
-            np.sqrt((x_pos[i - 1] ** 2) + (y_pos[i - 1] ** 2))
+        x_acc_new = (gamma * x_pos[i]) / (
+            np.sqrt((x_pos[i] ** 2) + (y_pos[i] ** 2))
         ) ** 3  # setting new x-acceleration using the position of in the last iteration
-        y_acc_new = (gamma * y_pos[i - 1]) / (
-            np.sqrt(x_pos[i - 1] ** 2 + y_pos[i - 1] ** 2)
+        y_acc_new = (gamma * y_pos[i]) / (
+            np.sqrt(x_pos[i] ** 2 + y_pos[i] ** 2)
         ) ** 3  # setting new y-acceleration using the position of in the last iteration
         x_vel[i] = (
             x_vel[i - 1] + (1 / 2) * (x_acc_old + x_acc_new) * dt
@@ -177,32 +180,32 @@ def simulate_orbits(
     )
 
 
-# def save_orbits_to_file(T, dt):
-#     """Function to save simulated orbits in -file."""
-#     for i in range(len(initial_positions[0])):
-#         (
-#             x_pos,
-#             y_pos,
-#             x_vel,
-#             y_vel,
-#             t_array,
-#             count_revolutions,
-#             period,
-#             relative_displacement,
-#         ) = simulate_orbits(
-#             initial_positions[0][i],
-#             initial_positions[1][i],
-#             initial_velocities[0][i],
-#             initial_velocities[1][i],
-#             T=T,
-#             dt=dt,
-#         )
-#         h5f = h5py.File(f"orbit{i}.h5", "w")
-#         h5f.create_dataset("dataset_1", data=[t_array, x_pos, y_pos, x_vel, y_vel])
-#         h5f.close()
+def save_orbits_to_file(T, dt):
+    """Function to save simulated orbits in -file."""
+    for i in range(len(initial_positions[0])):
+        (
+            x_pos,
+            y_pos,
+            x_vel,
+            y_vel,
+            t_array,
+            count_revolutions,
+            period,
+            relative_displacement,
+        ) = simulate_orbits(
+            initial_positions[0][i],
+            initial_positions[1][i],
+            initial_velocities[0][i],
+            initial_velocities[1][i],
+            T=T,
+            dt=dt,
+        )
+        h5f = h5py.File(f"orbit{i}.h5", "w")
+        h5f.create_dataset("dataset_1", data=[t_array, x_pos, y_pos, x_vel, y_vel])
+        h5f.close()
 
 
-# save_orbits_to_file(T=3, dt=10e-7)
+# save_orbits_to_file(T=3, dt=10e-6)
 
 
 def plot_orbits(T, dt):
@@ -216,6 +219,8 @@ def plot_orbits(T, dt):
         (
             sx_pos,
             sy_pos,
+            x_vel,
+            y_vel,
             t_array,
             count_revolutions,
             period,
@@ -271,17 +276,17 @@ def plot_orbits(T, dt):
         plt.annotate(
             f"{masses[i]:.2E}", (initial_positions[0][i], initial_positions[1][i])
         )
-    plt.xlabel("Au", fontsize=25)
-    plt.ylabel("Au", fontsize=25)
-    plt.xticks(fontsize=23)
-    plt.yticks(fontsize=23)
-    plt.legend(loc="upper right", fontsize=15)
+    plt.xlabel("Au", fontsize=10)
+    plt.ylabel("Au", fontsize=10)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.legend(loc="upper right", fontsize=8)
     plt.grid()
     plt.title(f"Analytical vs. simulated orbits (T={T}, dt = {dt})", fontsize=25)
     plt.show()
 
 
-# plot_orbits(T=3, dt=10e-7)
+# plot_orbits(T=3, dt=10e-6)
 
 
 # Task B

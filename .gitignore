@@ -158,3 +158,18 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# Simulated orbits
+orbit0.h5
+orbit1.h5
+orbit2.h5
+orbit3.h5
+orbit4.h5
+orbit5.h5
+orbit6.h5
+
+# Accurate orbits
+planet_trajectories.npz
+
+# Orbit vide
+orbit_video.xml
