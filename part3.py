@@ -217,9 +217,27 @@ falcon_engine = Engine(
     falcon_engine,
     fuel_weight=165000,
     target_vertical_velocity=escape_velocity,
-    launch_theta=np.pi / 2,
+    launch_theta=0,
     launch_phi=0,
-    launch_time=0,
+    launch_time=0.1,
+    dt=0.001,
+)
+(
+    altitude2,
+    vertical_velocity2,
+    total_time2,
+    fuel_weight2,
+    solar_x_pos2,
+    solar_y_pos2,
+    solar_x_vel2,
+    solar_y_vel2,
+) = generalized_launch_rocket(
+    falcon_engine,
+    fuel_weight=165000,
+    target_vertical_velocity=escape_velocity,
+    launch_theta=0,
+    launch_phi=np.pi,
+    launch_time=0.1,
     dt=0.001,
 )
 
@@ -293,39 +311,42 @@ mission.generate_orbit_video(
 print(
     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
 )
-print(f"---------------\nEngine performance:\nThrust (N): {falcon_engine.thrust}")
-print("Fuel weight (kg): 165000 ")
-print("")
 print(
-    f"Initial thrust/kg (N/kg): {falcon_engine.thrust / (165000 + dry_rocket_mass):.3f}"
+    f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"
 )
-print(f"Total fuel constant (kg/s): {falcon_engine.total_fuel_constant}")
-print(
-    f"Thrust/total fuel constant (Ns/kg): {falcon_engine.thrust / falcon_engine.total_fuel_constant:.3f}"
+# print(f"---------------\nEngine performance:\nThrust (N): {falcon_engine.thrust}")
+# print("Fuel weight (kg): 165000 ")
+# print("")
+# print(
+#     f"Initial thrust/kg (N/kg): {falcon_engine.thrust / (165000 + dry_rocket_mass):.3f}"
+# )
+# print(f"Total fuel constant (kg/s): {falcon_engine.total_fuel_constant}")
+# print(
+#     f"Thrust/total fuel constant (Ns/kg): {falcon_engine.thrust / falcon_engine.total_fuel_constant:.3f}"
+# )
+# print(f"Simulated pressure (pa): {falcon_engine.simulated_average_pressure:.3f}")
+# print(f"Expected pressure (pa): {falcon_engine.analytical_expected_pressure:.3f}")
+# print(f"Simulated total energy (J): {falcon_engine.simulated_total_energy}")
+# print(f"Simulated energy (J): {falcon_engine.simulated_average_energy}")
+# print(f"Analytical expected energy(J): {falcon_engine.analytical_expected_energy}")
+# print(f"Density (N / (m**3) = {falcon_engine.n:.3f}\n-----------------------")
+plt.plot(orbit_0[1], orbit_0[2], ls="--", label="Orbit homeplanet")
+# # plt.plot((0, solar_x_pos), (0, solar_y_pos))
+plt.scatter(solar_x_pos, solar_y_pos, label="Rocket")
+plt.scatter(
+    solar_x_pos + solar_x_vel * 10e-5,
+    solar_y_pos + solar_y_vel * 10e-5,
+    label="Rocket delta",
 )
-print(f"Simulated pressure (pa): {falcon_engine.simulated_average_pressure:.3f}")
-print(f"Expected pressure (pa): {falcon_engine.analytical_expected_pressure:.3f}")
-print(f"Simulated total energy (J): {falcon_engine.simulated_total_energy}")
-print(f"Simulated energy (J): {falcon_engine.simulated_average_energy}")
-print(f"Analytical expected energy(J): {falcon_engine.analytical_expected_energy}")
-print(f"Density (N / (m**3) = {falcon_engine.n:.3f}\n-----------------------")
-# plt.plot(orbit_0[1], orbit_0[2], ls="--", label="Orbit homeplanet")
-# # # plt.plot((0, solar_x_pos), (0, solar_y_pos))
-# plt.scatter(solar_x_pos, solar_y_pos, label="Rocket")
-# plt.scatter(
-#     solar_x_pos + solar_x_vel * 10e-5,
-#     solar_y_pos + solar_y_vel * 10e-5,
-#     label="Rocket delta",
-# )
-# # plt.plot((0, solar_x_pos2), (0, solar_y_pos2))
-# plt.scatter(solar_x_pos2, solar_y_pos2, label="Rocket2")
-# plt.scatter(
-#     solar_x_pos2 + solar_x_vel2 * 10e-5,
-#     solar_y_pos2 + solar_y_vel2 * 10e-5,
-#     label="Rocket 2 delta",
-# )
-# plt.xlabel("Au")
-# plt.ylabel("Au")
-# plt.title("Testing rocket_launch codes")
-# plt.legend()
-# plt.show()
+# plt.plot((0, solar_x_pos2), (0, solar_y_pos2))
+plt.scatter(solar_x_pos2, solar_y_pos2, label="Rocket2")
+plt.scatter(
+    solar_x_pos2 + solar_x_vel2 * 10e-5,
+    solar_y_pos2 + solar_y_vel2 * 10e-5,
+    label="Rocket 2 delta",
+)
+plt.xlabel("Au")
+plt.ylabel("Au")
+plt.title("Testing rocket_launch codes")
+plt.legend()
+plt.show()
