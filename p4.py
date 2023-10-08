@@ -11,9 +11,9 @@ from numba import njit
 import multiprocessing
 import time
 import math
-from P1B import Engine
-from P2 import simulate_orbits
-import h5py
+# from P1B import Engine
+# from P2 import simulate_orbits
+# import h5py
 
 utils.check_for_newer_version()
 
@@ -25,6 +25,14 @@ SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 star_mass = system.star_mass  # 0.25361200295275615
 star_radius = system.star_radius  # 239265.2554658649
 number_of_planets = system.number_of_planets  # 7
+
+Sun_doppler_shift = mission.star_doppler_shifts_at_sun #(-0.020473606152657177, 0.01606904976188539)
+Star_direction_angles = mission.star_direction_angles #(213.2764103110655, 149.62013634196333)
+
+c = const.c
+lamba_0 =  656.3    #nanometers
+v_r_sol = c * (np.array(Sun_doppler_shift) / lamba_0)   #nanometers / nanometers [-9352.17539636  7340.2101567 ]
+
 semi_major_axes = (
     system.semi_major_axes
 )  # [0.06482565 0.0829133  0.36976519 0.22599283 0.16581062 0.58942411 0.04853556]
