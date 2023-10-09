@@ -107,7 +107,10 @@ def Images():  # A2
 
 img = Image.open("sample0000.png")
 pixels = np.array(img)
+# print(pixels)
 shape = pixels.shape  # 480x640 pixels
+# print("shape:")
+# print(shape)
 length = shape[0]  # 480 pixels
 width = shape[1]  # 640 pixels
 alpha_theta = 70 * (np.pi / 180)  # FOV theta
@@ -128,26 +131,38 @@ rho = np.sqrt(xv**2 + yv**2)
 beta = 2 * np.arctan(rho / 2)
 theta_array = theta0 - np.arcsin(
     np.cos(beta) * np.cos(theta0) + (yv / rho) * np.sin(beta) * np.sin(theta0)
-)
+)  # shape = (480, 640)
 phi_array = phi0 + np.arctan(
     (xv * np.sin(beta))
     / (rho * np.sin(theta0) * np.cos(beta) - yv * np.cos(theta0) * np.sin(beta))
-)
-plt.scatter(theta_array, phi_array)
-plt.show()
-# pixel_array = np.zeros_like((theta_array, phi_array))
+)  # shape = (480, 640)
+
+print(np.shape(theta_array))
+print(np.shape(phi_array))
 
 coordinates = np.vstack([theta_array.ravel(), phi_array.ravel()])  # shape = (2, 307200)
+# empty_coordinates = np.zeros_like(coordinates)
+new_image = np.zeros(((480, 640, 3)))
+# print(np.shape(empty_coordinates))
 print(np.shape(coordinates))
-for coordinate in coordinates:
-    plt.scatter(coordinate)
-plt.show()
-
-# pixel_idx_array = np.zeros_like(coordinates)
-# for i, coordinate in enumerate(coordinates):
-#     pixel_idx_array[i] = mission.get_sky_image_pixel(np.pi / 2, coordinate)
-
+# for coordinate in coordinates:
+#     plt.scatter(coordinate)
+# plt.show()
 himmelkule = np.load("himmelkule.npy")  # shape = (3145728, 5)
+
+pixel_idx_array = np.zeros(len(coordinates[0]))
+
+print(np.shape(pixel_idx_array))
+for i in range(len(coordinates[0])):
+    pixel_idx_array[i] = mission.get_sky_image_pixel(
+        coordinates[0][i], coordinates[1][i]
+    )
+    new_image[0][i] = 12
+
+# print(himmelkule[2401062:744665])
+# print(himmelkule[2401062:744665])
+# plt.imshow(himmelkule[2401062:744665])
+# print(pixel_idx_array)  # 2401062, 744665
 
 
 def NewPhi(png):  # B
