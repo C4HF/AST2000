@@ -133,6 +133,8 @@ phi_array = phi0 + np.arctan(
     (xv * np.sin(beta))
     / (rho * np.sin(theta0) * np.cos(beta) - yv * np.cos(theta0) * np.sin(beta))
 )
+plt.scatter(theta_array, phi_array)
+plt.show()
 # pixel_array = np.zeros_like((theta_array, phi_array))
 
 coordinates = np.vstack([theta_array.ravel(), phi_array.ravel()])  # shape = (2, 307200)
