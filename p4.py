@@ -108,56 +108,69 @@ def Images():  # A2
 img = Image.open("sample0000.png")
 pixels = np.array(img)
 # print(pixels)
-shape = pixels.shape  # 480x640 pixels
-# print("shape:")
-# print(shape)
+shape = pixels.shape  # (480, 640, 3) pixels
+print("shape:")
+print(shape)
 length = shape[0]  # 480 pixels
 width = shape[1]  # 640 pixels
 alpha_theta = 70 * (np.pi / 180)  # FOV theta
 alpha_phi = 70 * (np.pi / 180)  # FOV phi
-theta0 = np.pi / 2
-phi0 = 0
+theta0 = np.pi / 2  # coordinate for image center
+phi0 = 0  # coordinate for image center
 X_max_min = np.array([1, -1]) * (
     (2 * np.sin(alpha_phi / 2)) / (1 + np.cos(alpha_phi / 2))
 )  # [ 0.63059758 -0.63059758]
 Y_max_min = np.array([1, -1]) * (
     (2 * np.sin(alpha_theta / 2)) / (1 + np.cos(alpha_theta / 2))
 )  # [ 0.63059758 -0.63059758]
-x_array = np.linspace(-0.63059758, 0.63059758, 640)
-y_array = np.linspace(-0.63059758, 0.63059758, 480)
-xv, yv = np.meshgrid(x_array, y_array)  # shape (2, 480, 640)
+x_array = np.linspace(-0.63059758, 0.63059758, 640)  # creating x-array usin xmin/max
+y_array = np.linspace(-0.63059758, 0.63059758, 480)  # creating y-array using ymin/max
+# x_array = np.linspace(0.63059758, -0.63059758, 640)
+# y_array = np.linspace(0.63059758, -0.63059758, 480)
+xv, yv = np.meshgrid(x_array, y_array)  # meshgrid with shape (2, 480, 640)
 
-rho = np.sqrt(xv**2 + yv**2)
-beta = 2 * np.arctan(rho / 2)
+rho = np.sqrt(xv**2 + yv**2)  # defining constants from formula
+beta = 2 * np.arctan(rho / 2)  # defining constants from formula
 theta_array = theta0 - np.arcsin(
     np.cos(beta) * np.cos(theta0) + (yv / rho) * np.sin(beta) * np.sin(theta0)
-)  # shape = (480, 640)
+)  # shape = (480, 640), transformation of xv to theta-angle
 phi_array = phi0 + np.arctan(
     (xv * np.sin(beta))
     / (rho * np.sin(theta0) * np.cos(beta) - yv * np.cos(theta0) * np.sin(beta))
-)  # shape = (480, 640)
+)  # shape = (480, 640), transformation of yv to theta-angle
 
 print(np.shape(theta_array))
 print(np.shape(phi_array))
 
-coordinates = np.vstack([theta_array.ravel(), phi_array.ravel()])  # shape = (2, 307200)
-# empty_coordinates = np.zeros_like(coordinates)
-new_image = np.zeros(((480, 640, 3)))
-# print(np.shape(empty_coordinates))
-print(np.shape(coordinates))
-# for coordinate in coordinates:
-#     plt.scatter(coordinate)
-# plt.show()
+# coordinates = np.vstack([theta_array.ravel(), phi_array.ravel()])  # shape = (2, 307200), zips coordianets
+new_image_array = np.zeros(
+    ((480, 640, 3))
+)  # creates empty image pixel array to be filled with rgb values
 himmelkule = np.load("himmelkule.npy")  # shape = (3145728, 5)
+# pixel_idx_array = np.zeros(len(coordinates[0]))
 
-pixel_idx_array = np.zeros(len(coordinates[0]))
+# print(np.shape(pixel_idx_array))
 
-print(np.shape(pixel_idx_array))
-for i in range(len(coordinates[0])):
-    pixel_idx_array[i] = mission.get_sky_image_pixel(
-        coordinates[0][i], coordinates[1][i]
-    )
-    new_image[0][i] = 12
+## looping over all coordinates and get indices of rgb values using the get_sky_image_pixel-method.
+## fills up the empty image array with the rgb values
+for i in range(len(new_image_array)):
+    for j in range(len(new_image_array[0])):
+        idx = mission.get_sky_image_pixel(theta_array[i][j], phi_array[i][j])
+        # print(idx)
+        rgb = himmelkule[idx][2:5]
+        new_image_array[i][j] = rgb
+
+print(new_image_array)
+print(np.shape(new_image_array))
+
+new_image = Image.fromarray(
+    new_image_array, "RGB"
+)  # create new image using Image.fromarray()
+new_image.show()  # shows image
+# img.save('testing_image_generator.png')
+
+# plt.imshow(new_image_array)
+# plt.show()
 
 # print(himmelkule[2401062:744665])
 # print(himmelkule[2401062:744665])
