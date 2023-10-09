@@ -10,10 +10,9 @@ import numba as nb
 from numba import njit
 import math
 from P1B import Engine
-
-# from P2 import simulate_orbits
-# import h5py
-# from part3 import generalized_launch_rocket
+from P2 import simulate_orbits
+import h5py
+from part3 import generalized_launch_rocket
 
 utils.check_for_newer_version()
 
@@ -25,11 +24,13 @@ Au = 149597870700  # Meters
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 sec_per_year = 60 * 60 * 24 * 365
 c = 63239.7263  # Speed of light in Au/yr
-lambda_0 = 656.3 * 10 ** (
-    -9
-)  # wavelength of the Hα spectral line from restframe in meters
-phi1 = 213.2764103110655 * (np.pi / 180)  # angle of reference star 1 in radians
-phi2 = 149.62013634196333 * (np.pi / 180)  # angle of reference star 2 in radians
+lambda_0 = 656.3  # wavelength of the Hα spectral line from restframe in nanometers
+phi1 = mission.star_direction_angles[0] * (
+    np.pi / 180
+)  # angle of reference star 1 in radians
+phi2 = mission.star_direction_angles[0] * (
+    np.pi / 180
+)  # angle of reference star 2 in radians
 star_mass = system.star_mass  # 0.25361200295275615
 star_radius = system.star_radius  # 239265.2554658649
 number_of_planets = system.number_of_planets  # 7
