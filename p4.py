@@ -89,7 +89,11 @@ def Images():   #A2
     phi = 0 #From task
     theta = np.pi / 2   #From task. Solar system plane
     XY_max_min = np.array([1,-1]) * ((2*np.sin(alpha / 2))/(1+np.cos(alpha / 2)))   #Stereographic projection[ 0.63059758 -0.63059758]
-
+    
+def NewPhi(png): #B
+    img = Image.open(png) # Open example picture
+    pixels = np.array(img) # png into numpy array
+    #return newphi
 
 # Setting launch parameters and checking launch results ##
 mission.set_launch_parameters(
