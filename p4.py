@@ -16,16 +16,6 @@ from P1B import Engine
 
 utils.check_for_newer_version()
 
-from PIL import Image
-img = Image.open(r'C:\Users\axlkl\Downloads\sample0000.png') # Open existing png
-pixels = np.array(img) # png into numpy array
-width = len(pixels[0, :])
-print(pixels, len(pixels), width) #Bildet er 480 x 640 piksler.
-# redpixs = [(255, 0, 0) for i in range(width)] # Array of red pixels
-# pixels[240, :] = redpixs # Insert into line 500
-# img2 = Image.fromarray(pixels)
-# img2.save('exampleWithRedLine.png') # Make new png
-
 np.random.seed(10)
 seed = 57063
 system = SolarSystem(seed)
@@ -84,6 +74,22 @@ homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
+
+from PIL import Image
+def Images():   #A2
+    img = Image.open(r'C:\Users\axlkl\Downloads\sample0000.png') # Open example picture
+    pixels = np.array(img) # png into numpy array
+    width = len(pixels[0, :])  #pixels comes in [y, x], where x is the width.
+    #print(pixels, len(pixels), width) #Picture is 480(y) x 640(x) pixels.
+    # redpixs = [(255, 0, 0) for i in range(width)] # Array of red pixels
+    # pixels[240, :] = redpixs # Insert into line 500
+    # img2 = Image.fromarray(pixels) 
+    # img2.save('exampleWithRedLine.png') # Make new png with red line
+    alpha = np.deg2rad(70)  #Turns degrees to radians
+    phi = 0 #From task
+    theta = np.pi / 2   #From task. Solar system plane
+    XY_max_min = np.array([1,-1]) * ((2*np.sin(alpha / 2))/(1+np.cos(alpha / 2)))   #Stereographic projection[ 0.63059758 -0.63059758]
+
 
 # Setting launch parameters and checking launch results ##
 mission.set_launch_parameters(
