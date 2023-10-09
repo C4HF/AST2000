@@ -8,20 +8,21 @@ from ast2000tools.solar_system import SolarSystem
 from scipy.stats import norm
 import numba as nb
 from numba import njit
-import multiprocessing
-import time
 import math
-# from P1B import Engine
-# from P2 import simulate_orbits
-# import h5py
+from P1B import Engine
+from P2 import simulate_orbits
+import h5py
+from part3 import generalized_launch_rocket
 
 utils.check_for_newer_version()
 
+np.random.seed(10)
 seed = 57063
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
 Au = 149597870700  # Meters
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
+sec_per_year = 60 * 60 * 24 * 365
 star_mass = system.star_mass  # 0.25361200295275615
 star_radius = system.star_radius  # 239265.2554658649
 number_of_planets = system.number_of_planets  # 7
@@ -64,120 +65,53 @@ initial_velocities = (
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
+home_planet_initial_pos = (
+    system._initial_positions[0][0],
+    system._initial_positions[1][0],
+)  # homeplanet initial pos in Au
+homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
+# Our engine
+falcon_engine = Engine(
+    N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
+)
 
+# Setting launch parameters and checking launch results ##
+mission.set_launch_parameters(
+    thrust=falcon_engine.thrust,
+    mass_loss_rate=falcon_engine.total_fuel_constant,
+    initial_fuel_mass=165000,
+    estimated_launch_duration=448.02169995917336,
+    launch_position=[
+        home_planet_initial_pos[0] + homeplanet_radius / Au,
+        home_planet_initial_pos[1],
+    ],
+    time_of_launch=0,
+)
+mission.launch_rocket()
+mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
+distances = mission.measure_distances()
 
-# distances = mission.measure_distances()
-
-
-def create_orbits(T, dt):
-    """Simulates orbits, packed like: x_pos, y_pos, x_vel, y_vel, t_array, count_revolutions,period, relative_displacement,"""
-    for i in range(7):
-        globals()[f"orbit_{i}"] = simulate_orbits(
-            initial_positions[0][i],
-            initial_positions[1][i],
-            initial_velocities[0][i],
-            initial_velocities[1][i],
-            T=T,
-            dt=dt,
-        )
-
-
-create_orbits(T=3, dt=10e-7)
-
-
-def generalized_launch_rocket(
-    engine,
-    fuel_weight,
-    target_vertical_velocity,
-    launch_theta,
-    launch_phi,
-    launch_time,
-    dt=1,
-):
-    """Funksjonen tar inn instans av engine, start-fuel-vekt, ønsket hastighet, vinkel-posisjon mellom nordpol/sorpol (launch_theta),
-    vinkelposisjon langs ekvator på planeten med vinkel null langs x-aksen (launch-phi) og oppskytningstidspunkt T i jordår fra 0-3.
-    Regner deretter ut akselereasjon med hensyn på gravitasjon og regner ut hastighet og posisjon.
-    Funksjonen returnerer høyde over jordoverflaten, vertikal-hastighet, total-tid, resterende drivstoffvekt
-    samt xy-posisjon og xy-hastighet i forhold til stjernen i solsystemet vårt."""
-    thrust = engine.thrust
-    total_fuel_constant = engine.total_fuel_constant
-    sec_per_year = 60 * 60 * 24 * 365
-    homeplanet_radius_Au = homeplanet_radius / Au  # Converting radius in meters to Au
-    rotational_velocity = (
-        np.abs(2 * np.pi * (homeplanet_radius_Au) * np.cos((np.pi / 2) - launch_theta))
-    ) / (home_planet_rotational_period / 365)
-
-    # finding idx of launch time
-    for i, t in enumerate(orbit_0[4]):
-        if math.isclose(t, launch_time):
-            idx = i
-            break
-        else:
-            continue
-    solar_x_pos = orbit_0[0][idx] + (
-        (
-            (homeplanet_radius_Au)
-            * np.cos((np.pi / 2) - launch_theta)
-            * np.cos(launch_phi)
-        )
-    )  # Au
-    solar_y_pos = orbit_0[1][idx] + (
-        (
-            (homeplanet_radius_Au)
-            * np.cos((np.pi / 2) - launch_theta)
-            * np.sin(launch_phi)
-        )
-    )  # Au
-    solar_x_vel = orbit_0[2][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
-    solar_y_vel = orbit_0[3][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
-
-    altitude = 0  # m
-    vertical_velocity = 0  # m/s
-    total_time = 0  # s
-
-    # While loop Euler-method with units kg, meters and seconds
-    while vertical_velocity < target_vertical_velocity:
-        wet_rocket_mass = dry_rocket_mass + fuel_weight
-        F_g = (G * homeplanet_mass * wet_rocket_mass) / (
-            (homeplanet_radius) + altitude
-        ) ** 2  # The gravitational force
-        rocket_thrust_gravitation_diff = thrust - F_g  # netto-kraft
-        vertical_velocity += (
-            rocket_thrust_gravitation_diff / wet_rocket_mass
-        ) * dt  # m/s
-        altitude += vertical_velocity * dt  # m
-        # solar_x_pos += vertical_velocity * np.cos(launch_phi) * dt / Au  # Au
-        # solar_y_pos += vertical_velocity * np.sin(launch_phi) * dt / Au  # Au
-        fuel_weight -= total_fuel_constant * dt  # kg
-        total_time += dt  # s
-
-        if fuel_weight <= 0:
-            break
-        elif total_time > 1800:
-            break
-        elif altitude < 0:
-            break
-    solar_x_vel += vertical_velocity * np.cos(launch_phi) * (sec_per_year / Au)
-    solar_y_vel += vertical_velocity * np.sin(launch_phi) * (sec_per_year / Au)
-    solar_x_pos += altitude * np.cos(launch_phi) / Au
-    solar_y_pos += altitude * np.sin(launch_phi) / Au
-    return (
-        altitude,
-        vertical_velocity,
-        total_time,
-        fuel_weight,
-        solar_x_pos,
-        solar_y_pos,
-        solar_x_vel,
-        solar_y_vel,
-    )
+# Fetching data from orbit-files:
+filenames = [
+    "orbit0.h5",
+    "orbit1.h5",
+    "orbit2.h5",
+    "orbit3.h5",
+    "orbit4.h5",
+    "orbit5.h5",
+    "orbit6.h5",
+]
+for i, filename in enumerate(filenames):
+    h5f = h5py.File(filename, "r")
+    globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
+    h5f.close()
 
 
 def spacecraft_triliteration(T, measured_distances):
     """Function to locate position of spacecraft using mesurements to other planets and sun."""
     # finding idx of mesurement time T
-    for i, t in enumerate(orbit_0[4]):
-        if math.isclose(t, T):
+    for i, t in enumerate(orbit_0[0]):
+        if math.isclose(t, T, rel_tol=10e-1):
             idx = i
             break
         else:
@@ -185,33 +119,103 @@ def spacecraft_triliteration(T, measured_distances):
 
     star_pos = np.asarray((0, 0))
     star_distance = measured_distances[-1]
-    planet_0_pos = np.asarray((orbit_0[0][idx], orbit_0[1][idx]))
-    planet_0_distance = measured_distances[0]
-    planet_6_pos = np.asarray((orbit_6[0][idx], orbit_6[1][idx]))
-    planet_6_distance = measured_distances[6]
-    theta_array = np.arange(0, 2 * np.pi, 10e-6)
-    circle_1 = (
-        (np.cos(theta_array) * star_distance) + star_pos[0],
-        (np.sin(theta_array) * star_distance) + star_pos[1],
+    planet_2_pos = np.asarray((orbit_2[1][idx], orbit_2[2][idx]))
+    planet_2_distance = measured_distances[2]
+    planet_5_pos = np.asarray((orbit_5[1][idx], orbit_5[2][idx]))
+    planet_5_distance = measured_distances[5]
+    theta_array = np.arange(0, 2 * np.pi, 10e-7)
+    circle_star = np.asarray(
+        (
+            (np.cos(theta_array) * star_distance) + star_pos[0],
+            (np.sin(theta_array) * star_distance) + star_pos[1],
+        )
     )
-    circle_2 = (
-        np.cos(theta_array) * planet_0_distance + planet_0_pos[0],
-        np.sin(theta_array) * planet_0_distance + planet_0_pos[1],
+    circle_planet2 = np.asarray(
+        (
+            np.cos(theta_array) * planet_2_distance + planet_2_pos[0],
+            np.sin(theta_array) * planet_2_distance + planet_2_pos[1],
+        )
     )
-    circle_3 = (
-        np.cos(theta_array) * planet_6_distance + planet_6_pos[0],
-        np.sin(theta_array) * planet_6_distance + planet_6_pos[1],
+    circle_planet5 = np.asarray(
+        (
+            np.cos(theta_array) * planet_5_distance + planet_5_pos[0],
+            np.sin(theta_array) * planet_5_distance + planet_5_pos[1],
+        )
     )
-    plt.plot(circle_1[0], circle_1[1], label="circle star")
-    # plt.plot(circle_2[0], circle_2[1], label="circle homeplanet")
-    # plt.plot(circle_3[0], circle_3[1], label="circle 3")
-    plt.legend()
-    plt.show()
+
+    diff_2_star = np.asarray(
+        [
+            np.abs(circle_planet2[0] - star_pos[0]),
+            np.abs(circle_planet2[1] - star_pos[1]),
+        ]
+    )
+    diff_5_star = np.asarray(
+        [
+            np.abs(circle_planet5[0] - star_pos[0]),
+            np.abs(circle_planet5[1] - star_pos[1]),
+        ]
+    )
+    abs_diff_2 = np.sqrt(diff_2_star[0] ** 2 + diff_2_star[1] ** 2)
+    abs_diff_5 = np.sqrt(diff_5_star[0] ** 2 + diff_5_star[1] ** 2)
+    search_2 = np.where(np.abs((abs_diff_2 - star_distance)) < 10e-7)[0]
+    search_5 = np.where((np.abs(abs_diff_5 - star_distance)) < 10e-7)[0]
+    n = len(search_2)
+    m = len(search_5)
+    matching_position = []
+    for i in range(n):
+        possible_x1 = circle_planet2[0][search_2[i]]
+        possible_y1 = circle_planet2[1][search_2[i]]
+        for j in range(m):
+            possible_x2 = circle_planet5[0][search_5[j]]
+            possible_y2 = circle_planet5[1][search_5[j]]
+            if math.isclose(possible_x1, possible_x2, rel_tol=10e-2) and math.isclose(
+                possible_y1, possible_y2, rel_tol=10e-2
+            ):
+                matching_position.append(
+                    ((possible_x1, possible_y1), (possible_x2, possible_y2))
+                )
+            else:
+                continue
+    possible_position_array = np.asarray(matching_position)
+    least_diff = 10
+    most_accurate_idx = 0
+    for k in range(len(possible_position_array)):
+        diff_x = possible_position_array[k, 0, 0] - possible_position_array[k, 1, 0]
+        diff_y = possible_position_array[k, 0, 1] - possible_position_array[k, 1, 1]
+        diff = np.sqrt(diff_x**2 + diff_y**2)
+        if diff < least_diff:
+            least_diff = diff
+            most_accurate_idx = k
+    found_x_pos = float(
+        (
+            possible_position_array[most_accurate_idx, 0, 0]
+            + possible_position_array[most_accurate_idx, 1, 0]
+        )
+        / 2
+    )
+    found_y_pos = float(
+        (
+            possible_position_array[most_accurate_idx, 0, 1]
+            + possible_position_array[most_accurate_idx, 1, 1]
+        )
+        / 2
+    )
+    # Kode for å visualisere trilateriring
+    # print(type(found_x_pos))
+    # print(type(found_y_pos))
+    # plt.plot(circle_star[0], circle_star[1], label="circle star")
+    # plt.plot(circle_planet2[0], circle_planet2[1], label="circle planet 2")
+    # plt.plot(circle_planet5[0], circle_planet5[1], label="circle planet 5")
+    # plt.scatter(
+    #     0.06590544416834804, 0.00017508613228451168, label="Rocket after launch"
+    # )
+    # plt.scatter(found_x_pos, found_y_pos, label="Triangulated_pos")
+    # plt.xlabel("Au")
+    # plt.ylabel("Au")
+    # plt.title("Visualisering av trilaterering")
+    # plt.legend()
+    # plt.show()
+    return found_x_pos, found_y_pos
 
 
-distance_list = [0.2, 0.1, 0.4, 0.2, 0.1, 0.7, 0.9, 0.8]
-spacecraft_triliteration(2, distance_list)
-
-falcon_engine = Engine(
-    N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
-)
+# spacecraft_triliteration(448.02169995917336 / sec_per_year, distances)

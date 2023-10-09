@@ -7,6 +7,7 @@ from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
 from scipy.stats import norm
 
+np.random.seed(10)
 seed = 57063
 system = SolarSystem(seed)
 mission = SpaceMission(seed)
