@@ -217,9 +217,9 @@ falcon_engine = Engine(
     falcon_engine,
     fuel_weight=165000,
     target_vertical_velocity=escape_velocity,
-    launch_theta=0,
+    launch_theta=np.pi / 2,
     launch_phi=0,
-    launch_time=0.1,
+    launch_time=0,
     dt=0.001,
 )
 (
@@ -236,8 +236,8 @@ falcon_engine = Engine(
     fuel_weight=165000,
     target_vertical_velocity=escape_velocity,
     launch_theta=0,
-    launch_phi=np.pi,
-    launch_time=0.1,
+    launch_phi=0,
+    launch_time=0,
     dt=0.001,
 )
 
@@ -345,8 +345,11 @@ plt.scatter(
     solar_y_pos2 + solar_y_vel2 * 10e-5,
     label="Rocket 2 delta",
 )
-plt.xlabel("Au")
-plt.ylabel("Au")
-plt.title("Testing rocket_launch codes")
-plt.legend()
+plt.xlabel("Au", fontsize=20)
+plt.ylabel("Au", fontsize=20)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.title("Testing rocket_launch codes", fontsize=20)
+plt.legend(fontsize=20)
+plt.grid()
 plt.show()
