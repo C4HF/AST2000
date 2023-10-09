@@ -25,6 +25,8 @@ SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 sec_per_year = 60 * 60 * 24 * 365
 c = 63239.7263  # Speed of light in Au/yr
 lambda_0 = 656.3  # wavelength of the Hα spectral line from restframe in nanometers
+delta_lambda1_sun = mission.star_doppler_shifts_at_sun[0]
+delta_lambda2_sun = mission.star_doppler_shifts_at_sun[1]
 phi1 = mission.star_direction_angles[0] * (
     np.pi / 180
 )  # angle of reference star 1 in radians
@@ -152,8 +154,10 @@ def calculate_velocity_from_doppler(delta_lambda1, delta_lambda2):
     Returns spacecraft velocity in the xy-plane."""
     vr1 = (c * delta_lambda1) / lambda_0
     vr2 = (c * delta_lambda2) / lambda_0
-    vx = vr1 * np.cos(phi1) + vr2 * np.cos(phi2)
-    vy = vr1 * np.sin(phi1) + vr2 * np.sin(phi2)
+    vr1sol = (c * delta_lambda1_sun) / lambda_0
+    vr2sol = (c * delta_lambda2_sun) / lambda_0
+    vx = (vr1 - vr1sol) * np.cos(phi1) + (vr2 - vr2sol) * np.cos(phi2)
+    vy = (vr1 - vr1sol) * np.sin(phi1) + (vr2 - vr2sol) * np.sin(phi2)
     return vx, vy
 
 
