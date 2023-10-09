@@ -10,11 +10,21 @@ import numba as nb
 from numba import njit
 import math
 from P1B import Engine
-from P2 import simulate_orbits
-import h5py
-from part3 import generalized_launch_rocket
+#from P2 import simulate_orbits
+#import h5py
+#from part3 import generalized_launch_rocket
 
 utils.check_for_newer_version()
+
+from PIL import Image
+img = Image.open(r'C:\Users\axlkl\Downloads\sample0000.png') # Open existing png
+pixels = np.array(img) # png into numpy array
+width = len(pixels[0, :])
+print(pixels, len(pixels), width) #Bildet er 480 x 640 piksler.
+# redpixs = [(255, 0, 0) for i in range(width)] # Array of red pixels
+# pixels[240, :] = redpixs # Insert into line 500
+# img2 = Image.fromarray(pixels)
+# img2.save('exampleWithRedLine.png') # Make new png
 
 np.random.seed(10)
 seed = 57063
@@ -79,8 +89,8 @@ falcon_engine = Engine(
 mission.set_launch_parameters(
     thrust=falcon_engine.thrust,
     mass_loss_rate=falcon_engine.total_fuel_constant,
-    initial_fuel_mass=165000,
-    estimated_launch_duration=448.02169995917336,
+    initial_fuel_mass = 165000,
+    estimated_launch_duration = 448.02169995917336,
     launch_position=[
         home_planet_initial_pos[0] + homeplanet_radius / Au,
         home_planet_initial_pos[1],
