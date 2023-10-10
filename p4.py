@@ -107,7 +107,8 @@ def Images():  # A2
 
 img = Image.open("sample0000.png")
 pixels = np.array(img)
-# print(pixels)
+# print(pixels[0][0])
+# print(type(pixels[0][0]))
 shape = pixels.shape  # (480, 640, 3) pixels
 print("shape:")
 print(shape)
@@ -125,6 +126,8 @@ Y_max_min = np.array([1, -1]) * (
 )  # [ 0.63059758 -0.63059758]
 x_array = np.linspace(-0.63059758, 0.63059758, 640)  # creating x-array usin xmin/max
 y_array = np.linspace(-0.63059758, 0.63059758, 480)  # creating y-array using ymin/max
+# x_array = np.linspace(0.63059758, -0.63059758, 640)
+# y_array = np.linspace(0.63059758, -0.63059758, 480)
 # x_array = np.linspace(0.63059758, -0.63059758, 640)
 # y_array = np.linspace(0.63059758, -0.63059758, 480)
 xv, yv = np.meshgrid(x_array, y_array)  # meshgrid with shape (2, 480, 640)
@@ -153,15 +156,33 @@ himmelkule = np.load("himmelkule.npy")  # shape = (3145728, 5)
 
 ## looping over all coordinates and get indices of rgb values using the get_sky_image_pixel-method.
 ## fills up the empty image array with the rgb values
+pixel_arr2 = np.array([])
 for i in range(len(new_image_array)):
     for j in range(len(new_image_array[0])):
         idx = mission.get_sky_image_pixel(theta_array[i][j], phi_array[i][j])
         # print(idx)
-        rgb = himmelkule[idx][2:5]
-        new_image_array[i][j] = rgb
+        # print(himmelkule[idx])
 
+        r = himmelkule[idx][2]
+        g = himmelkule[idx][3]
+        b = himmelkule[idx][4]
+        # rgb = np.asarray(himmelkule[idx][2:5].astype(int))
+        rgb = np.array([r, g, b], dtype=np.uint8)
+        # new_image_array[i][j] = np.asarray((r, g, b))
+        new_image_array[i][j] = rgb
+        np.append(pixel_arr2, rgb)
+print("pixel")
+print(pixels)
+print("newimage")
 print(new_image_array)
 print(np.shape(new_image_array))
+print(np.shape(new_image_array))
+print(type(new_image_array))
+print(np.shape(new_image_array[0]))
+print(type(new_image_array[0]))
+print(np.shape(new_image_array[0][1]))
+print(type(new_image_array[0][1]))
+
 
 new_image = Image.fromarray(
     new_image_array, "RGB"
