@@ -90,8 +90,6 @@ falcon_engine = Engine(
 )
 
 from PIL import Image
-
-
 def Images():  # A2
     img = Image.open(r"C:\Users\axlkl\Downloads\sample0000.png")  # Open example picture
     pixels = np.array(img)  # png into numpy array
@@ -104,12 +102,24 @@ def Images():  # A2
     alpha = np.deg2rad(70)  # Turns degrees to radians
     phi = 0  # From task
     theta = np.pi / 2  # From task. Solar system plane
-    XY_max_min = np.array([1, -1]) * (
+    X_max_min = np.array([1, -1]) * (
         (2 * np.sin(alpha / 2)) / (1 + np.cos(alpha / 2))
     )  # Stereographic projection[ 0.63059758 -0.63059758]
+    Y_max_min = np.array([1, -1]) * (2 * np.sin(alpha / 2)) / (1 + np.cos(alpha / 2))
+    N_X = 640   #Definerer piksler for hver akse
+    N_Y = 480
+    X = np.linspace(X_max_min[1], X_max_min[0], N_X) #Definerer XY-grid
+    Y = np.linspace(Y_max_min[1], Y_max_min[0], N_Y) 
+    theta_0 = 0 
+    phi_0 = np.pi / 2    #Definerer theta_0 og phi_0
+    rho = np.sqrt(X**2 + Y**2)  #Definerer uttrykk til formlene
+    beta = 2 * np.arctan(rho / 2)
+    theta = theta_0 - np.arcsin(np.cos(beta) * np.cos(theta_0) + (Y / rho) * np.sin(beta) * np.sin(theta_0)) #Formlene for XY til theta, phi
+    phi = phi_0 + np.arctan((X * np.sin(beta) / (rho * np.sin(theta_0) * np.cos(beta) - Y * np.cos(theta_0) * np.sin(beta))))
+    return print(theta, phi)
+Images()
 
-
-def NewPhi(png):  # B
+def NewPhi(png):  #B
     img = Image.open(png)  # Open example picture
     pixels = np.array(img)  # png into numpy array
     # return newphi
@@ -131,7 +141,7 @@ mission.launch_rocket()
 mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
 distances = mission.measure_distances()
 
-# Fetching data from orbit-files:
+# # Fetching data from orbit-files:
 filenames = [
     "orbit0.h5",
     "orbit1.h5",
