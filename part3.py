@@ -6,10 +6,7 @@ import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
 from scipy.stats import norm
-import numba as nb
 from numba import njit
-import multiprocessing
-import time
 import math
 from P1B import Engine
 from P2 import simulate_orbits
@@ -56,7 +53,7 @@ initial_velocities = (
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
-
+print("Så langt1")
 """Parametre"""
 m_H2 = const.m_H2
 k_B = const.k_B
@@ -98,6 +95,8 @@ for i, filename in enumerate(filenames):
     h5f = h5py.File(filename, "r")
     globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
     h5f.close()
+
+print("Så langt2")
 
 
 def generalized_launch_rocket(
@@ -200,10 +199,11 @@ def generalized_launch_rocket(
     )
 
 
+print("Så langt3")
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
-
+print("Så langt4")
 (
     altitude,
     vertical_velocity,
@@ -220,27 +220,28 @@ falcon_engine = Engine(
     launch_theta=np.pi / 2,
     launch_phi=0,
     launch_time=0,
-    dt=0,
+    dt=0.01,
 )
+print("Så langt5")
 print(solar_x_vel, solar_y_vel)
-(
-    altitude2,
-    vertical_velocity2,
-    total_time2,
-    fuel_weight2,
-    solar_x_pos2,
-    solar_y_pos2,
-    solar_x_vel2,
-    solar_y_vel2,
-) = generalized_launch_rocket(
-    falcon_engine,
-    fuel_weight=165000,
-    target_vertical_velocity=escape_velocity,
-    launch_theta=0,
-    launch_phi=0,
-    launch_time=0,
-    dt=0.001,
-)
+# (
+#     altitude2,
+#     vertical_velocity2,
+#     total_time2,
+#     fuel_weight2,
+#     solar_x_pos2,
+#     solar_y_pos2,
+#     solar_x_vel2,
+#     solar_y_vel2,
+# ) = generalized_launch_rocket(
+#     falcon_engine,
+#     fuel_weight=165000,
+#     target_vertical_velocity=escape_velocity,
+#     launch_theta=0,
+#     launch_phi=0,
+#     launch_time=0,
+#     dt=0.001,
+# )
 
 
 # Setting launch parameters and checking launch results ##

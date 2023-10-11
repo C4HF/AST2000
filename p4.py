@@ -1,19 +1,38 @@
 ########## Ikke kodemal #############################
+print("Hello1")
 import numpy as np
 import matplotlib.pyplot as plt
+
+
 import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
+
+
 from scipy.stats import norm
+
+
 import numba as nb
+
 from numba import njit
 import math
 from P1B import Engine
+
+
 from P2 import simulate_orbits
+
+
 import h5py
+
+print("here1?")
 from part3 import generalized_launch_rocket
+
+print("here2?")
 from PIL import Image
+
+print("here3?")
+
 
 utils.check_for_newer_version()
 
@@ -39,7 +58,7 @@ sun_doppler_shift = (
 star_direction_angles = (
     mission.star_direction_angles
 )  # (213.2764103110655, 149.62013634196333)
-
+print("Hello2")
 
 v_r_sol = c * (
     np.array(sun_doppler_shift) / lambda_0
@@ -85,6 +104,8 @@ homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
+
+print("hello3")
 
 
 def generate_image(phi):  # A2
@@ -194,6 +215,8 @@ for i, filename in enumerate(filenames):
     h5f = h5py.File(filename, "r")
     globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
     h5f.close()
+
+print("hello4")
 
 
 def calculate_velocity_from_doppler(delta_lambda1, delta_lambda2):
@@ -416,7 +439,7 @@ distances = mission.measure_distances()
 takenimage = mission.take_picture()
 mesured_dopplershifts = mission.measure_star_doppler_shifts()
 
-
+print("hello5")
 # Analyzing using onboard equipment
 pos_after_launch = spacecraft_triliteration(448.02169995917336, distances)
 vel_after_launch = calculate_velocity_from_doppler(
