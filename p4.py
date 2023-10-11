@@ -218,17 +218,17 @@ def calculate_velocity_from_doppler(delta_lambda1, delta_lambda2):
 # vy_sun = v_r_sol[0] * np.sin(star_direction_angles[0]) + v_r_sol[1] * np.sin(
 #     star_direction_angles[1]
 # )
-phi1 = star_direction_angles[0] * (np.pi / 180)  # angle to ref-star 1 in radians
-phi2 = star_direction_angles[1] * (np.pi / 180)  # angle to ref-star 2 in radians
-sun_doppler_shift1 = sun_doppler_shift[0]
-sun_doppler_shift2 = sun_doppler_shift[1]
-vr1sol = (c * sun_doppler_shift1) / lambda_0
-vr2sol = (c * sun_doppler_shift2) / lambda_0
-vx_sun = (vr1sol) * np.cos(phi1) + (vr2sol) * np.cos(phi2)
-vy_sun = (vr1sol) * np.sin(phi1) + (vr2sol) * np.sin(phi2)
-vx, vy = calculate_velocity_from_doppler(delta_lambda1=0, delta_lambda2=0)
-print(vx, vy)
-print(vx_sun, vy_sun)
+# phi1 = star_direction_angles[0] * (np.pi / 180)  # angle to ref-star 1 in radians
+# phi2 = star_direction_angles[1] * (np.pi / 180)  # angle to ref-star 2 in radians
+# sun_doppler_shift1 = sun_doppler_shift[0]
+# sun_doppler_shift2 = sun_doppler_shift[1]
+# vr1sol = (c * sun_doppler_shift1) / lambda_0
+# vr2sol = (c * sun_doppler_shift2) / lambda_0
+# vx_sun = (vr1sol) * np.cos(phi1) + (vr2sol) * np.cos(phi2)
+# vy_sun = (vr1sol) * np.sin(phi1) + (vr2sol) * np.sin(phi2)
+# vx, vy = calculate_velocity_from_doppler(delta_lambda1=0, delta_lambda2=0)
+# print(vx, vy)
+# print(vx_sun, vy_sun)
 
 
 def spacecraft_triliteration(T, measured_distances):
@@ -422,6 +422,7 @@ pos_after_launch = spacecraft_triliteration(448.02169995917336, distances)
 vel_after_launch = calculate_velocity_from_doppler(
     mesured_dopplershifts[0], mesured_dopplershifts[1]
 )
+print("Hello world")
 print(vel_after_launch)
 angle_after_launch = find_phi("sky_picture.png")
 
