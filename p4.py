@@ -154,15 +154,18 @@ def generate_image(phi):  # A2
 
 
 def find_phi(img):
-    taken_image = img
+    taken_image = Image.open(img)
+    taken_image_pixels = np.array(taken_image)
     different_phi_arrays = np.arange(0, 360, 1)
     best_match = 0
     least_error = 100000
     for phi in different_phi_arrays:
         compare_image = Image.open(f"Direction_images/image_phi{phi}.png")
         pixels = np.array(compare_image)
-        error = np.sum((taken_image.astype("float") - pixels.astype("float")) ** 2)
-        error /= float(taken_image.shape[0] * taken_image.shape[1])
+        error = np.sum(
+            (taken_image_pixels.astype("float") - pixels.astype("float")) ** 2
+        )
+        error /= float(taken_image_pixels.shape[0] * taken_image_pixels.shape[1])
         if error < least_error:
             least_error = error
             best_match = phi
@@ -177,23 +180,6 @@ def find_phi(img):
 # print(found)
 
 
-"""
-# Setting launch parameters and checking launch results ##
-mission.set_launch_parameters(
-    thrust=falcon_engine.thrust,
-    mass_loss_rate=falcon_engine.total_fuel_constant,
-    initial_fuel_mass=165000,
-    estimated_launch_duration=448.02169995917336,
-    launch_position=[
-        home_planet_initial_pos[0] + homeplanet_radius / Au,
-        home_planet_initial_pos[1],
-    ],
-    time_of_launch=0,
-)
-mission.launch_rocket()
-mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
-distances = mission.measure_distances()
-"""
 # Fetching data from orbit-files:
 filenames = [
     "orbit0.h5",
@@ -224,6 +210,25 @@ def calculate_velocity_from_doppler(delta_lambda1, delta_lambda2):
     vx = (vr1 - vr1sol) * np.cos(phi1) + (vr2 - vr2sol) * np.cos(phi2)
     vy = (vr1 - vr1sol) * np.sin(phi1) + (vr2 - vr2sol) * np.sin(phi2)
     return vx, vy
+
+
+# vx_sun = v_r_sol[0] * np.cos(star_direction_angles[0]) + v_r_sol[1] * np.cos(
+#     star_direction_angles[1]
+# )
+# vy_sun = v_r_sol[0] * np.sin(star_direction_angles[0]) + v_r_sol[1] * np.sin(
+#     star_direction_angles[1]
+# )
+phi1 = star_direction_angles[0] * (np.pi / 180)  # angle to ref-star 1 in radians
+phi2 = star_direction_angles[1] * (np.pi / 180)  # angle to ref-star 2 in radians
+sun_doppler_shift1 = sun_doppler_shift[0]
+sun_doppler_shift2 = sun_doppler_shift[1]
+vr1sol = (c * sun_doppler_shift1) / lambda_0
+vr2sol = (c * sun_doppler_shift2) / lambda_0
+vx_sun = (vr1sol) * np.cos(phi1) + (vr2sol) * np.cos(phi2)
+vy_sun = (vr1sol) * np.sin(phi1) + (vr2sol) * np.sin(phi2)
+vx, vy = calculate_velocity_from_doppler(delta_lambda1=0, delta_lambda2=0)
+print(vx, vy)
+print(vx_sun, vy_sun)
 
 
 def spacecraft_triliteration(T, measured_distances):
@@ -391,3 +396,35 @@ def spacecraft_triliteration(T, measured_distances):
 
 
 # spacecraft_triliteration(448.02169995917336 / sec_per_year, distances)
+
+
+# Setting launch parameters and checking launch results ##
+mission.set_launch_parameters(
+    thrust=falcon_engine.thrust,
+    mass_loss_rate=falcon_engine.total_fuel_constant,
+    initial_fuel_mass=165000,
+    estimated_launch_duration=448.02169995917336,
+    launch_position=[
+        home_planet_initial_pos[0] + homeplanet_radius / Au,
+        home_planet_initial_pos[1],
+    ],
+    time_of_launch=0,
+)
+mission.launch_rocket()
+mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
+distances = mission.measure_distances()
+takenimage = mission.take_picture()
+mesured_dopplershifts = mission.measure_star_doppler_shifts()
+
+
+# Analyzing using onboard equipment
+pos_after_launch = spacecraft_triliteration(448.02169995917336, distances)
+vel_after_launch = calculate_velocity_from_doppler(
+    mesured_dopplershifts[0], mesured_dopplershifts[1]
+)
+print(vel_after_launch)
+angle_after_launch = find_phi("sky_picture.png")
+
+# mission.verify_manual_orientation(
+#     pos_after_launch, vel_after_launch, angle_after_launch
+# )

@@ -220,8 +220,9 @@ falcon_engine = Engine(
     launch_theta=np.pi / 2,
     launch_phi=0,
     launch_time=0,
-    dt=0.001,
+    dt=0,
 )
+print(solar_x_vel, solar_y_vel)
 (
     altitude2,
     vertical_velocity2,
@@ -308,10 +309,11 @@ mission.generate_orbit_video(
     ],
 )
 """
+
+# print(
+#     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
+# )
 """
-print(
-    f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
-)
 print(
     f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"
 )
