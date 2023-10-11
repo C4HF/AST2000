@@ -13,6 +13,7 @@ from P1B import Engine
 from P2 import simulate_orbits
 import h5py
 from part3 import generalized_launch_rocket
+from PIL import Image
 
 utils.check_for_newer_version()
 
@@ -23,29 +24,25 @@ mission = SpaceMission(seed)
 Au = 149597870700  # Meters
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 sec_per_year = 60 * 60 * 24 * 365
-c = 63239.7263  # Speed of light in Au/yr
+# c = 63239.7263  # Speed of light in Au/yr
+c = const.c * (sec_per_year / Au)  # Speed of light in Au/yr
 lambda_0 = 656.3  # wavelength of the Hα spectral line from restframe in nanometers
-phi1 = mission.star_direction_angles[0] * (
-    np.pi / 180
-)  # angle of reference star 1 in radians
-phi2 = mission.star_direction_angles[0] * (
-    np.pi / 180
-)  # angle of reference star 2 in radians
+delta_lambda1_sun = mission.star_doppler_shifts_at_sun[0]
+delta_lambda2_sun = mission.star_doppler_shifts_at_sun[1]
 star_mass = system.star_mass  # 0.25361200295275615
 star_radius = system.star_radius  # 239265.2554658649
 number_of_planets = system.number_of_planets  # 7
 
-Sun_doppler_shift = (
+sun_doppler_shift = (
     mission.star_doppler_shifts_at_sun
 )  # (-0.020473606152657177, 0.01606904976188539)
-Star_direction_angles = (
+star_direction_angles = (
     mission.star_direction_angles
 )  # (213.2764103110655, 149.62013634196333)
 
-c = const.c
-lamba_0 = 656.3  # nanometers
+
 v_r_sol = c * (
-    np.array(Sun_doppler_shift) / lamba_0
+    np.array(sun_doppler_shift) / lambda_0
 )  # nanometers / nanometers [-9352.17539636  7340.2101567 ]
 
 semi_major_axes = (
@@ -89,11 +86,12 @@ falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
 
-from PIL import Image
+
 def Images():  # A2
-    img = Image.open(r"C:\Users\axlkl\Downloads\sample0000.png")  # Open example picture
+    # img = Image.open(r"C:\Users\axlkl\Downloads\sample0000.png")  # Open example picture
+    img = Image.open(r"sample0000.png")
     pixels = np.array(img)  # png into numpy array
-    width = len(pixels[0, :])  # pixels comes in [y, x], where x is the width.
+    width = len(pixels[:, 1])  # pixels comes in [y, x], where x is the width.
     # print(pixels, len(pixels), width) #Picture is 480(y) x 640(x) pixels.
     # redpixs = [(255, 0, 0) for i in range(width)] # Array of red pixels
     # pixels[240, :] = redpixs # Insert into line 500
@@ -105,26 +103,88 @@ def Images():  # A2
     X_max_min = np.array([1, -1]) * (
         (2 * np.sin(alpha / 2)) / (1 + np.cos(alpha / 2))
     )  # Stereographic projection[ 0.63059758 -0.63059758]
-    Y_max_min = np.array([1, -1]) * (2 * np.sin(alpha / 2)) / (1 + np.cos(alpha / 2))
-    N_X = 640   #Definerer piksler for hver akse
-    N_Y = 480
-    X = np.linspace(X_max_min[1], X_max_min[0], N_X) #Definerer XY-grid
-    Y = np.linspace(Y_max_min[1], Y_max_min[0], N_Y) 
-    theta_0 = 0 
-    phi_0 = np.pi / 2    #Definerer theta_0 og phi_0
-    rho = np.sqrt(X**2 + Y**2)  #Definerer uttrykk til formlene
-    beta = 2 * np.arctan(rho / 2)
-    theta = theta_0 - np.arcsin(np.cos(beta) * np.cos(theta_0) + (Y / rho) * np.sin(beta) * np.sin(theta_0)) #Formlene for XY til theta, phi
-    phi = phi_0 + np.arctan((X * np.sin(beta) / (rho * np.sin(theta_0) * np.cos(beta) - Y * np.cos(theta_0) * np.sin(beta))))
-    return print(theta, phi)
-Images()
 
-def NewPhi(png):  #B
+
+img = Image.open("sample0000.png")
+pixels = np.array(img)
+# print(pixels)
+shape = pixels.shape  # (480, 640, 3) pixels
+print("shape:")
+print(shape)
+length = shape[0]  # 480 pixels
+width = shape[1]  # 640 pixels
+alpha_theta = 70 * (np.pi / 180)  # FOV theta
+alpha_phi = 70 * (np.pi / 180)  # FOV phi
+theta0 = np.pi / 2  # coordinate for image center
+phi0 = 0  # coordinate for image center
+X_max_min = np.array([1, -1]) * (
+    (2 * np.sin(alpha_phi / 2)) / (1 + np.cos(alpha_phi / 2))
+)  # [ 0.63059758 -0.63059758]
+Y_max_min = np.array([1, -1]) * (
+    (2 * np.sin(alpha_theta / 2)) / (1 + np.cos(alpha_theta / 2))
+)  # [ 0.63059758 -0.63059758]
+x_array = np.linspace(-0.63059758, 0.63059758, 640)  # creating x-array usin xmin/max
+y_array = np.linspace(-0.63059758, 0.63059758, 480)  # creating y-array using ymin/max
+# x_array = np.linspace(0.63059758, -0.63059758, 640)
+# y_array = np.linspace(0.63059758, -0.63059758, 480)
+xv, yv = np.meshgrid(x_array, y_array)  # meshgrid with shape (2, 480, 640)
+
+rho = np.sqrt(xv**2 + yv**2)  # defining constants from formula
+beta = 2 * np.arctan(rho / 2)  # defining constants from formula
+theta_array = theta0 - np.arcsin(
+    np.cos(beta) * np.cos(theta0) + (yv / rho) * np.sin(beta) * np.sin(theta0)
+)  # shape = (480, 640), transformation of xv to theta-angle
+phi_array = phi0 + np.arctan(
+    (xv * np.sin(beta))
+    / (rho * np.sin(theta0) * np.cos(beta) - yv * np.cos(theta0) * np.sin(beta))
+)  # shape = (480, 640), transformation of yv to theta-angle
+
+print(np.shape(theta_array))
+print(np.shape(phi_array))
+
+# coordinates = np.vstack([theta_array.ravel(), phi_array.ravel()])  # shape = (2, 307200), zips coordianets
+new_image_array = np.zeros(
+    ((480, 640, 3))
+)  # creates empty image pixel array to be filled with rgb values
+himmelkule = np.load("himmelkule.npy")  # shape = (3145728, 5)
+# pixel_idx_array = np.zeros(len(coordinates[0]))
+
+# print(np.shape(pixel_idx_array))
+
+## looping over all coordinates and get indices of rgb values using the get_sky_image_pixel-method.
+## fills up the empty image array with the rgb values
+for i in range(len(new_image_array)):
+    for j in range(len(new_image_array[0])):
+        idx = mission.get_sky_image_pixel(theta_array[i][j], phi_array[i][j])
+        # print(idx)
+        rgb = himmelkule[idx][2:5]
+        new_image_array[i][j] = rgb
+
+print(new_image_array)
+print(np.shape(new_image_array))
+
+new_image = Image.fromarray(
+    new_image_array, "RGB"
+)  # create new image using Image.fromarray()
+new_image.show()  # shows image
+# img.save('testing_image_generator.png')
+
+# plt.imshow(new_image_array)
+# plt.show()
+
+# print(himmelkule[2401062:744665])
+# print(himmelkule[2401062:744665])
+# plt.imshow(himmelkule[2401062:744665])
+# print(pixel_idx_array)  # 2401062, 744665
+
+
+def NewPhi(png):  # B
     img = Image.open(png)  # Open example picture
     pixels = np.array(img)  # png into numpy array
     # return newphi
 
 
+"""
 # Setting launch parameters and checking launch results ##
 mission.set_launch_parameters(
     thrust=falcon_engine.thrust,
@@ -140,8 +200,8 @@ mission.set_launch_parameters(
 mission.launch_rocket()
 mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
 distances = mission.measure_distances()
-
-# # Fetching data from orbit-files:
+"""
+# Fetching data from orbit-files:
 filenames = [
     "orbit0.h5",
     "orbit1.h5",
@@ -160,10 +220,16 @@ for i, filename in enumerate(filenames):
 def calculate_velocity_from_doppler(delta_lambda1, delta_lambda2):
     """Function uses mesured dopplershift delta to calculate doppler-shift.
     Returns spacecraft velocity in the xy-plane."""
+    phi1 = star_direction_angles[0] * (np.pi / 180)  # angle to ref-star 1 in radians
+    phi2 = star_direction_angles[1] * (np.pi / 180)  # angle to ref-star 2 in radians
+    sun_doppler_shift1 = sun_doppler_shift[0]
+    sun_doppler_shift2 = sun_doppler_shift[1]
     vr1 = (c * delta_lambda1) / lambda_0
     vr2 = (c * delta_lambda2) / lambda_0
-    vx = vr1 * np.cos(phi1) + vr2 * np.cos(phi2)
-    vy = vr1 * np.sin(phi1) + vr2 * np.sin(phi2)
+    vr1sol = (c * sun_doppler_shift1) / lambda_0
+    vr2sol = (c * sun_doppler_shift2) / lambda_0
+    vx = (vr1 - vr1sol) * np.cos(phi1) + (vr2 - vr2sol) * np.cos(phi2)
+    vy = (vr1 - vr1sol) * np.sin(phi1) + (vr2 - vr2sol) * np.sin(phi2)
     return vx, vy
 
 

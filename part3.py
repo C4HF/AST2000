@@ -243,6 +243,7 @@ falcon_engine = Engine(
 
 
 # Setting launch parameters and checking launch results ##
+"""
 mission.set_launch_parameters(
     thrust=falcon_engine.thrust,
     mass_loss_rate=falcon_engine.total_fuel_constant,
@@ -256,7 +257,7 @@ mission.set_launch_parameters(
 )
 mission.launch_rocket()
 mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
-
+"""
 """
 step = 1
 mission.verify_planet_positions(
@@ -307,7 +308,7 @@ mission.generate_orbit_video(
     ],
 )
 """
-
+"""
 print(
     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
 )
@@ -353,3 +354,4 @@ plt.title("Testing rocket_launch codes", fontsize=20)
 plt.legend(fontsize=20)
 plt.grid()
 plt.show()
+"""
