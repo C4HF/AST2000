@@ -87,122 +87,94 @@ falcon_engine = Engine(
 )
 
 
-def Images():  # A2
-    # img = Image.open(r"C:\Users\axlkl\Downloads\sample0000.png")  # Open example picture
-    img = Image.open(r"sample0000.png")
-    pixels = np.array(img)  # png into numpy array
-    width = len(pixels[:, 1])  # pixels comes in [y, x], where x is the width.
-    # print(pixels, len(pixels), width) #Picture is 480(y) x 640(x) pixels.
-    # redpixs = [(255, 0, 0) for i in range(width)] # Array of red pixels
-    # pixels[240, :] = redpixs # Insert into line 500
-    # img2 = Image.fromarray(pixels)
-    # img2.save('exampleWithRedLine.png') # Make new png with red line
-    alpha = np.deg2rad(70)  # Turns degrees to radians
-    phi = 0  # From task
-    theta = np.pi / 2  # From task. Solar system plane
-    XY_max_min = np.array([1, -1]) * (
-        (2 * np.sin(alpha / 2)) / (1 + np.cos(alpha / 2))
-    )  # Stereographic projection[ 0.63059758 -0.63059758]
+def generate_image(phi):  # A2
+    img = Image.open("sample0000.png")
+    pixels = np.array(img)
+    shape = pixels.shape  # (480, 640, 3) pixels
+    length = shape[0]  # 480 pixels
+    width = shape[1]  # 640 pixels
+    alpha_theta = 70 * (np.pi / 180)  # FOV theta
+    alpha_phi = 70 * (np.pi / 180)  # FOV phi
+    theta0 = np.pi / 2  # coordinate for image center
+    phi0 = phi * (np.pi / 180)  # coordinate for image center
+    X_max_min = np.array([1, -1]) * (
+        (2 * np.sin(alpha_phi / 2)) / (1 + np.cos(alpha_phi / 2))
+    )  # [ 0.63059758 -0.63059758]
+    Y_max_min = np.array([1, -1]) * (
+        (2 * np.sin(alpha_theta / 2)) / (1 + np.cos(alpha_theta / 2))
+    )  # [ 0.63059758 -0.63059758]
+    x_array = np.linspace(
+        -0.63059758, 0.63059758, 640
+    )  # creating x-array usin xmin/max
+    y_array = np.linspace(
+        -0.63059758, 0.63059758, 480
+    )  # creating y-array using ymin/max
+    # y_array = np.linspace(0.63059758, -0.63059758, 480)
+    xv, yv = np.meshgrid(x_array, y_array)  # meshgrid with shape (2, 480, 640)
+    yv = np.flip(yv)
+    rho = np.sqrt(xv**2 + yv**2)  # defining constants from formula
+    beta = 2 * np.arctan(rho / 2)  # defining constants from formula
+    theta_array = theta0 - np.arcsin(
+        np.cos(beta) * np.cos(theta0) + (yv / rho) * np.sin(beta) * np.sin(theta0)
+    )  # shape = (480, 640), transformation of xv to theta-angle
+    phi_array = phi0 + np.arctan(
+        (xv * np.sin(beta))
+        / (rho * np.sin(theta0) * np.cos(beta) - yv * np.cos(theta0) * np.sin(beta))
+    )  # shape = (480, 640), transformation of yv to theta-angle
+    # plt.scatter(xv, yv) # show xgrid
+    # plt.show()
+    # plt.scatter(theta_array, phi_array) #show angelgrids
+    # plt.show()
+    # coordinates = np.vstack([theta_array.ravel(), phi_array.ravel()])  # shape = (2, 307200), zips coordianets
+    new_image_array = np.zeros(
+        ((480, 640, 3)), dtype=np.uint8
+    )  # creates empty image pixel array to be filled with rgb values
+    himmelkule = np.load("himmelkule.npy")  # shape = (3145728, 5)
+    ## looping over all coordinates and get indices of rgb values using the get_sky_image_pixel-method.
+    ## fills up the empty image array with the rgb values
+    for i in range(len(new_image_array)):
+        for j in range(len(new_image_array[0])):
+            idx = mission.get_sky_image_pixel(theta_array[i][j], phi_array[i][j])
+            r = himmelkule[idx][2]
+            g = himmelkule[idx][3]
+            b = himmelkule[idx][4]
+            rgb = np.array([r, g, b], dtype=np.uint8)
+            new_image_array[i][j] = rgb
+
+    new_image = Image.fromarray(
+        new_image_array, "RGB"
+    )  # create new image using Image.fromarray()
+    # new_image.show()  # shows image
+    new_image.save(f"image_phi{phi}.png")
 
 
-img = Image.open("sample0000.png")
-pixels = np.array(img)
-# print(pixels[0][0])
-# print(type(pixels[0][0]))
-shape = pixels.shape  # (480, 640, 3) pixels
-print("shape:")
-print(shape)
-length = shape[0]  # 480 pixels
-width = shape[1]  # 640 pixels
-alpha_theta = 70 * (np.pi / 180)  # FOV theta
-alpha_phi = 70 * (np.pi / 180)  # FOV phi
-theta0 = np.pi / 2  # coordinate for image center
-phi0 = 0  # coordinate for image center
-X_max_min = np.array([1, -1]) * (
-    (2 * np.sin(alpha_phi / 2)) / (1 + np.cos(alpha_phi / 2))
-)  # [ 0.63059758 -0.63059758]
-Y_max_min = np.array([1, -1]) * (
-    (2 * np.sin(alpha_theta / 2)) / (1 + np.cos(alpha_theta / 2))
-)  # [ 0.63059758 -0.63059758]
-x_array = np.linspace(-0.63059758, 0.63059758, 640)  # creating x-array usin xmin/max
-y_array = np.linspace(-0.63059758, 0.63059758, 480)  # creating y-array using ymin/max
-# x_array = np.linspace(0.63059758, -0.63059758, 640)
-# y_array = np.linspace(0.63059758, -0.63059758, 480)
-# x_array = np.linspace(0.63059758, -0.63059758, 640)
-# y_array = np.linspace(0.63059758, -0.63059758, 480)
-xv, yv = np.meshgrid(x_array, y_array)  # meshgrid with shape (2, 480, 640)
-
-rho = np.sqrt(xv**2 + yv**2)  # defining constants from formula
-beta = 2 * np.arctan(rho / 2)  # defining constants from formula
-theta_array = theta0 - np.arcsin(
-    np.cos(beta) * np.cos(theta0) + (yv / rho) * np.sin(beta) * np.sin(theta0)
-)  # shape = (480, 640), transformation of xv to theta-angle
-phi_array = phi0 + np.arctan(
-    (xv * np.sin(beta))
-    / (rho * np.sin(theta0) * np.cos(beta) - yv * np.cos(theta0) * np.sin(beta))
-)  # shape = (480, 640), transformation of yv to theta-angle
-
-print(np.shape(theta_array))
-print(np.shape(phi_array))
-
-# coordinates = np.vstack([theta_array.ravel(), phi_array.ravel()])  # shape = (2, 307200), zips coordianets
-new_image_array = np.zeros(
-    ((480, 640, 3))
-)  # creates empty image pixel array to be filled with rgb values
-himmelkule = np.load("himmelkule.npy")  # shape = (3145728, 5)
-# pixel_idx_array = np.zeros(len(coordinates[0]))
-
-# print(np.shape(pixel_idx_array))
-
-## looping over all coordinates and get indices of rgb values using the get_sky_image_pixel-method.
-## fills up the empty image array with the rgb values
-pixel_arr2 = np.array([])
-for i in range(len(new_image_array)):
-    for j in range(len(new_image_array[0])):
-        idx = mission.get_sky_image_pixel(theta_array[i][j], phi_array[i][j])
-        # print(idx)
-        # print(himmelkule[idx])
-
-        r = himmelkule[idx][2]
-        g = himmelkule[idx][3]
-        b = himmelkule[idx][4]
-        # rgb = np.asarray(himmelkule[idx][2:5].astype(int))
-        rgb = np.array([r, g, b], dtype=np.uint8)
-        # new_image_array[i][j] = np.asarray((r, g, b))
-        new_image_array[i][j] = rgb
-        np.append(pixel_arr2, rgb)
-print("pixel")
-print(pixels)
-print("newimage")
-print(new_image_array)
-print(np.shape(new_image_array))
-print(np.shape(new_image_array))
-print(type(new_image_array))
-print(np.shape(new_image_array[0]))
-print(type(new_image_array[0]))
-print(np.shape(new_image_array[0][1]))
-print(type(new_image_array[0][1]))
+# different_phi_arrays = np.arange(0, 360, 1)
+# for phi in different_phi_arrays:
+#     generate_image(phi)
 
 
-new_image = Image.fromarray(
-    new_image_array, "RGB"
-)  # create new image using Image.fromarray()
-new_image.show()  # shows image
-# img.save('testing_image_generator.png')
+def find_phi(img):
+    taken_image = img
+    different_phi_arrays = np.arange(0, 360, 1)
+    best_match = 0
+    least_error = 100000
+    for phi in different_phi_arrays:
+        compare_image = Image.open(f"Direction_images/image_phi{phi}.png")
+        pixels = np.array(compare_image)
+        error = np.sum((taken_image.astype("float") - pixels.astype("float")) ** 2)
+        error /= float(taken_image.shape[0] * taken_image.shape[1])
+        if error < least_error:
+            least_error = error
+            best_match = phi
+        else:
+            continue
+    return best_match
 
-# plt.imshow(new_image_array)
-# plt.show()
 
-# print(himmelkule[2401062:744665])
-# print(himmelkule[2401062:744665])
-# plt.imshow(himmelkule[2401062:744665])
-# print(pixel_idx_array)  # 2401062, 744665
-
-
-def NewPhi(png):  # B
-    img = Image.open(png)  # Open example picture
-    pixels = np.array(img)  # png into numpy array
-    # return newphi
+# test_image = Image.open(f"Direction_images/image_phi{37}.png")
+# pixels_test_image = np.array(test_image)
+# found = find_phi(pixels_test_image)
+# print(found)
 
 
 """
