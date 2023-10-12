@@ -9,10 +9,10 @@ from scipy.stats import norm
 import numba as nb
 from numba import njit
 import math
-from P1B import Engine
-from P2 import simulate_orbits
+#from P1B import Engine
+#from P2 import simulate_orbits
 import h5py
-from part3 import generalized_launch_rocket
+#from part3 import generalized_launch_rocket
 from PIL import Image
 
 utils.check_for_newer_version()
@@ -26,6 +26,7 @@ SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 sec_per_year = 60 * 60 * 24 * 365
 # c = 63239.7263  # Speed of light in Au/yr
 c = const.c * (sec_per_year / Au)  # Speed of light in Au/yr
+G = 4 * (np.pi) ** 2    #Gravitational constant using AU
 lambda_0 = 656.3  # wavelength of the Hα spectral line from restframe in nanometers
 delta_lambda1_sun = mission.star_doppler_shifts_at_sun[0]
 delta_lambda2_sun = mission.star_doppler_shifts_at_sun[1]
@@ -73,7 +74,6 @@ initial_velocities = (
     system.initial_velocities
 )  # [[  0.          -7.37808042   2.31451309  -0.68985302   6.50085578 -0.48817572 -11.61944718]
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
-# G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
 home_planet_initial_pos = (
     system._initial_positions[0][0],
@@ -81,4 +81,25 @@ home_planet_initial_pos = (
 )  # homeplanet initial pos in Au
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 
+def rocket_path(t0, r0, v0, T, dt):
+    "Utilises leapfrog and newtons 2.law to calculate the rockets path given initial values of the rocket"
+    "t0 in years"
+    "r0 in AU"
+    "v0 in AU / yr"
+    "T in years"
+    "dt in years"
+    N = int(T / dt)  #Defines length of arrays
+    t = np.zeros(N)     #Time array
+    t[0] = t0       #Sets first values of arrays
+    r = np.zeros((2,N)) #Position array
+    r[0] = r0
+    v = np.zeros((2,N)) #Velocity array
+    v[0] = v0
+    a = np.zeros((2,N)) #Acceleration array
+    a_0_sun = -G * (masses[0] * star_mass) * r0 / (np.abs(r0)**3) #Sets initial acceleration from sun according to N.2 law
+    a_0_planets = -np.sum((G * masses[0] * masses[1:] * (r0 - np.array([initial_positions[0,1:], initial_positions[1,1:]]))) / (np.abs(r0 - np.array([initial_positions[0,1:], initial_positions[1,1:]])**3)))  #Sets initial acceleration from planets according to N.2 law
+    a[0] = a_0_sun + a_0_planets    #Sets first value of acceleration array
+    return print(r, v, a)
+    #return t_final, r_final, v_final
 
+rocket_path(1, np.array([[0.06585422], [0.01]]), np.array([[0.004], [0.003]]), 2, 1e-3)
