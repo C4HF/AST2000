@@ -44,7 +44,7 @@ sun_doppler_shift = (
 star_direction_angles = (
     mission.star_direction_angles
 )  # (213.2764103110655, 149.62013634196333)
-print("Hello2")
+
 
 v_r_sol = c * (
     np.array(sun_doppler_shift) / lambda_0
@@ -204,7 +204,7 @@ def find_phi(img):
 with np.load("planet_trajectories.npz") as f:
     times = f["times"]
     exact_planet_positions = f["planet_positions"]
-
+print(times)
 for i, planet in enumerate(exact_planet_positions[0]):
     globals()[f"orbit_{i}"] = np.array(
         (
@@ -454,7 +454,7 @@ vel_after_launch = calculate_velocity_from_doppler(
 #  Solar-xy-vel (Au/yr): (2.413600055971701, 12.324180383036367)
 # ----------------------
 # print(pos_after_launch)
-print(f"Got:  {vel_after_launch}")
+# print(f"Got:  {vel_after_launch}")
 angle_after_launch = find_phi("sky_picture.png")
 
 mission.verify_manual_orientation(
