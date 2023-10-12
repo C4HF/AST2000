@@ -9,12 +9,10 @@ from scipy.stats import norm
 import numba as nb
 from numba import njit
 import math
-
-# from P1B import Engine
-# from P2 import simulate_orbits
+from P1B import Engine
+from P2 import simulate_orbits
 import h5py
-
-# from part3 import generalized_launch_rocket
+from part3 import generalized_launch_rocket
 from PIL import Image
 
 utils.check_for_newer_version()
@@ -82,42 +80,131 @@ home_planet_initial_pos = (
     system._initial_positions[1][0],
 )  # homeplanet initial pos in Au
 homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
+"""Parametre"""
+m_H2 = const.m_H2
+k_B = const.k_B
+Au = 149597870700  # Meters
+SM = 1.9891 * 10 ** (30)  # Solar masses in kg
+G = 6.6743 * (10 ** (-11))  # Gravitational constant
+# G = 4 * (np.pi) ** 2  # Gravitational constant for Au
+dry_rocket_mass = mission.spacecraft_mass  # kg
+crosssection_rocket = mission.spacecraft_area  # m**2
+homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
+homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
+home_planet_initial_vel = (
+    system._initial_velocities[0][0],
+    system._initial_velocities[1][0],
+)  # homeplanet initital velocity (Au/yr)
+home_planet_initial_pos = (
+    system._initial_positions[0][0],
+    system._initial_positions[1][0],
+)  # homeplanet initial pos (Au)
+home_planet_rotational_period = system._rotational_periods[
+    0
+]  # homeplanet rotational period (earth days)
 
+escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
+falcon_engine = Engine(
+    N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
+)
+# Fetching data from orbit-files and stores in variables in this script
+with np.load("planet_trajectories.npz") as f:
+    times = f["times"]
+    exact_planet_positions = f["planet_positions"]
 
-def rocket_path(t0, r0, v0, T, dt):
-    "Utilises leapfrog and newtons 2.law to calculate the rockets path given initial values of the rocket"
-    "t0 in years"
-    "r0 in AU"
-    "v0 in AU / yr"
-    "T in years"
-    "dt in years"
-    N = int(T / dt)  # Defines length of arrays
-    t = np.zeros(N)  # Time array
-    t[0] = t0  # Sets first values of arrays
-    r = np.zeros((2, N))  # Position array
-    r[0] = r0
-    v = np.zeros((2, N))  # Velocity array
-    v[0] = v0
-    a = np.zeros((2, N))  # Acceleration array
-    a_0_sun = (
-        -G * (masses[0] * star_mass) * r0 / (np.abs(r0) ** 3)
-    )  # Sets initial acceleration from sun according to N.2 law
-    a_0_planets = -np.sum(
+for i, planet in enumerate(exact_planet_positions):
+    globals()[f"orbit_{i}"] = np.array(
         (
-            G
-            * masses[0]
-            * masses[1:]
-            * (r0 - np.array([initial_positions[0, 1:], initial_positions[1, 1:]]))
+            times,
+            exact_planet_positions[0][i],
+            exact_planet_positions[1][i],
         )
-        / (
-            np.abs(
-                r0 - np.array([initial_positions[0, 1:], initial_positions[1, 1:]]) ** 3
-            )
-        )
-    )  # Sets initial acceleration from planets according to N.2 law
-    a[0] = a_0_sun + a_0_planets  # Sets first value of acceleration array
-    return print(r, v, a)
-    # return t_final, r_final, v_final
+    )
+
+
+# Initialize launch #
+def rocket_trajectory(time_of_launch, phi, theta=np.pi / 2):
+    (
+        altitude,
+        vertical_velocity,
+        total_time,
+        fuel_weight,
+        solar_x_pos,
+        solar_y_pos,
+        solar_x_vel,
+        solar_y_vel,
+    ) = generalized_launch_rocket(
+        falcon_engine,
+        fuel_weight=165000,
+        target_vertical_velocity=escape_velocity,
+        launch_theta=np.pi / 2,
+        launch_phi=0,
+        launch_time=0,
+        dt=0.001,
+    )
+
+    # finding idx of launch time
+    for i, t in enumerate(orbit_0[0]):
+        if math.isclose(t, time_of_launch, rel_tol=10e-6):
+            idx = i
+            break
+        else:
+            continue
+    mission.set_launch_parameters(
+        thrust=falcon_engine.thrust,
+        mass_loss_rate=falcon_engine.total_fuel_constant,
+        initial_fuel_mass=165000,
+        estimated_launch_duration=total_time,
+        launch_position=[
+            orbit_0[1][idx]
+            + ((homeplanet_radius / Au) * np.cos((np.pi / 2) - theta) * np.cos(phi)),
+            orbit_0[2][idx]
+            + (
+                ((homeplanet_radius / Au) * np.cos((np.pi / 2) - theta) * np.sin(phi))
+            ),  # Au,
+        ],
+        time_of_launch=time_of_launch,
+    )
+    mission.launch_rocket()
+    mission.verify_launch_result([solar_x_pos, solar_y_pos])
+
+
+rocket_trajectory(1, 0)
+
+# def rocket_path(t0, r0, v0, T, dt):
+#     "Utilises leapfrog and newtons 2.law to calculate the rockets path given initial values of the rocket"
+#     "t0 in years"
+#     "r0 in AU"
+#     "v0 in AU / yr"
+#     "T in years"
+#     "dt in years"
+#     N = int(T / dt)  # Defines length of arrays
+#     t = np.zeros(N)  # Time array
+#     t[0] = t0  # Sets first values of arrays
+#     r = np.zeros((2, N))  # Position array
+#     r[0] = r0
+#     v = np.zeros((2, N))  # Velocity array
+#     v[0] = v0
+#     a = np.zeros((2, N))  # Acceleration array
+#     a_0_sun = (
+#         -G * (masses[0] * star_mass) * r0 / (np.abs(r0) ** 3)
+#     )  # Sets initial acceleration from sun according to N.2 law
+#     a_0_planets = -np.sum(
+#         (
+#             G
+#             * masses[0]
+#             * masses[1:]
+#             * (r0 - np.array([initial_positions[0, 1:], initial_positions[1, 1:]]))
+#         )
+#         / (
+#             np.abs(
+#                 r0 - np.array([initial_positions[0, 1:], initial_positions[1, 1:]]) ** 3
+#             )
+#         )
+#     )  # Sets initial acceleration from planets according to N.2 law
+#     a[0] = a_0_sun + a_0_planets  # Sets first value of acceleration array
+#     return print(r, v, a)
+#     # return t_final, r_final, v_final
 
 
 # rocket_path(1, np.array([[0.06585422], [0.01]]), np.array([[0.004], [0.003]]), 2, 1e-3)
