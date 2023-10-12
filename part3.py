@@ -285,7 +285,7 @@ mission.set_launch_parameters(
 mission.launch_rocket()
 mission.verify_launch_result([0.06590528017456165, 0.0001750860307357733])
 """
-
+"""
 step = 1
 mission.verify_planet_positions(
     simulation_duration=3,
@@ -310,6 +310,7 @@ mission.verify_planet_positions(
         ],
     ],
 )
+"""
 """
 mission.generate_orbit_video(
     times=orbit_0[0],
