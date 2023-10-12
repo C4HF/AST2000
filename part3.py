@@ -92,9 +92,9 @@ escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
 #     "orbit6.h5",
 # ]
 # for i, filename in enumerate(filenames):
-# h5f = h5py.File(filename, "r")
-# globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
-# h5f.close()
+#     h5f = h5py.File(filename, "r")
+#     globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
+#     h5f.close()
 
 # Fetching data from orbit-files and stores in variables in this script
 with np.load("planet_trajectories.npz") as f:
@@ -102,16 +102,6 @@ with np.load("planet_trajectories.npz") as f:
     exact_planet_positions = f["planet_positions"]
 
 for i, planet in enumerate(exact_planet_positions):
-    # velocityx = np.zeros(len(exact_planet_positions[0]))
-    # velocityy = np.zeros(len(exact_planet_positions[0]))
-    # for j in range(len(exact_planet_positions[0])):
-    #     velocityx[i] = (
-    #         exact_planet_positions[0][i][j + 1] - exact_planet_positions[0][i][j - 1]
-    #     ) / (times[i + 1] - times[i])
-    #     velocityy[i] = (
-    #         exact_planet_positions[1][i][j + 1] - exact_planet_positions[1][i][j - 1]
-    #     ) / (times[i + 1] - times[i])
-
     globals()[f"orbit_{i}"] = np.array(
         (
             times,
@@ -295,7 +285,7 @@ mission.set_launch_parameters(
 mission.launch_rocket()
 mission.verify_launch_result([0.06590528017456165, 0.0001750860307357733])
 """
-"""
+
 step = 1
 mission.verify_planet_positions(
     simulation_duration=3,
@@ -320,7 +310,7 @@ mission.verify_planet_positions(
         ],
     ],
 )
-
+"""
 mission.generate_orbit_video(
     times=orbit_0[0],
     planet_positions=[
