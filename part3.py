@@ -191,10 +191,11 @@ def generalized_launch_rocket(
     #     vertical_velocity + np.abs(rotational_velocity * (Au / sec_per_year))
     #     < target_vertical_velocity
     # ):
-    while vertical_velocity + rotational_velocity < target_vertical_velocity * (
+    while vertical_velocity + np.abs(rotational_velocity) < target_vertical_velocity * (
         sec_per_year / Au
     ):
         wet_rocket_mass = dry_rocket_mass + fuel_weight
+        # Endre retning på kraften underveis
         F_g = (G * homeplanet_mass * wet_rocket_mass) / (
             (homeplanet_radius) + altitude
         ) ** 2  # The gravitational force
