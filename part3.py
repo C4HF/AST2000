@@ -53,7 +53,7 @@ initial_velocities = (
 # [ 12.23206968   8.10396565   4.89032951  -6.57758159   4.21187235    4.13408761 -10.58597977]]
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
-print("Så langt1")
+
 """Parametre"""
 m_H2 = const.m_H2
 k_B = const.k_B
@@ -82,21 +82,47 @@ escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
 # print(mission.__dir__())
 
 # Fetching data from orbit-files and stores in variables in this script
-filenames = [
-    "orbit0.h5",
-    "orbit1.h5",
-    "orbit2.h5",
-    "orbit3.h5",
-    "orbit4.h5",
-    "orbit5.h5",
-    "orbit6.h5",
-]
-for i, filename in enumerate(filenames):
-    h5f = h5py.File(filename, "r")
-    globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
-    h5f.close()
+# filenames = [
+#     "orbit0.h5",
+#     "orbit1.h5",
+#     "orbit2.h5",
+#     "orbit3.h5",
+#     "orbit4.h5",
+#     "orbit5.h5",
+#     "orbit6.h5",
+# ]
+# for i, filename in enumerate(filenames):
+# h5f = h5py.File(filename, "r")
+# globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
+# h5f.close()
 
-print("Så langt2")
+# Fetching data from orbit-files and stores in variables in this script
+with np.load("planet_trajectories.npz") as f:
+    times = f["times"]
+    exact_planet_positions = f["planet_positions"]
+
+for i, planet in enumerate(exact_planet_positions):
+    # velocityx = np.zeros(len(exact_planet_positions[0]))
+    # velocityy = np.zeros(len(exact_planet_positions[0]))
+    # for j in range(len(exact_planet_positions[0])):
+    #     velocityx[i] = (
+    #         exact_planet_positions[0][i][j + 1] - exact_planet_positions[0][i][j - 1]
+    #     ) / (times[i + 1] - times[i])
+    #     velocityy[i] = (
+    #         exact_planet_positions[1][i][j + 1] - exact_planet_positions[1][i][j - 1]
+    #     ) / (times[i + 1] - times[i])
+
+    globals()[f"orbit_{i}"] = np.array(
+        (
+            times,
+            exact_planet_positions[0][i],
+            exact_planet_positions[1][i],
+        )
+    )
+
+# print(np.shape(exact_planet_positions))
+# plt.plot(exact_planet_positions[0][0], exact_planet_positions[0][1])
+# plt.show()
 
 
 def generalized_launch_rocket(
@@ -142,8 +168,18 @@ def generalized_launch_rocket(
             * np.sin(launch_phi)
         )
     )  # Au
-    solar_x_vel = orbit_0[3][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
-    solar_y_vel = orbit_0[4][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
+    solar_x_vel = (
+        (orbit_0[1][idx + 1] - orbit_0[1][idx])
+        / (orbit_0[0][idx + 1] - orbit_0[0][idx])
+    ) + rotational_velocity * (
+        -np.sin(launch_phi)
+    )  # Au/yr
+    solar_y_vel = (
+        (orbit_0[2][idx + 1] - orbit_0[2][idx])
+        / (orbit_0[0][idx + 1] - orbit_0[0][idx])
+    ) + rotational_velocity * np.cos(
+        launch_phi
+    )  # Au/yr
 
     altitude = 0  # m
     vertical_velocity = 0  # m/s
@@ -199,11 +235,10 @@ def generalized_launch_rocket(
     )
 
 
-print("Så langt3")
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
-print("Så langt4")
+
 (
     altitude,
     vertical_velocity,
@@ -220,10 +255,10 @@ print("Så langt4")
     launch_theta=np.pi / 2,
     launch_phi=0,
     launch_time=0,
-    dt=0.01,
+    dt=0.001,
 )
-print("Så langt5")
-print(solar_x_vel, solar_y_vel)
+
+# print(solar_x_vel, solar_y_vel)
 # (
 #     altitude2,
 #     vertical_velocity2,
@@ -258,7 +293,7 @@ mission.set_launch_parameters(
     time_of_launch=0,
 )
 mission.launch_rocket()
-mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
+mission.verify_launch_result([0.06590528017456165, 0.0001750860307357733])
 """
 """
 step = 1
@@ -311,9 +346,9 @@ mission.generate_orbit_video(
 )
 """
 
-# print(
-#     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
-# )
+print(
+    f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
+)
 """
 print(
     f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"

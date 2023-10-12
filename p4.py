@@ -1,5 +1,4 @@
 ########## Ikke kodemal #############################
-print("Hello1")
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -11,27 +10,14 @@ from ast2000tools.solar_system import SolarSystem
 
 
 from scipy.stats import norm
-
-
 import numba as nb
-
 from numba import njit
 import math
 from P1B import Engine
-
-
 from P2 import simulate_orbits
-
-
 import h5py
-
-print("here1?")
 from part3 import generalized_launch_rocket
-
-print("here2?")
 from PIL import Image
-
-print("here3?")
 
 
 utils.check_for_newer_version()
@@ -104,8 +90,6 @@ homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
-
-print("hello3")
 
 
 def generate_image(phi):  # A2
@@ -202,21 +186,33 @@ def find_phi(img):
 
 
 # Fetching data from orbit-files:
-filenames = [
-    "orbit0.h5",
-    "orbit1.h5",
-    "orbit2.h5",
-    "orbit3.h5",
-    "orbit4.h5",
-    "orbit5.h5",
-    "orbit6.h5",
-]
-for i, filename in enumerate(filenames):
-    h5f = h5py.File(filename, "r")
-    globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
-    h5f.close()
+# filenames = [
+#     "orbit0.h5",
+#     "orbit1.h5",
+#     "orbit2.h5",
+#     "orbit3.h5",
+#     "orbit4.h5",
+#     "orbit5.h5",
+#     "orbit6.h5",
+# ]
+# for i, filename in enumerate(filenames):
+#     h5f = h5py.File(filename, "r")
+#     globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
+#     h5f.close()
 
-print("hello4")
+# Fetching data from orbit-files and stores in variables in this script
+with np.load("planet_trajectories.npz") as f:
+    times = f["times"]
+    exact_planet_positions = f["planet_positions"]
+
+for i, planet in enumerate(exact_planet_positions[0]):
+    globals()[f"orbit_{i}"] = np.array(
+        (
+            times,
+            exact_planet_positions[0][i],
+            exact_planet_positions[1][i],
+        )
+    )
 
 
 def calculate_velocity_from_doppler(delta_lambda1, delta_lambda2):
@@ -226,10 +222,10 @@ def calculate_velocity_from_doppler(delta_lambda1, delta_lambda2):
     phi2 = star_direction_angles[1] * (np.pi / 180)  # angle to ref-star 2 in radians
     sun_doppler_shift1 = sun_doppler_shift[0]
     sun_doppler_shift2 = sun_doppler_shift[1]
-    vr1 = (c * delta_lambda1) / lambda_0
-    vr2 = (c * delta_lambda2) / lambda_0
-    vr1sol = (c * sun_doppler_shift1) / lambda_0
-    vr2sol = (c * sun_doppler_shift2) / lambda_0
+    vr1 = -(c * delta_lambda1) / lambda_0
+    vr2 = -(c * delta_lambda2) / lambda_0
+    vr1sol = -(c * sun_doppler_shift1) / lambda_0
+    vr2sol = -(c * sun_doppler_shift2) / lambda_0
     vx = (vr1 - vr1sol) * np.cos(phi1) + (vr2 - vr2sol) * np.cos(phi2)
     vy = (vr1 - vr1sol) * np.sin(phi1) + (vr2 - vr2sol) * np.sin(phi2)
     return vx, vy
@@ -439,16 +435,28 @@ distances = mission.measure_distances()
 takenimage = mission.take_picture()
 mesured_dopplershifts = mission.measure_star_doppler_shifts()
 
-print("hello5")
+# print(mesured_dopplershifts)
+
+
 # Analyzing using onboard equipment
 pos_after_launch = spacecraft_triliteration(448.02169995917336, distances)
 vel_after_launch = calculate_velocity_from_doppler(
     mesured_dopplershifts[0], mesured_dopplershifts[1]
 )
-print("Hello world")
-print(vel_after_launch)
+# vel_after_launch = calculate_velocity_from_doppler(
+#     sun_doppler_shift[0], sun_doppler_shift[1]
+# )
+# ----------------------
+# Launch results:
+#  Total launch time (s): 448.02299999631754
+#  Remaining fuel (kg): 6264.647279576635
+#  Solar-xy-pos (Au): (0.06590544416834804, 0.00017508613228451168)
+#  Solar-xy-vel (Au/yr): (2.413600055971701, 12.324180383036367)
+# ----------------------
+# print(pos_after_launch)
+print(f"Got:  {vel_after_launch}")
 angle_after_launch = find_phi("sky_picture.png")
 
-# mission.verify_manual_orientation(
-#     pos_after_launch, vel_after_launch, angle_after_launch
-# )
+mission.verify_manual_orientation(
+    pos_after_launch, vel_after_launch, angle_after_launch
+)
