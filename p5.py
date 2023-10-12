@@ -144,12 +144,15 @@ def rocket_trajectory(time_of_launch, phi, theta=np.pi / 2):
     )
 
     # finding idx of launch time
-    for i, t in enumerate(orbit_0[0]):
-        if math.isclose(t, time_of_launch, rel_tol=10e-6):
-            idx = i
-            break
-        else:
-            continue
+    # for i, t in enumerate(orbit_0[0]):
+    #     if math.isclose(t, time_of_launch, rel_tol=10e-7):
+    #         idx = i
+    #         break
+    #     else:
+    #         continue
+    time_diff = orbit_0[0] - time_of_launch
+    least_time_diff = np.min(time_diff)
+    idx = np.where(time_diff == least_time_diff)[0]
     mission.set_launch_parameters(
         thrust=falcon_engine.thrust,
         mass_loss_rate=falcon_engine.total_fuel_constant,
