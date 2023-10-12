@@ -167,7 +167,7 @@ def generalized_launch_rocket(
     planet_y_vel = (orbit_0[2][idx + 1] - orbit_0[2][idx]) / (
         orbit_0[0][idx + 1] - orbit_0[0][idx]
     )
-    solar_y_vel = planet_y_vel + rotational_velocity * np.cos(launch_phi)  # Au/yr
+    solar_y_vel = planet_y_vel + rotational_velocity * (np.cos(launch_phi))  # Au/yr
 
     print(solar_x_pos)
     print(solar_y_pos)
@@ -224,9 +224,12 @@ def generalized_launch_rocket(
         vertical_velocity = np.sqrt(
             (solar_x_vel - planet_x_vel) ** 2 + (solar_y_vel - planet_y_vel) ** 2
         )
-        altitude = np.sqrt(
-            (solar_x_pos - planet_x_pos) ** 2 + (solar_y_pos - planet_y_pos) ** 2
-        )
+        altitude = (
+            np.sqrt(
+                (solar_x_pos - planet_x_pos) ** 2 + (solar_y_pos - planet_y_pos) ** 2
+            )
+            * Au
+        ) - homeplanet_radius
         fuel_weight -= total_fuel_constant * dt  # kg
         total_time += dt  # s
 
@@ -234,8 +237,8 @@ def generalized_launch_rocket(
             break
         elif total_time > 1800:
             break
-        elif altitude < 0:
-            break
+            # elif altitude < 0:
+            # break
 
     mission.verify_launch_result((solar_x_pos[0], solar_y_pos[0]))
     return (
@@ -295,7 +298,9 @@ for phi in phi_arrassss:
         launch_time=0,
         dt=0.001,
     )
-
+    print(
+        f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
+    )
 # print(solar_x_vel, solar_y_vel)
 # (
 #     altitude2,
