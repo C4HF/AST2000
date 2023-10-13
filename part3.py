@@ -7,21 +7,20 @@ from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
 from scipy.stats import norm
 from numba import njit
-import math
 from P1B import Engine
 from P2 import simulate_orbits
 import h5py
 
-
 utils.check_for_newer_version()
 
-np.random.seed(10)
-seed = 57063
-system = SolarSystem(seed)
-mission = SpaceMission(seed)
-star_mass = system.star_mass  # 0.25361200295275615
-star_radius = system.star_radius  # 239265.2554658649
-number_of_planets = system.number_of_planets  # 7
+np.random.seed(
+    10
+)  # setting random seed to ensure repeatable results when using np.random
+seed = 57063  # our solarsystem seed
+system = SolarSystem(seed)  # initiating SolarSystem using our seed
+mission = SpaceMission(seed)  # initiating SpaceMission using our seed
+
+"""Codeblock to fetch solar-system constants and values:"""
 semi_major_axes = (
     system.semi_major_axes
 )  # [0.06482565 0.0829133  0.36976519 0.22599283 0.16581062 0.58942411 0.04853556]
@@ -54,17 +53,14 @@ initial_velocities = (
 # G = 4 * (np.pi) ** 2
 planet_types = system.types  # ('rock', 'rock', 'gas', 'rock', 'rock', 'gas', 'rock')
 
-"""Parametre"""
-m_H2 = const.m_H2
-k_B = const.k_B
-Au = 149597870700  # Meters
+""" Mass constants"""
 SM = 1.9891 * 10 ** (30)  # Solar masses in kg
-G = 6.6743 * (10 ** (-11))  # Gravitational constant
-# G = 4 * (np.pi) ** 2  # Gravitational constant for Au
-dry_rocket_mass = mission.spacecraft_mass  # kg
-crosssection_rocket = mission.spacecraft_area  # m**2
-homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
+m_H2 = const.m_H2
+star_mass = system.star_mass  # 0.25361200295275615
 homeplanet_mass = system._masses[0] * SM  # homeplanet mass in kg
+dry_rocket_mass = mission.spacecraft_mass  # kg
+
+""" Postions and velocities"""
 home_planet_initial_vel = (
     system._initial_velocities[0][0],
     system._initial_velocities[1][0],
@@ -77,11 +73,19 @@ home_planet_rotational_period = system._rotational_periods[
     0
 ]  # homeplanet rotational period (earth days)
 
-# escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
-# print(system.__dir__())  ### get a list of attribute-commands
-# print(mission.__dir__())
+""" Other constants"""
+k_B = const.k_B
+Au = 149597870700  # Meters
+G = 6.6743 * (10 ** (-11))  # Gravitational constant
+# G = 4 * (np.pi) ** 2  # Gravitational constant for Au
+crosssection_rocket = mission.spacecraft_area  # m**2
+homeplanet_radius = system._radii[0] * 1000  # homeplanet radius in m
+star_radius = system.star_radius  # 239265.2554658649
+number_of_planets = system.number_of_planets  # 7
 
-# Fetching data from orbit-files and stores in variables in this script
+
+"""Codeblock used to fetch old orbits files from h5. Not used anymore:"""
+"""
 # filenames = [
 #     "orbit0.h5",
 #     "orbit1.h5",
@@ -95,8 +99,9 @@ home_planet_rotational_period = system._rotational_periods[
 #     h5f = h5py.File(filename, "r")
 #     globals()[f"orbit_{i}"] = h5f["dataset_1"][:]
 #     h5f.close()
+"""
 
-# Fetching data from orbit-files and stores in variables in this script
+# Fetching data from excact-orbit-files and stores in variables in this script:
 with np.load("planet_trajectories.npz") as f:
     times = f["times"]
     exact_planet_positions = f["planet_positions"]
@@ -107,10 +112,6 @@ for i, planet in enumerate(exact_planet_positions):
         exact_planet_positions[0][i],
         exact_planet_positions[1][i],
     )
-
-# print(np.shape(exact_planet_positions))
-# plt.plot(exact_planet_positions[0][0], exact_planet_positions[0][1])
-# plt.show()
 
 
 def generalized_launch_rocket(
@@ -126,14 +127,19 @@ def generalized_launch_rocket(
     Regner deretter ut akselereasjon med hensyn på gravitasjon og regner ut hastighet og posisjon.
     Funksjonen returnerer høyde over jordoverflaten, vertikal-hastighet, total-tid, resterende drivstoffvekt
     samt xy-posisjon og xy-hastighet i forhold til stjernen i solsystemet vårt."""
-    thrust = engine.thrust
-    total_fuel_constant = engine.total_fuel_constant
-    sec_per_year = 60 * 60 * 24 * 365
-    homeplanet_radius_Au = homeplanet_radius / Au  # Converting radius in meters to Au
+    thrust = engine.thrust  # the thrust-force of the engine in N
+    total_fuel_constant = (
+        engine.total_fuel_constant
+    )  # how many kg fuel burnt per secon kg/s
+    sec_per_year = 60 * 60 * 24 * 365  # a conversion constant for years to seconds
+    homeplanet_radius_Au = (
+        homeplanet_radius / Au
+    )  # Converting homeplanetradius in meters to Au
     rotational_velocity = np.abs(
         (2 * np.pi * (homeplanet_radius_Au) * np.cos((np.pi / 2) - launch_theta))
         / (home_planet_rotational_period / 365)
-    )
+    )  # the velocity contribution from the planets rotation in Au/yr
+    # Finding the closest idx in the time-array of the desired launchtime:
     time_diff = orbit_0[0] - launch_time
     least_time_diff = np.min(time_diff)
     idx = np.where(time_diff == least_time_diff)[0]
@@ -143,23 +149,27 @@ def generalized_launch_rocket(
             * np.cos((np.pi / 2) - launch_theta)
             * np.cos(launch_phi)
         )
-    )  # Au
+    )  # starting x-postion in Au
     solar_y_pos = orbit_0[2][idx] + (
         (
             (homeplanet_radius_Au)
             * np.cos((np.pi / 2) - launch_theta)
             * np.sin(launch_phi)
         )
-    )  # Au
+    )  # starting y-postion in Au
     planet_x_vel = (orbit_0[1][idx + 1] - orbit_0[1][idx]) / (
         orbit_0[0][idx + 1] - orbit_0[0][idx]
-    )
-    solar_x_vel = planet_x_vel + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
+    )  # the planets starting velocty in x-direction in Au/yr
+    solar_x_vel = planet_x_vel + rotational_velocity * (
+        -np.sin(launch_phi)
+    )  # the rockets starting velocity in the x-direction in Au/yr
     planet_y_vel = (orbit_0[2][idx + 1] - orbit_0[2][idx]) / (
         orbit_0[0][idx + 1] - orbit_0[0][idx]
-    )
-    solar_y_vel = planet_y_vel + rotational_velocity * (np.cos(launch_phi))  # Au/yr
-
+    )  # the planets starting velocty in y-direction in Au/yr
+    solar_y_vel = planet_y_vel + rotational_velocity * (
+        np.cos(launch_phi)
+    )  # # the rockets starting velocity in the y-direction in Au/yr
+    # Code-block to set launch-parameters so that the current launch-parameters are updated with AST2000-tools:
     mission.set_launch_parameters(
         thrust=falcon_engine.thrust,
         mass_loss_rate=falcon_engine.total_fuel_constant,
@@ -170,57 +180,84 @@ def generalized_launch_rocket(
     )
     mission.launch_rocket()
 
-    altitude = homeplanet_radius_Au  # Au
-    vertical_velocity = 0  # Au/yr
-    total_time = 0  # s
-    planet_x_pos = orbit_0[1][idx]  # Au
-    planet_y_pos = orbit_0[2][idx]  # Au
+    altitude = homeplanet_radius_Au  # setting starting altitude in Au, to be used in calculating force
+    vertical_velocity = 0  # starting vertical velocity in Au/yr
+    total_time = 0  # the total time of the launch procedure in s
+    planet_x_pos = orbit_0[1][idx]  # storing the planets starting x-position in Au
+    planet_y_pos = orbit_0[2][idx]  # storing the planets starting y-position in Au
     x_diff = homeplanet_radius_Au * np.cos(
         launch_phi
-    )  # angle between gravitational force to planet and thrust-direction
-    y_diff = homeplanet_radius_Au * np.sin(launch_phi)
-    escape_velocity = np.sqrt((2 * G * homeplanet_mass) / (altitude * Au))  # m/s
-
+    )  # the distance in x-dircetion between planet and rocket
+    y_diff = homeplanet_radius_Au * np.sin(
+        launch_phi
+    )  # the distance in y-direction between planet and rocket
+    escape_velocity = np.sqrt(
+        (2 * G * homeplanet_mass) / (altitude * Au)
+    )  # the current escape-velocity at starting-altidtude
+    # Euler-cromer loop to update postions of planet and rocket, rocket velocity and acceleration. (Assumes constant planet-velocity).
+    # The loop ends when the relative velocity between the rocket and planet reaches is bigger that the escape-velocity required for that altidtude.
     while vertical_velocity < escape_velocity * (sec_per_year / Au):
-        wet_rocket_mass = dry_rocket_mass + fuel_weight
-        # Endre retning på kraften underveis
+        wet_rocket_mass = (
+            dry_rocket_mass + fuel_weight
+        )  # setting current wet_rocket_mass after burnt fuel
         F_gx = (
             (G * homeplanet_mass * wet_rocket_mass)
             / ((altitude * Au) ** 2)
             * (-x_diff / altitude)
-        )  # The gravitational force x direction
+        )  # The gravitational force from the planet on the rocket in the x-direction
         F_gy = (
             (G * homeplanet_mass * wet_rocket_mass)
             / ((altitude * Au) ** 2)
             * (-y_diff / altitude)
-        )  # The gravitational force y direction
-        thrust_x = thrust * np.cos(launch_phi)
-        thrust_y = thrust * np.sin(launch_phi)
-        sum_force_x = thrust_x + F_gx
-        sum_force_y = thrust_y + F_gy
-        solar_x_vel += sum_force_x / wet_rocket_mass * dt * (sec_per_year / Au)  # Au/yr
-        solar_y_vel += sum_force_y / wet_rocket_mass * dt * (sec_per_year / Au)  # Au/yr
-        solar_x_pos += solar_x_vel * dt / sec_per_year  # Au
-        solar_y_pos += solar_y_vel * dt / sec_per_year  # Au
-        planet_x_pos += planet_x_vel * dt / sec_per_year  # Au
-        planet_y_pos += planet_y_vel * dt / sec_per_year  # Au
+        )  # The gravitational force from the planet on the rocket in the y-direction
+        thrust_x = thrust * np.cos(
+            launch_phi
+        )  # The thrustforce of the rocket in the x-direction
+        thrust_y = thrust * np.sin(
+            launch_phi
+        )  # The thrustforce of the rocket in the y-direction
+        sum_force_x = thrust_x + F_gx  # sum of forces in x-direction
+        sum_force_y = thrust_y + F_gy  # sum of forces in y-direction
+        solar_x_vel += (
+            sum_force_x / wet_rocket_mass * dt * (sec_per_year / Au)
+        )  # updating rocket velocity in x-direction in Au/yr
+        solar_y_vel += (
+            sum_force_y / wet_rocket_mass * dt * (sec_per_year / Au)
+        )  # updating rocket velocity in y-direction in Au/yr
+        solar_x_pos += solar_x_vel * dt / sec_per_year  # updating rocket x-pos in Au
+        solar_y_pos += solar_y_vel * dt / sec_per_year  # updating rocket y-pos in Au
+        planet_x_pos += planet_x_vel * dt / sec_per_year  # updating planet x-pos in Au
+        planet_y_pos += planet_y_vel * dt / sec_per_year  # updating planet y-pos in Au
         vertical_velocity = np.sqrt(
             (solar_x_vel - planet_x_vel) ** 2 + (solar_y_vel - planet_y_vel) ** 2
-        )
-        x_diff = solar_x_pos - planet_x_pos
-        y_diff = solar_y_pos - planet_y_pos
+        )  # Calculating the relative velocity between planet and rocket in Au
+        x_diff = (
+            solar_x_pos - planet_x_pos
+        )  # difference in x-direction in Au between planet and rocket
+        y_diff = (
+            solar_y_pos - planet_y_pos
+        )  # difference in y-direction in Au between planet and rocket
 
-        altitude = np.sqrt(x_diff**2 + y_diff**2)
-        escape_velocity = np.sqrt((2 * G * homeplanet_mass) / (altitude * Au))
-        fuel_weight -= total_fuel_constant * dt  # kg
-        total_time += dt  # s
+        altitude = np.sqrt(
+            x_diff**2 + y_diff**2
+        )  # Calculating the curren altitude from the planet-center in Au
+        escape_velocity = np.sqrt(
+            (2 * G * homeplanet_mass) / (altitude * Au)
+        )  # Calculating the current escape-velocity in m/s
+        fuel_weight -= (
+            total_fuel_constant * dt
+        )  # calculating the amount of burnt fuel in kg
+        total_time += dt  # keeping track of time in s
 
+        # Small codeblock to test if rocket is empty for fuel or if the rocket uses an unreasonable amount of time to launh:
         if fuel_weight <= 0:
             break
         elif total_time > 1800:
             break
 
-    mission.verify_launch_result((solar_x_pos[0], solar_y_pos[0]))
+    mission.verify_launch_result(
+        (solar_x_pos[0], solar_y_pos[0])
+    )  # verifies that the calculated launch-results are correct
     return (
         altitude,
         vertical_velocity,
@@ -233,92 +270,42 @@ def generalized_launch_rocket(
     )
 
 
+# Setting instance of our latest Engine. To be used when launching.
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
-
-# (
-#     altitude,
-#     vertical_velocity,
-#     total_time,
-#     fuel_weight,
-#     solar_x_pos,
-#     solar_y_pos,
-#     solar_x_vel,
-#     solar_y_vel,
-# ) = generalized_launch_rocket(
-#     falcon_engine,
-#     fuel_weight=165000,
-#     target_vertical_velocity=escape_velocity,
-#     launch_theta=np.pi / 2,
-#     launch_phi=np.pi / 2,
-#     launch_time=0,
-#     dt=0.001,
-# )
-# print(
-#     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
-# )
+"""Codeblock to test different launch agles and launch times."""
+"""
 phi_arrassss = np.arange(0, 2 * np.pi + np.pi / 5, np.pi / 5)
+different_times = np.arange(0, 3, 0.7)
 for phi in phi_arrassss:
-    print("---------------")
-    print(phi / np.pi)
-    (
-        altitude,
-        vertical_velocity,
-        total_time,
-        fuel_weight,
-        solar_x_pos,
-        solar_y_pos,
-        solar_x_vel,
-        solar_y_vel,
-    ) = generalized_launch_rocket(
-        falcon_engine,
-        fuel_weight=165000,
-        launch_theta=np.pi / 2,
-        launch_phi=phi,
-        launch_time=2.1,
-        dt=0.01,
-    )
-    print(
-        f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
-    )
-# print(solar_x_vel, solar_y_vel)
-# (
-#     altitude2,
-#     vertical_velocity2,
-#     total_time2,
-#     fuel_weight2,
-#     solar_x_pos2,
-#     solar_y_pos2,
-#     solar_x_vel2,
-#     solar_y_vel2,
-# ) = generalized_launch_rocket(
-#     falcon_engine,
-#     fuel_weight=165000,
-#     target_vertical_velocity=escape_velocity,
-#     launch_theta=0,
-#     launch_phi=0,
-#     launch_time=0,
-#     dt=0.001,
-# )
-
-
-# Setting launch parameters and checking launch results ##
+    for time in different_times:
+        print("---------------")
+        print(f"Launch phi (radians): {phi / np.pi}")
+        print(f"Launch time (years): {time}")
+        (
+            altitude,
+            vertical_velocity,
+            total_time,
+            fuel_weight,
+            solar_x_pos,
+            solar_y_pos,
+            solar_x_vel,
+            solar_y_vel,
+        ) = generalized_launch_rocket(
+            falcon_engine,
+            fuel_weight=165000,
+            launch_theta=np.pi / 2,
+            launch_phi=phi,
+            launch_time=time,
+            dt=0.01,
+        )
+        print(
+            f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
+        )
 """
-mission.set_launch_parameters(
-    thrust=falcon_engine.thrust,
-    mass_loss_rate=falcon_engine.total_fuel_constant,
-    initial_fuel_mass=165000,
-    estimated_launch_duration=448.02169995917336,
-    launch_position=[
-        home_planet_initial_pos[0] + homeplanet_radius / Au,
-        home_planet_initial_pos[1],
-    ],
-    time_of_launch=0,
-)
-mission.launch_rocket()
-mission.verify_launch_result([0.06590528017456165, 0.0001750860307357733])
-"""
+
+"""Codeblock to verify simulated orbits."""
 """
 step = 1
 mission.verify_planet_positions(
@@ -345,6 +332,7 @@ mission.verify_planet_positions(
     ],
 )
 """
+"""Codeblock to generate orbit-video."""
 """
 mission.generate_orbit_video(
     times=orbit_0[0],
@@ -371,9 +359,7 @@ mission.generate_orbit_video(
 )
 """
 
-# print(
-#     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
-# )
+"""Codeblock to create som plots of some rocket launches."""
 """
 print(
     f"----------------------\nLaunch results2:\n Total launch time (s): {total_time2}\n Remaining fuel (kg): {fuel_weight2} \n Solar-xy-pos (Au): ({solar_x_pos2}, {solar_y_pos2}) \n Solar-xy-vel (Au/yr): ({solar_x_vel2}, {solar_y_vel2})\n----------------------"
