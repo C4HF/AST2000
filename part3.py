@@ -276,8 +276,8 @@ for phi in phi_arrassss:
         fuel_weight=165000,
         launch_theta=np.pi / 2,
         launch_phi=phi,
-        launch_time=0,
-        dt=0.001,
+        launch_time=2.1,
+        dt=0.01,
     )
     print(
         f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
