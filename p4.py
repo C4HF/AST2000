@@ -200,7 +200,7 @@ def generate_image(phi):
         new_image_array, "RGB"
     )  # create new image using Image.fromarray()
     # new_image.show()  # shows image
-    new_image.save(f"image_phi{phi}.png")
+    new_image.save(f"Direction_images/image_phi{phi}.png")
 
 
 """ Codeblock to loop over phi from 0 to 2*pi and save referance images."""
