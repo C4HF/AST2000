@@ -77,7 +77,7 @@ home_planet_rotational_period = system._rotational_periods[
     0
 ]  # homeplanet rotational period (earth days)
 
-escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
+# escape_velocity = np.sqrt((2 * G * homeplanet_mass) / homeplanet_radius)  # m/s
 # print(system.__dir__())  ### get a list of attribute-commands
 # print(mission.__dir__())
 
@@ -116,7 +116,6 @@ for i, planet in enumerate(exact_planet_positions):
 def generalized_launch_rocket(
     engine,
     fuel_weight,
-    target_vertical_velocity,
     launch_theta,
     launch_phi,
     launch_time,
@@ -135,14 +134,6 @@ def generalized_launch_rocket(
         (2 * np.pi * (homeplanet_radius_Au) * np.cos((np.pi / 2) - launch_theta))
         / (home_planet_rotational_period / 365)
     )
-
-    # finding idx of launch time
-    # for i, t in enumerate(orbit_0[0]):
-    #     if math.isclose(t, launch_time):
-    #         idx = i
-    #         break
-    #     else:
-    #         continue
     time_diff = orbit_0[0] - launch_time
     least_time_diff = np.min(time_diff)
     idx = np.where(time_diff == least_time_diff)[0]
@@ -169,55 +160,46 @@ def generalized_launch_rocket(
     )
     solar_y_vel = planet_y_vel + rotational_velocity * (np.cos(launch_phi))  # Au/yr
 
-    print(solar_x_pos)
-    print(solar_y_pos)
     mission.set_launch_parameters(
         thrust=falcon_engine.thrust,
         mass_loss_rate=falcon_engine.total_fuel_constant,
         initial_fuel_mass=165000,
-        estimated_launch_duration=448.02169995917336,
+        estimated_launch_duration=446.7099999963486,
         launch_position=[solar_x_pos[0], solar_y_pos[0]],
         time_of_launch=orbit_0[0][idx],
     )
     mission.launch_rocket()
 
-    altitude = 0  # m
-    vertical_velocity = 0  # m/s
+    altitude = homeplanet_radius_Au  # Au
+    vertical_velocity = 0  # Au/yr
     total_time = 0  # s
     planet_x_pos = orbit_0[1][idx]  # Au
     planet_y_pos = orbit_0[2][idx]  # Au
-    # While loop Euler-method with units kg, meters and seconds
-    # while (
-    #     vertical_velocity + np.abs(rotational_velocity * (Au / sec_per_year))
-    #     < target_vertical_velocity
-    # ):
-    while vertical_velocity + np.abs(rotational_velocity) < target_vertical_velocity * (
-        sec_per_year / Au
-    ):
+    x_diff = homeplanet_radius_Au * np.cos(
+        launch_phi
+    )  # angle between gravitational force to planet and thrust-direction
+    y_diff = homeplanet_radius_Au * np.sin(launch_phi)
+    escape_velocity = np.sqrt((2 * G * homeplanet_mass) / (altitude * Au))  # m/s
+
+    while vertical_velocity < escape_velocity * (sec_per_year / Au):
         wet_rocket_mass = dry_rocket_mass + fuel_weight
         # Endre retning på kraften underveis
-        F_g = (G * homeplanet_mass * wet_rocket_mass) / (
-            (homeplanet_radius) + altitude
-        ) ** 2  # The gravitational force
-        rocket_thrust_gravitation_diff = thrust - F_g  # netto-kraft
-
-        # vertical_velocity += (
-        #     rocket_thrust_gravitation_diff / wet_rocket_mass
-        # ) * dt  # m/s
-        # altitude += vertical_velocity * dt  # m
-
-        solar_x_vel += (
-            (rocket_thrust_gravitation_diff / wet_rocket_mass)
-            * dt
-            * np.cos(launch_phi)
-            * (sec_per_year / Au)
-        )  # Au/yr
-        solar_y_vel += (
-            (rocket_thrust_gravitation_diff / wet_rocket_mass)
-            * dt
-            * np.sin(launch_phi)
-            * (sec_per_year / Au)
-        )  # Au/yr
+        F_gx = (
+            (G * homeplanet_mass * wet_rocket_mass)
+            / ((altitude * Au) ** 2)
+            * (-x_diff / altitude)
+        )  # The gravitational force x direction
+        F_gy = (
+            (G * homeplanet_mass * wet_rocket_mass)
+            / ((altitude * Au) ** 2)
+            * (-y_diff / altitude)
+        )  # The gravitational force y direction
+        thrust_x = thrust * np.cos(launch_phi)
+        thrust_y = thrust * np.sin(launch_phi)
+        sum_force_x = thrust_x + F_gx
+        sum_force_y = thrust_y + F_gy
+        solar_x_vel += sum_force_x / wet_rocket_mass * dt * (sec_per_year / Au)  # Au/yr
+        solar_y_vel += sum_force_y / wet_rocket_mass * dt * (sec_per_year / Au)  # Au/yr
         solar_x_pos += solar_x_vel * dt / sec_per_year  # Au
         solar_y_pos += solar_y_vel * dt / sec_per_year  # Au
         planet_x_pos += planet_x_vel * dt / sec_per_year  # Au
@@ -225,12 +207,11 @@ def generalized_launch_rocket(
         vertical_velocity = np.sqrt(
             (solar_x_vel - planet_x_vel) ** 2 + (solar_y_vel - planet_y_vel) ** 2
         )
-        altitude = (
-            np.sqrt(
-                (solar_x_pos - planet_x_pos) ** 2 + (solar_y_pos - planet_y_pos) ** 2
-            )
-            * Au
-        ) - homeplanet_radius
+        x_diff = solar_x_pos - planet_x_pos
+        y_diff = solar_y_pos - planet_y_pos
+
+        altitude = np.sqrt(x_diff**2 + y_diff**2)
+        escape_velocity = np.sqrt((2 * G * homeplanet_mass) / (altitude * Au))
         fuel_weight -= total_fuel_constant * dt  # kg
         total_time += dt  # s
 
@@ -238,8 +219,6 @@ def generalized_launch_rocket(
             break
         elif total_time > 1800:
             break
-            # elif altitude < 0:
-            # break
 
     mission.verify_launch_result((solar_x_pos[0], solar_y_pos[0]))
     return (
@@ -272,12 +251,14 @@ falcon_engine = Engine(
 #     fuel_weight=165000,
 #     target_vertical_velocity=escape_velocity,
 #     launch_theta=np.pi / 2,
-#     launch_phi=3 * np.pi / 2,
-#     launch_time=2.3,
+#     launch_phi=np.pi / 2,
+#     launch_time=0,
 #     dt=0.001,
 # )
-
-phi_arrassss = np.arange(0, 2 * np.pi, np.pi / 2)
+# print(
+#     f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
+# )
+phi_arrassss = np.arange(0, 2 * np.pi + np.pi / 5, np.pi / 5)
 for phi in phi_arrassss:
     print("---------------")
     print(phi / np.pi)
@@ -293,7 +274,6 @@ for phi in phi_arrassss:
     ) = generalized_launch_rocket(
         falcon_engine,
         fuel_weight=165000,
-        target_vertical_velocity=escape_velocity,
         launch_theta=np.pi / 2,
         launch_phi=phi,
         launch_time=0,
