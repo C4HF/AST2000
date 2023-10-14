@@ -194,6 +194,7 @@ def generalized_launch_rocket(
     escape_velocity = np.sqrt(
         (2 * G * homeplanet_mass) / (altitude * Au)
     )  # the current escape-velocity at starting-altidtude
+
     # Euler-cromer loop to update postions of planet and rocket, rocket velocity and acceleration. (Assumes constant planet-velocity).
     # The loop ends when the relative velocity between the rocket and planet reaches is bigger that the escape-velocity required for that altidtude.
     while vertical_velocity < escape_velocity * (sec_per_year / Au):
