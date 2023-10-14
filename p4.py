@@ -222,7 +222,7 @@ def generate_image(phi):
     # new_image.save(f"Direction_images/image_phi{phi}.png")
 
 
-generate_image(0)
+# generate_image(0)
 """ Codeblock to loop over phi from 0 to 2*pi and save referance images."""
 
 # different_phi_arrays = np.arange(0, 360, 1)
