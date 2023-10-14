@@ -162,6 +162,17 @@ def generate_image(phi):
         -0.63059758, 0.63059758, 480
     )  # creating y-array using ymin/max
     xv, yv = np.meshgrid(x_array, y_array)  # meshgrid with shape (2, 480, 640)
+
+    ## Code to visualize transformation:
+    # categories = np.array([0, 1, 2])
+    # categories_array = np.tile(categories, 480 * 640 // len(categories) // 20)
+    # colormap = np.array(["r", "g", "b"])
+    # plt.scatter(xv[::20], yv[::20], s=0.5, label="Pixels", c=colormap[categories_array])
+    # plt.title("(480x640) X/Y pixel-meshgrid")
+    # plt.xlabel("X")
+    # plt.ylabel("Y")
+    # plt.legend()
+    # plt.show()  # show xgrid
     yv = np.flip(
         yv
     )  # have to flip y to make sure it matches the direction of theta-angle (ref. projection chart)
@@ -174,11 +185,19 @@ def generate_image(phi):
         (xv * np.sin(beta))
         / (rho * np.sin(theta0) * np.cos(beta) - yv * np.cos(theta0) * np.sin(beta))
     )  # shape = (480, 640), transformation of yv to theta-angle
-
-    # plt.scatter(xv, yv) # show xgrid
-    # plt.show()
-    # plt.scatter(theta_array, phi_array) #show angelgrids
-    # plt.show()
+    ## Code to visualize transformation:
+    # plt.scatter(
+    #     theta_array[::20],
+    #     phi_array[::20],
+    #     s=0.5,
+    #     label="Pixels",
+    #     c=colormap[categories_array],
+    # )
+    # plt.title("(480x640) X/Y pixel-meshgrid transformed")
+    # plt.xlabel("phi")
+    # plt.ylabel("theta")
+    # plt.legend()
+    # plt.show()  # show xgrid
     new_image_array = np.zeros(
         ((480, 640, 3)), dtype=np.uint8
     )  # creates empty image pixel array to be filled with rgb values NB! has to be type = uint8
@@ -199,10 +218,11 @@ def generate_image(phi):
     new_image = Image.fromarray(
         new_image_array, "RGB"
     )  # create new image using Image.fromarray()
-    # new_image.show()  # shows image
-    new_image.save(f"Direction_images/image_phi{phi}.png")
+    new_image.show()  # shows image
+    # new_image.save(f"Direction_images/image_phi{phi}.png")
 
 
+generate_image(0)
 """ Codeblock to loop over phi from 0 to 2*pi and save referance images."""
 
 # different_phi_arrays = np.arange(0, 360, 1)
@@ -452,9 +472,6 @@ def spacecraft_triliteration(T, measured_distances):
     # plt.show()
     """
     return found_x_pos, found_y_pos
-
-
-# spacecraft_triliteration(448.02169995917336 / sec_per_year, distances)
 
 
 # Launching rocket to update AST2000-tools currens tate:
