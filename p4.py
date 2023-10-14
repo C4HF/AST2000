@@ -418,9 +418,6 @@ def spacecraft_triliteration(T, measured_distances):
     )
 
     # Codeblock to visualize trilateration:
-    """
-    # print(type(found_x_pos))
-    # print(type(found_y_pos))
     # plt.plot(circle_star[0], circle_star[1], ls="-", label="circle star")
     # plt.plot(circle_planet2[0], circle_planet2[1], ls="-", label="circle planet 2")
     # plt.plot(circle_planet5[0], circle_planet5[1], ls="-", label="circle planet 5")
@@ -458,24 +455,25 @@ def spacecraft_triliteration(T, measured_distances):
     #     ls="-",
     #     label="Mesured distance planet 5",
     # )
-    # plt.scatter(
-    #     0.06590544416834804, 0.00017508613228451168, label="Rocket after launch"
-    # )
+    # plt.scatter(0.06580293, 0.00017203, label="Rocket after launch")
     # plt.scatter(found_x_pos, found_y_pos, label="Triangulated_pos")
     # plt.scatter(star_pos[0], star_pos[1], label="Star")
     # plt.scatter(planet_2_pos[0], planet_2_pos[1], label="Planet 2")
     # plt.scatter(planet_5_pos[0], planet_5_pos[1], label="Planet 5")
-    # plt.xlabel("Au")
-    # plt.ylabel("Au")
-    # plt.title("Visualisering av trilaterering")
-    # plt.legend()
+    # plt.xlabel("Au", fontsize=20)
+    # plt.ylabel("Au", fontsize=20)
+    # plt.xticks(size=20)
+    # plt.yticks(size=20)
+    # plt.title(f"Trilaterering etter launch (phi=-3.14, T=1.1)", fontsize=20)
+    # plt.legend(fontsize=12)
     # plt.show()
-    """
     return found_x_pos, found_y_pos
 
 
 # Launching rocket to update AST2000-tools currens tate:
 def test_equipment(phi, T):
+    print("-------------------------")
+    print(f"Testing equipment with phi = {phi:2f} and T = {T:2f}")
     (
         altitude,
         vertical_velocity,
@@ -545,4 +543,4 @@ def test_equipment(phi, T):
     )
 
 
-# test_equipment(0, 0)
+# test_equipment(-np.pi, 1.1)
