@@ -122,8 +122,9 @@ def generalized_launch_rocket(
     launch_time,
     dt=0.01,
 ):
-    """Funksjonen tar inn instans av engine, start-fuel-vekt, ønsket hastighet, vinkel-posisjon mellom nordpol/sorpol (launch_theta),
-    vinkelposisjon langs ekvator på planeten med vinkel null langs x-aksen (launch-phi) og oppskytningstidspunkt T i jordår fra 0-3.
+    """Funksjonen tar inn instans av engine, start-fuel-vekt, ønsket hastighet,
+    vinkel-posisjon mellom nordpol/sorpol (launch_theta), vinkelposisjon langs
+    ekvator på planeten med vinkel null langs x-aksen (launch-phi) og oppskytningstidspunkt T i jordår fra 0-3.
     Regner deretter ut akselereasjon med hensyn på gravitasjon og regner ut hastighet og posisjon.
     Funksjonen returnerer høyde over jordoverflaten, vertikal-hastighet, total-tid, resterende drivstoffvekt
     samt xy-posisjon og xy-hastighet i forhold til stjernen i solsystemet vårt."""
@@ -169,7 +170,8 @@ def generalized_launch_rocket(
     solar_y_vel = planet_y_vel + rotational_velocity * (
         np.cos(launch_phi)
     )  # # the rockets starting velocity in the y-direction in Au/yr
-    # Code-block to set launch-parameters so that the current launch-parameters are updated with AST2000-tools:
+    # Code-block to set launch-parameters so that the current
+    # launch-parameters are updated with AST2000-tools:
     mission.set_launch_parameters(
         thrust=falcon_engine.thrust,
         mass_loss_rate=falcon_engine.total_fuel_constant,
@@ -195,8 +197,10 @@ def generalized_launch_rocket(
         (2 * G * homeplanet_mass) / (altitude * Au)
     )  # the current escape-velocity at starting-altidtude
 
-    # Euler-cromer loop to update postions of planet and rocket, rocket velocity and acceleration. (Assumes constant planet-velocity).
-    # The loop ends when the relative velocity between the rocket and planet reaches is bigger that the escape-velocity required for that altidtude.
+    # Euler-cromer loop to update postions of planet and rocket,
+    # rocket velocity and acceleration. (Assumes constant planet-velocity).
+    # The loop ends when the relative velocity between the rocket and planet
+    # reaches is bigger that the escape-velocity required for that altidtude.
     while vertical_velocity < escape_velocity * (sec_per_year / Au):
         wet_rocket_mass = (
             dry_rocket_mass + fuel_weight
@@ -250,7 +254,8 @@ def generalized_launch_rocket(
         )  # calculating the amount of burnt fuel in kg
         total_time += dt  # keeping track of time in s
 
-        # Small codeblock to test if rocket is empty for fuel or if the rocket uses an unreasonable amount of time to launh:
+        # Small codeblock to test if rocket is empty for fuel or if the rocket
+        # uses an unreasonable amount of time to launh:
         if fuel_weight <= 0:
             break
         elif total_time > 1800:
