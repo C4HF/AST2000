@@ -225,8 +225,7 @@ def generalized_launch_rocket(
             launch_phi
         )  # The thrustforce of the rocket in the y-direction
         sum_force_x = thrust_x + F_gx  # sum of forces in x-direction
-        sum_force_y = thrust_y + F_gy  # sum of forces in y-direction
-    )  # Au
+        sum_force_y = thrust_y + F_gy  # sum of forces in y-direction # Au
     solar_x_vel = orbit_0[3][idx] + rotational_velocity * (-np.sin(launch_phi))  # Au/yr
     solar_y_vel = orbit_0[4][idx] + rotational_velocity * np.cos(launch_phi)  # Au/yr
 
