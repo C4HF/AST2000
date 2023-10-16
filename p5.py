@@ -9,10 +9,12 @@ from scipy.stats import norm
 import numba as nb
 from numba import njit
 import math
-#from P1B import Engine
-#from P2 import simulate_orbits
+
+# from P1B import Engine
+# from P2 import simulate_orbits
 import h5py
-#from part3 import generalized_launch_rocket
+
+# from part3 import generalized_launch_rocket
 from PIL import Image
 
 utils.check_for_newer_version()
@@ -26,7 +28,7 @@ SM = 1.9891 * 10 ** (30)  # Solar masses in kg
 sec_per_year = 60 * 60 * 24 * 365
 # c = 63239.7263  # Speed of light in Au/yr
 c = const.c * (sec_per_year / Au)  # Speed of light in Au/yr
-G = 4 * (np.pi) ** 2    #Gravitational constant using AU
+G = 4 * (np.pi) ** 2  # Gravitational constant using AU
 lambda_0 = 656.3  # wavelength of the Hα spectral line from restframe in nanometers
 delta_lambda1_sun = mission.star_doppler_shifts_at_sun[0]
 delta_lambda2_sun = mission.star_doppler_shifts_at_sun[1]
@@ -123,7 +125,7 @@ for i, planet in enumerate(exact_planet_positions):
 
 
 # Initialize launch #
-def rocket_trajectory(time_of_launch, phi, theta=np.pi / 2):
+def rocket_trajectory(total_flight_time, time_of_launch, phi, theta=np.pi / 2):
     (
         altitude,
         vertical_velocity,
@@ -150,6 +152,7 @@ def rocket_trajectory(time_of_launch, phi, theta=np.pi / 2):
     #         break
     #     else:
     #         continue
+    delta_time = orbit_0[0][1] - orbit_0[0][0]
     time_diff = orbit_0[0] - time_of_launch
     least_time_diff = np.min(time_diff)
     idx = np.where(time_diff == least_time_diff)[0]
@@ -170,9 +173,38 @@ def rocket_trajectory(time_of_launch, phi, theta=np.pi / 2):
     )
     mission.launch_rocket()
     mission.verify_launch_result([solar_x_pos, solar_y_pos])
+    time_array = np.arange(0, total_flight_time, delta_time)
+    x_pos_arr = np.zeros(len(time_array))
+    y_pos_arr = np.zeros(len(time_array))
+    x_vel_arr = np.zeros(len(time_array))
+    y_vel_arr = np.zeros(len(time_array))
+
+    # Setter initial-betingelser etter launch:
+    x_pos_arr[0] = solar_x_pos
+    y_pos_arr[0] = solar_y_pos
+    x_vel_arr[0] = solar_x_vel
+    y_vel_arr[0] = solar_y_vel
+    for i, t in enumerate(time_array):
+        a_sun = (
+            (-G * star_mass) * r0 / (np.abs(r0) ** 3)
+        )  # Sets initial acceleration from sun according to N.2 law
+        a_planets = -np.sum(
+            (
+                G
+                * masses[1:]
+                * (r0 - np.array([initial_positions[0, 1:], initial_positions[1, 1:]]))
+            )
+            / (
+                np.abs(
+                    r0
+                    - np.array([initial_positions[0, 1:], initial_positions[1, 1:]])
+                    ** 3
+                )
+            )
+        )  # Sets initial acceleration from planets according to N.2 law
 
 
-rocket_trajectory(1, 0)
+# rocket_trajectory(1, 0)
 
 # def rocket_path(t0, r0, v0, T, dt):
 #     "Utilises leapfrog and newtons 2.law to calculate the rockets path given initial values of the rocket"
