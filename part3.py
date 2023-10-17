@@ -141,7 +141,7 @@ def generalized_launch_rocket(
         / (home_planet_rotational_period / 365)
     )  # the velocity contribution from the planets rotation in Au/yr
     # Finding the closest idx in the time-array of the desired launchtime:
-    time_diff = orbit_0[0] - launch_time
+    time_diff = np.abs(orbit_0[0] - launch_time)
     least_time_diff = np.min(time_diff)
     idx = np.where(time_diff == least_time_diff)[0]
     solar_x_pos = orbit_0[1][idx] + (
