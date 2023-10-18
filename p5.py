@@ -244,7 +244,14 @@ def rocket_trajectory(total_flight_time, time_of_launch, phi, theta=np.pi / 2):
     return time_array, r_rocket, v_rocket
 
 
-(time_array, r_rocket, v_rocket) = rocket_trajectory(2.9, 0, 0)
+pos_diff = np.sqrt((orbit_0[1] - orbit_1[1]) ** 2 + (orbit_0[2] - orbit_1[2]) ** 2)
+least_pos_diff = np.min(pos_diff)
+idx1 = np.where(pos_diff == least_pos_diff)[0]
+print(idx1)
+
+(time_array, r_rocket, v_rocket) = rocket_trajectory(
+    3 - orbit_0[0][idx1 - 5000], orbit_0[0][idx1 - 5000], np.pi
+)
 plt.plot(r_rocket[0, :], r_rocket[1, :])
 for orbit in orbits:
     plt.plot(orbit[1], orbit[2])
