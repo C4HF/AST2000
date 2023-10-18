@@ -120,6 +120,7 @@ for i, planet in enumerate(exact_planet_positions[0]):
             exact_planet_positions[1][i],
         )
     )
+orbits = np.array([orbit_0, orbit_1, orbit_2, orbit_3, orbit_4, orbit_5, orbit_6])
 
 
 # Initialize launch #
@@ -150,7 +151,6 @@ def rocket_trajectory(total_flight_time, time_of_launch, phi, theta=np.pi / 2):
     #     else:
     #         continue
     delta_time = orbit_0[0][1] - orbit_0[0][0]
-    print(delta_time)
     time_diff = np.abs(orbit_0[0] - time_of_launch)
     least_time_diff = np.min(time_diff)
     idx = np.where(time_diff == least_time_diff)[0]
@@ -160,16 +160,16 @@ def rocket_trajectory(total_flight_time, time_of_launch, phi, theta=np.pi / 2):
     start_y_pos = orbit_0[2][idx] + (
         ((homeplanet_radius / Au) * np.cos((np.pi / 2) - theta) * np.sin(phi))
     )  # starting y_pos in Au
-    mission.set_launch_parameters(
-        thrust=falcon_engine.thrust,
-        mass_loss_rate=falcon_engine.total_fuel_constant,
-        initial_fuel_mass=165000,
-        estimated_launch_duration=total_time,
-        launch_position=[start_x_pos[0], start_y_pos[0]],
-        time_of_launch=time_of_launch,
-    )
-    mission.launch_rocket()
-    mission.verify_launch_result([solar_x_pos[0], solar_y_pos[0]])
+    # mission.set_launch_parameters(
+    #     thrust=falcon_engine.thrust,
+    #     mass_loss_rate=falcon_engine.total_fuel_constant,
+    #     initial_fuel_mass=165000,
+    #     estimated_launch_duration=total_time,
+    #     launch_position=[start_x_pos[0], start_y_pos[0]],
+    #     time_of_launch=time_of_launch,
+    # )
+    # mission.launch_rocket()
+    # mission.verify_launch_result([solar_x_pos[0], solar_y_pos[0]])
     time_array = np.arange(0, total_flight_time, delta_time)
     x_pos_arr = np.zeros(len(time_array))
     y_pos_arr = np.zeros(len(time_array))
@@ -184,22 +184,22 @@ def rocket_trajectory(total_flight_time, time_of_launch, phi, theta=np.pi / 2):
     r_planets = np.array(
         [
             [
-                orbit_0[1][idx],
-                orbit_1[1][idx],
-                orbit_2[1][idx],
-                orbit_3[1][idx],
-                orbit_4[1][idx],
-                orbit_5[1][idx],
-                orbit_6[1][idx],
+                orbit_0[1],
+                orbit_1[1],
+                orbit_2[1],
+                orbit_3[1],
+                orbit_4[1],
+                orbit_5[1],
+                orbit_6[1],
             ],
             [
-                orbit_0[2][idx],
-                orbit_1[2][idx],
-                orbit_2[2][idx],
-                orbit_3[2][idx],
-                orbit_4[2][idx],
-                orbit_5[2][idx],
-                orbit_6[2][idx],
+                orbit_0[2],
+                orbit_1[2],
+                orbit_2[2],
+                orbit_3[2],
+                orbit_4[2],
+                orbit_5[2],
+                orbit_6[2],
             ],
         ]
     )
@@ -209,11 +209,12 @@ def rocket_trajectory(total_flight_time, time_of_launch, phi, theta=np.pi / 2):
     a_sun = (
         (-G * star_mass) * r_rocket[:, 0] / (np.sqrt(np.sum(r_rocket[:, 0] ** 2))) ** 3
     )  # Sets initial acceleration from sun according to N.2 law
-    # a_planets = np.sum((G * masses * (r_rocket[:, 0] - r_planets[:, idx]))) / (
-    #     np.abs(r_rocket[:, 0] - r_planets[:, idx]) ** 3
-    # )  # Sets initial acceleration from planets according to N.2 law
-    # acc_old = a_sun + a_planets
-    acc_old = a_sun
+    a_planets = -np.sum(
+        ((G * masses * np.sqrt(np.sum((r_rocket[:, 0] - r_planets[:, :, idx]) ** 2))))
+        / (np.sqrt(np.sum((r_rocket[:, 0] - r_planets[:, :, idx]) ** 2)) ** 3)
+    )  # Sets initial acceleration from planets according to N.2 law
+    acc_old = a_sun + a_planets
+    # acc_old = a_planets
     for i in range(0, len(time_array) - 1):
         r_rocket[:, i + 1] = (
             r_rocket[:, i]
@@ -225,22 +226,28 @@ def rocket_trajectory(total_flight_time, time_of_launch, phi, theta=np.pi / 2):
             * r_rocket[:, i + 1]
             / (np.sqrt(np.sum(r_rocket[:, i + 1] ** 2)) ** 3)
         )  # Sets initial acceleration from sun according to N.2 law
-        # a_planets = np.sum(
-        #     (G * masses * (r_rocket[:, i + 1] - r_planets[:, i + 1]))
-        # ) / (
-        #     np.abs(r_rocket[:, i + 1] - r_planets[:, i + 1]) ** 3
-        # )  # Sets initial acceleration from planets according to N.2 law
-        # acc_new = a_sun + a_planets
-        acc_new = a_sun
+        a_planets = -np.sum(
+            (
+                (
+                    G
+                    * masses
+                    * np.sqrt(np.sum((r_rocket[:, 0] - r_planets[:, :, idx + i]) ** 2))
+                )
+            )
+            / (np.sqrt(np.sum((r_rocket[:, 0] - r_planets[:, :, idx + i]) ** 2)) ** 3)
+        )  # Sets initial acceleration from planets according to N.2 law
+        acc_new = a_sun + a_planets
+        # acc_new = a_planets
         v_rocket[:, i + 1] = v_rocket[:, i] + (1 / 2) * (acc_old + acc_new) * delta_time
         acc_old = acc_new
 
     return time_array, r_rocket, v_rocket
 
 
-(time_array, r_rocket, v_rocket) = rocket_trajectory(0.03, 0, np.pi)
+(time_array, r_rocket, v_rocket) = rocket_trajectory(2.9, 0, 0)
 plt.plot(r_rocket[0, :], r_rocket[1, :])
-plt.plot(orbit_0[1], orbit_0[2])
+for orbit in orbits:
+    plt.plot(orbit[1], orbit[2])
 plt.show()
 """
 Leapfrog:
