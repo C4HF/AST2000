@@ -281,7 +281,7 @@ falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
 )
 """Codeblock to test different launch agles and launch times."""
-
+"""
 phi_arrassss = np.arange(0, np.pi / 2 + np.pi / 5, np.pi / 5)
 different_times = np.arange(0, 1.4, 0.7)
 for phi in phi_arrassss:
@@ -310,7 +310,7 @@ for phi in phi_arrassss:
             f"----------------------\nLaunch results:\n Total launch time (s): {total_time}\n Remaining fuel (kg): {fuel_weight} \n Solar-xy-pos (Au): ({solar_x_pos}, {solar_y_pos}) \n Solar-xy-vel (Au/yr): ({solar_x_vel}, {solar_y_vel})\n----------------------"
         )
 
-
+"""
 """Codeblock to verify simulated orbits."""
 """
 step = 1
