@@ -9,10 +9,10 @@ from scipy.stats import norm
 import numba as nb
 from numba import njit
 import math
-from P1B import Engine
-from P2 import simulate_orbits
-import h5py
-from part3 import generalized_launch_rocket
+#from P1B import Engine
+#from P2 import simulate_orbits
+#import h5py
+#from part3 import generalized_launch_rocket
 from PIL import Image
 
 utils.check_for_newer_version()
@@ -32,3 +32,6 @@ lambda_0 = 656.3  # wavelength of the Hα spectral line from restframe in nanome
 m_H2 = const.m_H2
 k_B = const.k_B
 
+r = G * 1.96851038e-06*SM / (10000**2)
+print(r / 1000, 'km')
+print(5687.03659344, 'km')  
