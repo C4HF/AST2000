@@ -276,12 +276,13 @@ def rocket_trajectory(
 # idx1 = np.where(pos_diff == least_pos_diff)[0]
 # launch_time1 = orbit_0[0][idx1 - 10000]
 # print(idx1)
-# launch_times = np.linspace(0, 2.5, 1000)
+# launch_times = np.linspace(0, 2, 1000)
 # launch_phis = np.linspace(0, 2 * np.pi, 4)
 
 # shortest_dist = 100000
 # best_launch_time = 0
 # best_launch_phi = 0
+# success = []
 
 # for launch_time in launch_times:
 #     for launch_phi in launch_phis:
@@ -310,7 +311,7 @@ def rocket_trajectory(
 #             solar_y_pos,
 #             solar_x_vel,
 #             solar_y_vel,
-#             total_flight_time=2.8 - launch_time,
+#             total_flight_time=2.9 - launch_time,
 #             time_step=10e-5,
 #         )
 
@@ -328,7 +329,8 @@ def rocket_trajectory(
 #         print(f"Launchtime: {launch_time}")
 #         print(f"Launch_phi: {launch_phi}")
 #         print("******************")
-#         break
+#         success.append((launch_time, launch_phi, dist))
+#         # break
 #     if dist < shortest_dist:
 #         shortest_dist = dist
 #         best_launch_time = launch_time
@@ -357,11 +359,13 @@ def rocket_trajectory(
 #         best_launch_phi = launch_phi
 
 # print("---------")
+# print("Finished. Found:")
 # print(f"Current shortest dist {shortest_dist}")
-
 # print(f"Launchtime: {launch_time}")
 # print(f"Launch_phi: {launch_phi}")
 # print(f"Shortest_dist (Au): {shortest_dist}")
+# print(f"Success: {success})")
+# print("-----------")
 """
 ******************
 Success!
@@ -371,6 +375,9 @@ Launch_phi: 6.283185307179586
 Launchtime: 0.06006006006006006
 Launch_phi: 6.283185307179586
 Shortest_dist (Au): 0.0003444713870950338
+
+Searching: # launch_times = np.linspace(0, 2, 1000), launch_phis = np.linspace(0, 2 * np.pi, 4), 
+with dt=0.01 and timestep=10e-5 found best: (0.8368368368368369, 6.283185307179586, 8.240883598534517e-06)
 """
 (
     altitude,
@@ -386,17 +393,17 @@ Shortest_dist (Au): 0.0003444713870950338
     fuel_weight=165000,
     launch_theta=np.pi / 2,
     launch_phi=6.283185307179586,
-    launch_time=0.06006006006006006,
-    dt=0.01,
+    launch_time=0.8368368368368369,
+    dt=0.001,
 )
 
 (time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
-    0.06006006006006006 + (total_time / sec_per_year),
+    0.8368368368368369 + (total_time / sec_per_year),
     solar_x_pos,
     solar_y_pos,
     solar_x_vel,
     solar_y_vel,
-    total_flight_time=2.8 - 0.06006006006006006,
+    total_flight_time=2.9 - 0.8368368368368369,
     time_step=10e-6,
 )
 
@@ -417,6 +424,8 @@ plt.plot(r_rocket[0, 0, :], r_rocket[1, 0, :], label="rocket trajectory")
 
 # print(np.shape(r_planets))
 # plt.plot(r_planets[0, 0, :], r_planets[1, 0, :], label="orbit 0")
+
+#######
 for i in range(7):
     # plt.plot(orbit[1], orbit[2], label=f"orbit{i}")
     plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}")
@@ -428,6 +437,7 @@ plt.plot(
     (r_rocket[0, 0, idx], r_planets[0, 1, idx]),
     (r_rocket[1, 0, idx], r_planets[1, 1, idx]),
 )
+####
 # for idx in enumerate(time_idx):
 #     plt.scatter(orbit_0[1][int(idx)], orbit_0[2][int(idx)], c="b")
 #     plt.scatter(orbit_1[1][int(idx)], orbit_1[2][int(idx)], c="b")
@@ -442,6 +452,8 @@ plt.plot(
 #     )
 # # plt.scatter(orbit_0[1][int(idx1)], orbit_0[2][int(idx1)], label="closest point 1")
 # # plt.scatter(orbit_1[1][int(idx1)], orbit_1[2][int(idx1)], label="closes point 2")
+
+######
 plt.scatter(solar_x_pos, solar_y_pos, label="After launch pos")
 plt.scatter(0, 0, label="Sun")
 plt.legend()
