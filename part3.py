@@ -172,15 +172,15 @@ def generalized_launch_rocket(
     )  # # the rockets starting velocity in the y-direction in Au/yr
     # Code-block to set launch-parameters so that the current
     # launch-parameters are updated with AST2000-tools:
-    mission.set_launch_parameters(
-        thrust=falcon_engine.thrust,
-        mass_loss_rate=falcon_engine.total_fuel_constant,
-        initial_fuel_mass=165000,
-        estimated_launch_duration=446.7099999963486,
-        launch_position=[solar_x_pos[0], solar_y_pos[0]],
-        time_of_launch=orbit_0[0][idx],
-    )
-    mission.launch_rocket()
+    # mission.set_launch_parameters(
+    #     thrust=falcon_engine.thrust,
+    #     mass_loss_rate=falcon_engine.total_fuel_constant,
+    #     initial_fuel_mass=165000,
+    #     estimated_launch_duration=446.7099999963486,
+    #     launch_position=[solar_x_pos[0], solar_y_pos[0]],
+    #     time_of_launch=orbit_0[0][idx],
+    # )
+    # mission.launch_rocket()
 
     altitude = homeplanet_radius_Au  # setting starting altitude in Au, to be used in calculating force
     vertical_velocity = 0  # starting vertical velocity in Au/yr
@@ -261,9 +261,9 @@ def generalized_launch_rocket(
         elif total_time > 1800:
             break
 
-    mission.verify_launch_result(
-        (solar_x_pos[0], solar_y_pos[0])
-    )  # verifies that the calculated launch-results are correct
+    # mission.verify_launch_result(
+    #     (solar_x_pos[0], solar_y_pos[0])
+    # )  # verifies that the calculated launch-results are correct
     return (
         altitude,
         vertical_velocity,
