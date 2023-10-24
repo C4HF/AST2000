@@ -404,7 +404,7 @@ with dt=0.01 and timestep=10e-5 found best: (0.8368368368368369, 6.2831853071795
     solar_x_vel,
     solar_y_vel,
     total_flight_time=2.9 - 0.8368368368368369,
-    time_step=10e-6,
+    time_step=10e-7,
 )
 
 dist_array = np.sqrt(
