@@ -185,10 +185,10 @@ def rocket_trajectory(
                 (
                     G
                     * masses
-                    * np.sqrt(np.sum((r_rocket[:, :, 0] - r_planets[:, :, 0 + i]) ** 2))
+                    * np.sqrt(np.sum((r_rocket[:, :, i] - r_planets[:, :, i]) ** 2))
                 )
             )
-            / (np.sqrt(np.sum((r_rocket[:, :, 0] - r_planets[:, :, 0 + i]) ** 2)) ** 3)
+            / (np.sqrt(np.sum((r_rocket[:, :, i] - r_planets[:, :, i]) ** 2)) ** 3)
         )  # Sets initial acceleration from planets according to N.2 law
         acc_new = a_sun + a_planets
         # acc_new = a_planets
@@ -455,12 +455,11 @@ dist_to_star = np.sqrt(r_rocket[0, 0, idx2] ** 2 + r_rocket[1, 0, idx2] ** 2)
 # gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
 
 dist_to_star_array = np.sqrt(r_rocket[0, 0, :] ** 2 + r_rocket[1, 0, :] ** 2)
-plt.plot(time_array, dist_array, label="dist to planet", fontsize=20)
+plt.plot(time_array, dist_array, label="dist to planet")
 plt.plot(
     time_array,
     dist_to_star_array * np.sqrt(masses[1] / (10 * star_mass)),
     label="gravitational capture",
-    fontsize=20,
 )
 plt.xlabel("T", fontsize=20)
 plt.ylabel("Au", fontsize=20)
@@ -471,36 +470,31 @@ plt.plot(
     r_rocket[0, 0, 0 : int(idx2 + 1)],
     r_rocket[1, 0, 0 : int(idx2 + 1)],
     label="Rocket trajectory after correctional boost",
-    fontsize=20,
 )
 plt.plot(
     r_rocket1[0, 0, 0 : int(idx1 + 1)],
     r_rocket1[1, 0, 0 : int(idx1 + 1)],
     label="Rocket trajectory after launch",
-    fontsize=20,
 )
 for i in range(7):
-    plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}", fontsize=20)
+    plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}")
 
 plt.scatter(
     r_rocket[0, 0, idx2],
     r_rocket[1, 0, idx2],
     label="Shortest dist rocket",
-    fontsize=20,
 )
 plt.scatter(
     r_planets[0, 1, idx2],
     r_planets[1, 1, idx2],
     label="Shortest dist planet",
-    fontsize=20,
 )
 plt.scatter(
     r_rocket1[0, 0, idx1],
     r_rocket1[1, 0, idx1],
     label="Rocket before boost",
-    fontsize=20,
 )
-plt.scatter(0, 0, label="Sun", fontsize=20)
+plt.scatter(0, 0, label="Sun")
 
 gravitational_capture_dist_array = np.sqrt(
     r_rocket[0, 0, :] ** 2 + r_rocket[1, 0, :] ** 2
@@ -514,7 +508,7 @@ v2_planet1_shortest_dist = np.array(
 "Code to calculate velocity vectors, used to calculate boost vector"
 v_rocket2_shortest_dist = np.array((v_rocket1[0, 0, idx2][0], v_rocket1[1, 0, idx2][0]))
 r_rocket2_shortest_dist = (r_rocket[0, 0, idx2][0], r_rocket[1, 0, idx2][0])
-r_planet2_shortest_dist = np.array((r_planets[0, 0, idx2], r_planets[1, 1, idx2]))
+r_planet2_shortest_dist = np.array((r_planets[0, 1, idx2], r_planets[1, 1, idx2]))
 r_radial = r_rocket2_shortest_dist - r_planet2_shortest_dist
 unit_vector_1 = v_rocket2_shortest_dist / np.linalg.norm(v_rocket2_shortest_dist)
 unit_vector_2 = r_radial / np.linalg.norm(r_radial)
@@ -542,9 +536,10 @@ plt.plot(
     r_rocket3[0, 0, :],
     r_rocket3[1, 0, :],
     label="Rocket trajectory after injection",
-    fontsize=20,
 )
 plt.xlabel("Au", fontsize=20)
 plt.ylabel("Au", fontsize=20)
-plt.legend()
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.legend(fontsize=10)
 plt.show()
