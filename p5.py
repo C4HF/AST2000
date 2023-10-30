@@ -124,7 +124,6 @@ for i, planet in enumerate(exact_planet_positions[0]):
 orbits = np.array([orbit_0, orbit_1, orbit_2, orbit_3, orbit_4, orbit_5, orbit_6])
 
 
-# Initialize launch #
 def rocket_trajectory(
     initial_time,
     initial_x_pos,
@@ -145,9 +144,6 @@ def rocket_trajectory(
     x_vel_arr[0] = initial_x_vel
     y_vel_arr[0] = initial_y_vel
 
-    time_diff = np.abs(orbit_0[0] - initial_time)
-    least_time_diff = np.min(time_diff)
-    idx = np.where(time_diff == least_time_diff)[0][0]
     interpolated_orbits = [[], []]
 
     for orbit in orbits:
@@ -206,102 +202,101 @@ def rocket_trajectory(
 
 """Code to find best launch time and launch phi."""
 """
-# launch_times = np.linspace(0, 2, 1000)
-# launch_phis = np.linspace(0, 2 * np.pi, 4)
+launch_times = np.linspace(0, 2, 1000)
+launch_phis = np.linspace(0, 2 * np.pi, 4)
 
-# shortest_dist = 100000
-# best_launch_time = 0
-# best_launch_phi = 0
-# success = []
+shortest_dist = 100000
+best_launch_time = 0
+best_launch_phi = 0
+success = []
 
-# for launch_time in launch_times:
-#     for launch_phi in launch_phis:
-#         print(f"Checking launch time: {launch_time} and launch phi: {launch_phi}...")
-#         (
-#             altitude,
-#             vertical_velocity,
-#             total_time,
-#             fuel_weight,
-#             solar_x_pos,
-#             solar_y_pos,
-#             solar_x_vel,
-#             solar_y_vel,
-#         ) = generalized_launch_rocket(
-#             falcon_engine,
-#             fuel_weight=165000,
-#             launch_theta=np.pi / 2,
-#             launch_phi=launch_phi,
-#             launch_time=launch_time,
-#             dt=0.01,
-#         )
+for launch_time in launch_times:
+    for launch_phi in launch_phis:
+        print(f"Checking launch time: {launch_time} and launch phi: {launch_phi}...")
+        (
+            altitude,
+            vertical_velocity,
+            total_time,
+            fuel_weight,
+            solar_x_pos,
+            solar_y_pos,
+            solar_x_vel,
+            solar_y_vel,
+        ) = generalized_launch_rocket(
+            falcon_engine,
+            fuel_weight=165000,
+            launch_theta=np.pi / 2,
+            launch_phi=launch_phi,
+            launch_time=launch_time,
+            dt=0.01,
+        )
 
-#         (time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
-#             launch_time + (total_time / sec_per_year),
-#             solar_x_pos,
-#             solar_y_pos,
-#             solar_x_vel,
-#             solar_y_vel,
-#             total_flight_time=2.9 - launch_time,
-#             time_step=10e-5,
-#         )
+        (time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
+            launch_time + (total_time / sec_per_year),
+            solar_x_pos,
+            solar_y_pos,
+            solar_x_vel,
+            solar_y_vel,
+            total_flight_time=2.9 - launch_time,
+            time_step=10e-6,
+        )
 
-#     dist_array = np.sqrt(
-#         (r_rocket[0, 0, :] - r_planets[0, 1, :]) ** 2
-#         + (r_rocket[1, 0, :] - r_planets[1, 1, :]) ** 2
-#     )
-#     dist = np.min(dist_array)
-#     idx = np.where(dist_array == dist)[0]
-#     dist_to_star = np.sqrt(r_rocket[0, 0, idx] ** 2 + r_rocket[1, 0, idx] ** 2)
-#     gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
-#     if dist < gravitational_capture_dist:
-#         print("******************")
-#         print("Success!")
-#         print(f"Launchtime: {launch_time}")
-#         print(f"Launch_phi: {launch_phi}")
-#         print("******************")
-#         success.append((launch_time, launch_phi, dist))
-#         # break
-#     if dist < shortest_dist:
-#         shortest_dist = dist
-#         best_launch_time = launch_time
-#         best_launch_phi = launch_phi
+    dist_array = np.sqrt(
+        (r_rocket[0, 0, :] - r_planets[0, 1, :]) ** 2
+        + (r_rocket[1, 0, :] - r_planets[1, 1, :]) ** 2
+    )
+    dist = np.min(dist_array)
+    idx = np.where(dist_array == dist)[0]
+    dist_to_star = np.sqrt(r_rocket[0, 0, idx] ** 2 + r_rocket[1, 0, idx] ** 2)
+    gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
+    if dist < gravitational_capture_dist:
+        print("******************")
+        print("Success!")
+        print(f"Launchtime: {launch_time}")
+        print(f"Launch_phi: {launch_phi}")
+        print("******************")
+        success.append((launch_time, launch_phi, dist))
+        # break
+    if dist < shortest_dist:
+        shortest_dist = dist
+        best_launch_time = launch_time
+        best_launch_phi = launch_phi
 
-#     print("---------")
-#     print(f"Current shortest dist: {shortest_dist}")
-#     print("---------")
-# for i in range(0, len(r_rocket[0, 0]), 10000):
-#     dist = np.sqrt(
-#         (r_rocket[0, 0, i] - r_planets[0, 1, i]) ** 2
-#         + (r_rocket[1, 0, i] - r_planets[1, 1, i]) ** 2
-#     )
-#     dist_to_star = np.sqrt(r_rocket[0, 0, i] ** 2 + r_rocket[1, 0, i] ** 2)
-#     gravitational_capture_dist = dist_to_star * np.sqrt(
-#         masses[1] / (10 * star_mass)
-#     )
-#     if dist < gravitational_capture_dist:
-#         print("Success!")
-#         print(f"Launchtime: {launch_time}")
-#         print(f"Launch_phi: {launch_phi}")
-#         break
-#     if dist < shortest_dist:
-#         shortest_dist = dist
-#         best_launch_time = launch_time
-#         best_launch_phi = launch_phi
+    print("---------")
+    print(f"Current shortest dist: {shortest_dist}")
+    print("---------")
+for i in range(0, len(r_rocket[0, 0]), 10000):
+    dist = np.sqrt(
+        (r_rocket[0, 0, i] - r_planets[0, 1, i]) ** 2
+        + (r_rocket[1, 0, i] - r_planets[1, 1, i]) ** 2
+    )
+    dist_to_star = np.sqrt(r_rocket[0, 0, i] ** 2 + r_rocket[1, 0, i] ** 2)
+    gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
+    if dist < gravitational_capture_dist:
+        print("Success!")
+        print(f"Launchtime: {launch_time}")
+        print(f"Launch_phi: {launch_phi}")
+        break
+    if dist < shortest_dist:
+        shortest_dist = dist
+        best_launch_time = launch_time
+        best_launch_phi = launch_phi
 
-# print("---------")
-# print("Finished. Found:")
-# print(f"Current shortest dist {shortest_dist}")
-# print(f"Launchtime: {launch_time}")
-# print(f"Launch_phi: {launch_phi}")
-# print(f"Shortest_dist (Au): {shortest_dist}")
-# print(f"Success: {success})")
-# print("-----------")
+print("---------")
+print("Finished. Found:")
+print(f"Current shortest dist {shortest_dist}")
+print(f"Launchtime: {launch_time}")
+print(f"Launch_phi: {launch_phi}")
+print(f"Shortest_dist (Au): {shortest_dist}")
+print(f"Success: {success})")
+print("-----------")
 """
 """ 
 Results:
-Searching: # launch_times = np.linspace(0, 2, 1000), launch_phis = np.linspace(0, 2 * np.pi, 4), 
+Searching parameters: # launch_times = np.linspace(0, 2, 1000), launch_phis = np.linspace(0, 2 * np.pi, 4), 
 with dt=0.01 and timestep=10e-5 found best: (0.8368368368368369, 6.283185307179586, 8.240883598534517e-06)
 """
+best_launch_time_dt05 = 0.8368368368368369
 (
     altitude,
     vertical_velocity,
@@ -316,145 +311,240 @@ with dt=0.01 and timestep=10e-5 found best: (0.8368368368368369, 6.2831853071795
     fuel_weight=165000,
     launch_theta=np.pi / 2,
     launch_phi=6.283185307179586,
-    launch_time=0.8368368368368369,
+    launch_time=best_launch_time_dt05,
     dt=0.01,
 )
 
-(time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
-    0.8368368368368369 + (total_time / sec_per_year),
+(time_array, r_rocket1, v_rocket1, r_planets) = rocket_trajectory(
+    best_launch_time_dt05 + (total_time / sec_per_year),
     solar_x_pos,
     solar_y_pos,
     solar_x_vel,
     solar_y_vel,
-    total_flight_time=2.9 - 0.8368368368368369,
-    time_step=10e-5,
+    total_flight_time=3.0 - (best_launch_time_dt05 + (total_time / sec_per_year)),
+    time_step=10e-6,
 )
+dist_array = np.sqrt(
+    (r_rocket1[0, 0, :] - r_planets[0, 1, :]) ** 2
+    + (r_rocket1[1, 0, :] - r_planets[1, 1, :]) ** 2
+)
+dist = np.min(dist_array)
+idx1 = np.where(dist_array == dist)[0]
+time_of_least_distance = time_array[idx1]
+
+"Code to calculate velocity vectors, used to calculate boost vector:"
+v_planet1_shortest_dist = np.array(
+    (r_planets[:, 1, idx1] - r_planets[:, 1, idx1 - 1])
+    / (time_array[idx1] - time_array[idx1 - 1])
+)
+dist_to_star = np.sqrt(r_rocket1[0, 0, idx1] ** 2 + r_rocket1[1, 0, idx1] ** 2)
+gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
+v_rocket1_shortest_dist = np.array((r_rocket1[0, 0, idx1][0], r_rocket1[1, 0, idx1][0]))
+r_rocket1_shortest_dist = (r_rocket1[0, 0, idx1][0], r_rocket1[1, 0, idx1][0])
+r_planet1_shortest_dist = np.array((r_planets[0, 0, idx1], r_planets[1, 1, idx1]))
+r_radial = r_rocket1_shortest_dist - r_planet1_shortest_dist
+unit_vector_1 = v_rocket1_shortest_dist / np.linalg.norm(v_rocket1_shortest_dist)
+unit_vector_2 = r_radial / np.linalg.norm(r_radial)
+dot_product = np.dot(unit_vector_1, unit_vector_2)
+angle = np.arccos(dot_product)
+v_rocket1_tangential = v_rocket1_shortest_dist * np.sin(angle)
+v_rocket1_radial = -v_rocket1_shortest_dist * np.cos(angle)
+abs_v_stable = np.sqrt((G * masses[1]) / dist)
+abs_v_tangential = np.linalg.norm(v_rocket1_tangential)
+r = abs_v_stable / abs_v_tangential
+v_stable = v_planet1_shortest_dist[:, 0] + v_rocket1_tangential * r
+v_injection = v_stable - v_rocket1_shortest_dist
+# print(abs_v_stable, np.linalg.norm(v_rocket1_tangential * r))
+# delta_v_injection = v_stable + v_rocket1_shortest_dist
+# plt.plot(r_rocket1[0, 0, :], r_rocket1[1, 0, :], label="Rocket trajectory before boost")
+
+# Finding angle of first boost
+"""Code to find boost-angle"""
+"""
+boost_angles = np.linspace(-np.pi / 2, np.pi / 2, 10)
+best_angle = 0
+least_distance = 10000
+
+for i, boost_angle in enumerate(boost_angles):
+    boost_rocket_x = v_rocket1_radial[0] * np.cos(boost_angle) - v_rocket1_radial[
+        1
+    ] * np.cos(boost_angle)
+    boost_rocket_y = v_rocket1_radial[0] * np.sin(boost_angle) + v_rocket1_radial[
+        1
+    ] * np.cos(boost_angle)
+    (time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
+        time_of_least_distance,
+        r_rocket1[0, 0, idx1],
+        r_rocket1[1, 0, idx1],
+        v_rocket1[0, 0, idx1] + boost_rocket_x * 100,
+        v_rocket1[1, 0, idx1] + boost_rocket_y * 100,
+        total_flight_time=3 - time_of_least_distance,
+        time_step=10e-6,
+    )
+
+    dist_array = np.sqrt(
+        (r_rocket[0, 0, :] - r_planets[0, 1, :]) ** 2
+        + (r_rocket[1, 0, :] - r_planets[1, 1, :]) ** 2
+    )
+
+    dist = np.min(dist_array)
+    idx2 = np.where(dist_array == dist)[0]
+    time_of_least_distance2 = time_array[idx2]
+    dist_to_star = np.sqrt(r_rocket[0, 0, idx2] ** 2 + r_rocket[1, 0, idx2] ** 2)
+    gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
+    print(f"Checking {i}/{len(boost_angles)}...")
+    # plt.plot(r_rocket[0, 0, :], r_rocket[1, 0, :], label=f"boost {boost_angle}")
+    if dist <= gravitational_capture_dist:
+        least_distance = dist
+        best_angle = boost_angle
+        print("*************")
+        print("Success!")
+        print(f"Current best angle: {best_angle} ")
+        # print(f"Current shortest dist: {least_distance}")
+        # print(f"Time of least distance: {time_of_least_distance2}")
+        print(f"*************")
+    if dist < least_distance:
+        least_distance = dist
+        best_angle = boost_angle
+        print("*************")
+        print(f"Current best angle: {best_angle} ")
+        print(f"Current shortest dist: {least_distance}")
+        print(f"Time of least distance: {time_of_least_distance2}")
+        print(f"*************")
+# for i in range(7):
+#     plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}")
+# plt.plot(r_rocket1[0, 0, :], r_rocket1[1, 0, :], label="Rocket trajectory before boost")
+# plt.scatter(r_rocket1[0, 0, -1], r_rocket1[1, 0, -1], label="Rocket before boost")
+# plt.legend()
+# plt.show()
+"""
+""""
+*************
+Results
+Current best angle: -0.8726646259971648
+Current shortest dist: 3.0515403005546108e-05
+Time of least distance: [2.652451]
+*************
+"""
+best_angle = -0.8726646259971648
+boost_rocket_x = v_rocket1_radial[0] * np.cos(best_angle) - v_rocket1_radial[
+    1
+] * np.cos(best_angle)
+boost_rocket_y = v_rocket1_radial[0] * np.sin(best_angle) + v_rocket1_radial[
+    1
+] * np.cos(best_angle)
+(time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
+    time_of_least_distance,
+    r_rocket1[0, 0, idx1],
+    r_rocket1[1, 0, idx1],
+    v_rocket1[0, 0, idx1] + boost_rocket_x * 100,
+    v_rocket1[1, 0, idx1] + boost_rocket_y * 100,
+    total_flight_time=3 - time_of_least_distance,
+    time_step=10e-6,
+)
+
 dist_array = np.sqrt(
     (r_rocket[0, 0, :] - r_planets[0, 1, :]) ** 2
     + (r_rocket[1, 0, :] - r_planets[1, 1, :]) ** 2
 )
+
 dist = np.min(dist_array)
-idx = np.where(dist_array == dist)[0]
-time_of_least_distance = time_array[idx]
-v_planet1_shortest_dist = (r_planets[:, 1, idx + 1] - r_planets[:, 1, idx]) / (
-    time_array[idx + 1] - time_array[idx]
-)
-v_rocket_shortest_dist = (v_rocket[0, 0, idx][0], v_rocket[1, 0, idx][0])
-print(np.shape(v_rocket_shortest_dist))
-print(v_rocket_shortest_dist)
-v_radial = v_rocket_shortest_dist - v_planet1_shortest_dist
-print(np.shape(v_radial))
-print(v_radial)
-unit_vector_1 = v_rocket_shortest_dist / np.linalg.norm(v_rocket_shortest_dist)
-unit_vector_2 = v_radial / np.linalg.norm(v_radial)
-print(np.shape(unit_vector_1))
-print(np.shape(unit_vector_2))
-dot_product = np.dot(unit_vector_1, unit_vector_2)
-angle = np.arccos(dot_product)
-v_rocket_tangential = v_rocket_shortest_dist * np.sin(angle)
-abs_v_stable = np.sqrt((G * masses[1]) / dist)
-abs_v_tangential = np.linalg.norm(v_rocket_tangential)
-r = abs_v_stable / abs_v_tangential
-v_stable = v_rocket_tangential * r
-v_injection = v_stable * 2 - v_rocket_shortest_dist
+idx2 = np.where(dist_array == dist)[0]
+time_of_least_distance2 = time_array[idx2]
+dist_to_star = np.sqrt(r_rocket[0, 0, idx2] ** 2 + r_rocket[1, 0, idx2] ** 2)
+# gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
 
-delta_v_injection = v_stable + v_radial + v_rocket_shortest_dist
-
-
-"""Code to plot trajectory:"""
-"""
-plt.plot(r_rocket[0, 0, :], r_rocket[1, 0, :], label="rocket trajectory")
-for i in range(7):
-    # plt.plot(orbit[1], orbit[2], label=f"orbit{i}")
-    plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}")
-
-plt.scatter(r_planets[0, 1, idx], r_planets[1, 1, idx], color="red")
-plt.scatter(r_planets[0, 0, idx], r_planets[1, 0, idx], color="red")
-plt.scatter(r_rocket[0, 0, idx], r_rocket[1, 0, idx], color="red")
+dist_to_star_array = np.sqrt(r_rocket[0, 0, :] ** 2 + r_rocket[1, 0, :] ** 2)
+plt.plot(time_array, dist_array, label="dist to planet", fontsize=20)
 plt.plot(
-    (r_rocket[0, 0, idx], r_planets[0, 1, idx]),
-    (r_rocket[1, 0, idx], r_planets[1, 1, idx]),
+    time_array,
+    dist_to_star_array * np.sqrt(masses[1] / (10 * star_mass)),
+    label="gravitational capture",
+    fontsize=20,
 )
-plt.scatter(solar_x_pos, solar_y_pos, label="After launch pos")
-plt.scatter(0, 0, label="Sun")
+plt.xlabel("T", fontsize=20)
+plt.ylabel("Au", fontsize=20)
 plt.legend()
 plt.show()
-"""
 
+plt.plot(
+    r_rocket[0, 0, 0 : int(idx2 + 1)],
+    r_rocket[1, 0, 0 : int(idx2 + 1)],
+    label="Rocket trajectory after correctional boost",
+    fontsize=20,
+)
+plt.plot(
+    r_rocket1[0, 0, 0 : int(idx1 + 1)],
+    r_rocket1[1, 0, 0 : int(idx1 + 1)],
+    label="Rocket trajectory after launch",
+    fontsize=20,
+)
+for i in range(7):
+    plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}", fontsize=20)
 
-def launch_sequence(time_of_launch, time_of_injection_boost, v_injection):
-    (
-        altitude,
-        vertical_velocity,
-        total_time,
-        fuel_weight,
-        solar_x_pos,
-        solar_y_pos,
-        solar_x_vel,
-        solar_y_vel,
-    ) = generalized_launch_rocket(
-        falcon_engine,
-        fuel_weight=165000,
-        launch_theta=np.pi / 2,
-        launch_phi=6.283185307179586,
-        launch_time=time_of_launch,
-        dt=0.01,
-    )
+plt.scatter(
+    r_rocket[0, 0, idx2],
+    r_rocket[1, 0, idx2],
+    label="Shortest dist rocket",
+    fontsize=20,
+)
+plt.scatter(
+    r_planets[0, 1, idx2],
+    r_planets[1, 1, idx2],
+    label="Shortest dist planet",
+    fontsize=20,
+)
+plt.scatter(
+    r_rocket1[0, 0, idx1],
+    r_rocket1[1, 0, idx1],
+    label="Rocket before boost",
+    fontsize=20,
+)
+plt.scatter(0, 0, label="Sun", fontsize=20)
 
-    (time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
-        time_of_launch + (total_time / sec_per_year),
-        solar_x_pos,
-        solar_y_pos,
-        solar_x_vel,
-        solar_y_vel,
-        total_flight_time=time_of_injection_boost
-        - (time_of_launch + (total_time / sec_per_year)),
-        time_step=10e-5,
-    )
+gravitational_capture_dist_array = np.sqrt(
+    r_rocket[0, 0, :] ** 2 + r_rocket[1, 0, :] ** 2
+) * np.sqrt(masses[1] / (10 * star_mass))
 
-    plt.plot(r_rocket[0, 0, :], r_rocket[1, 0, :], label="rocket trajectory")
-    for i in range(7):
-        # plt.plot(orbit[1], orbit[2], label=f"orbit{i}")
-        plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}")
+v2_planet1_shortest_dist = np.array(
+    (r_planets[:, 1, idx2] - r_planets[:, 1, idx2 - 1])
+    / (time_array[idx2] - time_array[idx2 - 1])
+)
 
-    # plt.scatter(r_planets[0, 1, idx], r_planets[1, 1, idx], color="red")
-    # plt.scatter(r_planets[0, 0, idx], r_planets[1, 0, idx], color="red")
-    # plt.scatter(r_rocket[0, 0, idx], r_rocket[1, 0, idx], color="red")
-    # plt.plot(
-    #     (r_rocket[0, 0, idx], r_planets[0, 1, idx]),
-    #     (r_rocket[1, 0, idx], r_planets[1, 1, idx]),
-    # )
-    plt.scatter(solar_x_pos, solar_y_pos, label="After launch pos")
-    plt.scatter(0, 0, label="Sun")
-    plt.legend()
-    plt.show()
+"Code to calculate velocity vectors, used to calculate boost vector"
+v_rocket2_shortest_dist = np.array((v_rocket1[0, 0, idx2][0], v_rocket1[1, 0, idx2][0]))
+r_rocket2_shortest_dist = (r_rocket[0, 0, idx2][0], r_rocket[1, 0, idx2][0])
+r_planet2_shortest_dist = np.array((r_planets[0, 0, idx2], r_planets[1, 1, idx2]))
+r_radial = r_rocket2_shortest_dist - r_planet2_shortest_dist
+unit_vector_1 = v_rocket2_shortest_dist / np.linalg.norm(v_rocket2_shortest_dist)
+unit_vector_2 = r_radial / np.linalg.norm(r_radial)
+dot_product = np.dot(unit_vector_1, unit_vector_2)
+angle = np.arccos(dot_product)
+v_rocket2_tangential = v_rocket2_shortest_dist * np.sin(angle)
+v_rocket2_radial = -v_rocket2_shortest_dist * np.cos(angle)
+abs_v_stable = np.sqrt((G * masses[1]) / dist)
+abs_v_tangential = np.linalg.norm(v_rocket2_tangential)
+r = abs_v_stable / abs_v_tangential
+v_stable = v2_planet1_shortest_dist[:, 0] + v_rocket2_tangential * r
+v_injection = v_stable - v_rocket1_shortest_dist
 
-    (time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
-        time_of_launch + (total_time / sec_per_year),
-        r_rocket[0, 0, -1],
-        r_rocket[1, 0, -1],
-        v_rocket[0, 0, -1] + v_injection[0],
-        v_rocket[1, 0, -1] + v_injection[1],
-        total_flight_time=3 - time_of_injection_boost,
-        time_step=10e-7,
-    )
+(time_array, r_rocket3, v_rocket3, r_planets) = rocket_trajectory(
+    time_of_least_distance,
+    r_rocket[0, 0, idx2],
+    r_rocket[1, 0, idx2],
+    v_stable[0],
+    v_stable[1],
+    total_flight_time=3 - time_of_least_distance2,
+    time_step=10e-6,
+)
 
-    plt.plot(r_rocket[0, 0, :], r_rocket[1, 0, :], label="rocket trajectory")
-    for i in range(7):
-        # plt.plot(orbit[1], orbit[2], label=f"orbit{i}")
-        plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}")
-
-    # plt.scatter(r_planets[0, 1, idx], r_planets[1, 1, idx], color="red")
-    # plt.scatter(r_planets[0, 0, idx], r_planets[1, 0, idx], color="red")
-    # plt.scatter(r_rocket[0, 0, idx], r_rocket[1, 0, idx], color="red")
-    # plt.plot(
-    #     (r_rocket[0, 0, idx], r_planets[0, 1, idx]),
-    #     (r_rocket[1, 0, idx], r_planets[1, 1, idx]),
-    # )
-    plt.scatter(solar_x_pos, solar_y_pos, label="After launch pos")
-    plt.scatter(0, 0, label="Sun")
-    plt.legend()
-    plt.show()
-
-
-launch_sequence(0.8368368368368369, time_of_least_distance, v_injection)
+plt.plot(
+    r_rocket3[0, 0, :],
+    r_rocket3[1, 0, :],
+    label="Rocket trajectory after injection",
+    fontsize=20,
+)
+plt.xlabel("Au", fontsize=20)
+plt.ylabel("Au", fontsize=20)
+plt.legend()
+plt.show()
