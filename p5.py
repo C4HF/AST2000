@@ -13,6 +13,7 @@ from P1B import Engine
 from P2 import simulate_orbits
 import h5py
 from part3 import generalized_launch_rocket
+from P1B import calculate_needed_fuel
 from PIL import Image
 from scipy import interpolate
 
@@ -314,6 +315,7 @@ best_launch_time_dt05 = 0.8368368368368369
     launch_time=best_launch_time_dt05,
     dt=0.01,
 )
+print(f"After launch v: {solar_x_vel}, {solar_y_vel}")
 
 (time_array, r_rocket1, v_rocket1, r_planets) = rocket_trajectory(
     best_launch_time_dt05 + (total_time / sec_per_year),
@@ -349,14 +351,6 @@ dot_product = np.dot(unit_vector_1, unit_vector_2)
 angle = np.arccos(dot_product)
 v_rocket1_tangential = v_rocket1_shortest_dist * np.sin(angle)
 v_rocket1_radial = -v_rocket1_shortest_dist * np.cos(angle)
-abs_v_stable = np.sqrt((G * masses[1]) / dist)
-abs_v_tangential = np.linalg.norm(v_rocket1_tangential)
-r = abs_v_stable / abs_v_tangential
-v_stable = v_planet1_shortest_dist[:, 0] + v_rocket1_tangential * r
-v_injection = v_stable - v_rocket1_shortest_dist
-# print(abs_v_stable, np.linalg.norm(v_rocket1_tangential * r))
-# delta_v_injection = v_stable + v_rocket1_shortest_dist
-# plt.plot(r_rocket1[0, 0, :], r_rocket1[1, 0, :], label="Rocket trajectory before boost")
 
 # Finding angle of first boost
 """Code to find boost-angle"""
@@ -433,6 +427,16 @@ boost_rocket_x = v_rocket1_radial[0] * np.cos(best_angle) - v_rocket1_radial[
 boost_rocket_y = v_rocket1_radial[0] * np.sin(best_angle) + v_rocket1_radial[
     1
 ] * np.cos(best_angle)
+
+fuel_boost1 = calculate_needed_fuel(
+    falcon_engine,
+    dry_rocket_mass + fuel_weight,
+    np.linalg.norm(boost_rocket_x * 100 + boost_rocket_y**100),
+    dt=0.00001,
+)
+print(
+    f"T: {time_array[idx1]} yr. Boost 1: {np.linalg.norm(boost_rocket_x * 100 + boost_rocket_y**100)}, ({boost_rocket_x * 100},{boost_rocket_y**100}) Au/yr, v: ({v_rocket1[0, 0, idx1] + boost_rocket_x * 100}, {v_rocket1[1, 0, idx1] + boost_rocket_y * 100})"
+)
 (time_array, r_rocket, v_rocket, r_planets) = rocket_trajectory(
     time_of_least_distance,
     r_rocket1[0, 0, idx1],
@@ -455,15 +459,19 @@ dist_to_star = np.sqrt(r_rocket[0, 0, idx2] ** 2 + r_rocket[1, 0, idx2] ** 2)
 # gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
 
 dist_to_star_array = np.sqrt(r_rocket[0, 0, :] ** 2 + r_rocket[1, 0, :] ** 2)
-plt.plot(time_array, dist_array, label="dist to planet")
+plt.plot(time_array, dist_array, label="Dist to planet")
 plt.plot(
     time_array,
     dist_to_star_array * np.sqrt(masses[1] / (10 * star_mass)),
-    label="gravitational capture",
+    label="Gravitational capture",
 )
+plt.scatter(time_array[idx2], dist_array[idx2], label="Shortest distance")
 plt.xlabel("T", fontsize=20)
 plt.ylabel("Au", fontsize=20)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
 plt.legend()
+plt.title("Distance to target planet vs. gravitational capture distance")
 plt.show()
 
 plt.plot(
@@ -495,6 +503,8 @@ plt.scatter(
     label="Rocket before boost",
 )
 plt.scatter(0, 0, label="Sun")
+plt.scatter(r_rocket1[0, 0, 0], r_rocket1[1, 0, 0], label="Rocket after launch")
+
 
 gravitational_capture_dist_array = np.sqrt(
     r_rocket[0, 0, :] ** 2 + r_rocket[1, 0, :] ** 2
@@ -506,7 +516,7 @@ v2_planet1_shortest_dist = np.array(
 )
 
 "Code to calculate velocity vectors, used to calculate boost vector"
-v_rocket2_shortest_dist = np.array((v_rocket1[0, 0, idx2][0], v_rocket1[1, 0, idx2][0]))
+v_rocket2_shortest_dist = np.array((v_rocket[0, 0, idx2][0], v_rocket[1, 0, idx2][0]))
 r_rocket2_shortest_dist = (r_rocket[0, 0, idx2][0], r_rocket[1, 0, idx2][0])
 r_planet2_shortest_dist = np.array((r_planets[0, 1, idx2], r_planets[1, 1, idx2]))
 r_radial = r_rocket2_shortest_dist - r_planet2_shortest_dist
@@ -519,7 +529,8 @@ v_rocket2_radial = -v_rocket2_shortest_dist * np.cos(angle)
 abs_v_stable = np.sqrt((G * masses[1]) / dist)
 abs_v_tangential = np.linalg.norm(v_rocket2_tangential)
 r = abs_v_stable / abs_v_tangential
-v_stable = v2_planet1_shortest_dist[:, 0] + v_rocket2_tangential * r
+# v_stable = v2_planet1_shortest_dist[:, 0] + v_rocket2_tangential * r
+v_stable = v2_planet1_shortest_dist + v_rocket2_tangential * r
 v_injection = v_stable - v_rocket1_shortest_dist
 
 (time_array, r_rocket3, v_rocket3, r_planets) = rocket_trajectory(
@@ -531,7 +542,14 @@ v_injection = v_stable - v_rocket1_shortest_dist
     total_flight_time=3 - time_of_least_distance2,
     time_step=10e-6,
 )
+v_boost = np.linalg.norm((v_rocket[:, 0, idx2] - v_stable))
+fuel_injection = calculate_needed_fuel(
+    falcon_engine, dry_rocket_mass + (fuel_weight - fuel_boost1), v_boost, dt=0.00001
+)
 
+print(
+    f"T: {time_of_least_distance2} yr. Boost: ({v_rocket2_shortest_dist[0] - v_stable[0]}, {v_rocket2_shortest_dist[1]-v_stable[1]}) Au/yr, V: ({v_stable[0]}, {v_stable[1]})"
+)
 plt.plot(
     r_rocket3[0, 0, :],
     r_rocket3[1, 0, :],
@@ -542,4 +560,12 @@ plt.ylabel("Au", fontsize=20)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
 plt.legend(fontsize=10)
+plt.title("Rocket trajectory towards target planet", fontsize=20)
 plt.show()
+
+print("-------------")
+print(f"Fuel before launch:{165000} kg")
+print(f"Fuel after launch:{fuel_weight} kg")
+print(f"Fuel after first boost: {fuel_weight - fuel_boost1} kg")
+print(f"Fuel after injection: {fuel_weight - fuel_boost1-fuel_injection} kg")
+print("------------")
