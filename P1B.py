@@ -317,7 +317,7 @@ class Engine:
 """Kode 1D"""
 
 
-def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=10):
+def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=0.01):
     """Funksjonen regner ut hvor mye drivstoff vi trenger for å øke hastigheten med en ønsket mengde.
     Tar inn variabler (thrust, fuel_consumption, initial_rocket_mass, speed_boost) og returnerer
     fuel_consumed."""

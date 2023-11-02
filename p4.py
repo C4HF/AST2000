@@ -305,12 +305,15 @@ def spacecraft_triliteration(T, measured_distances):
     Returns estimated x and y pos of rocket.
     """
     """finding idx of mesurement time T"""
-    for i, t in enumerate(orbit_0[0]):
-        if math.isclose(t, T, rel_tol=10e-1):
-            idx = i
-            break
-        else:
-            continue
+    # for i, t in enumerate(orbit_0[0]):
+    #     if math.isclose(t, T, rel_tol=10e-1):
+    #         idx = i
+    #         break
+    #     else:
+    #         continue
+    time_diff = np.abs(orbit_0[0] - T)
+    least_time_diff = np.min(time_diff)
+    idx = np.where(time_diff == least_time_diff)[0]
     """Storing mesured distance to star, planet 2 and planet 5"""
     star_pos = np.asarray((0, 0))
     star_distance = measured_distances[-1]
@@ -464,46 +467,46 @@ def spacecraft_triliteration(T, measured_distances):
 # spacecraft_triliteration(448.02169995917336 / sec_per_year, distances)
 
 
-# Setting launch parameters and checking launch results ##
-mission.set_launch_parameters(
-    thrust=falcon_engine.thrust,
-    mass_loss_rate=falcon_engine.total_fuel_constant,
-    initial_fuel_mass=165000,
-    estimated_launch_duration=448.02169995917336,
-    launch_position=[
-        home_planet_initial_pos[0] + homeplanet_radius / Au,
-        home_planet_initial_pos[1],
-    ],
-    time_of_launch=0,
-)
-mission.launch_rocket()
-mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
-distances = mission.measure_distances()
-takenimage = mission.take_picture()
-mesured_dopplershifts = mission.measure_star_doppler_shifts()
-
-# print(mesured_dopplershifts)
-
-
-# Analyzing using onboard equipment
-pos_after_launch = spacecraft_triliteration(448.02169995917336, distances)
-vel_after_launch = calculate_velocity_from_doppler(
-    mesured_dopplershifts[0], mesured_dopplershifts[1]
-)
-# vel_after_launch = calculate_velocity_from_doppler(
-#     sun_doppler_shift[0], sun_doppler_shift[1]
+# # Setting launch parameters and checking launch results ##
+# mission.set_launch_parameters(
+#     thrust=falcon_engine.thrust,
+#     mass_loss_rate=falcon_engine.total_fuel_constant,
+#     initial_fuel_mass=165000,
+#     estimated_launch_duration=448.02169995917336,
+#     launch_position=[
+#         home_planet_initial_pos[0] + homeplanet_radius / Au,
+#         home_planet_initial_pos[1],
+#     ],
+#     time_of_launch=0,
 # )
-# ----------------------
-# Launch results:
-#  Total launch time (s): 448.02299999631754
-#  Remaining fuel (kg): 6264.647279576635
-#  Solar-xy-pos (Au): (0.06590544416834804, 0.00017508613228451168)
-#  Solar-xy-vel (Au/yr): (2.413600055971701, 12.324180383036367)
-# ----------------------
-# print(pos_after_launch)
-# print(f"Got:  {vel_after_launch}")
-angle_after_launch = find_phi("sky_picture.png")
+# mission.launch_rocket()
+# mission.verify_launch_result([0.06590544416834804, 0.00017508613228451168])
+# distances = mission.measure_distances()
+# takenimage = mission.take_picture()
+# mesured_dopplershifts = mission.measure_star_doppler_shifts()
 
-mission.verify_manual_orientation(
-    pos_after_launch, vel_after_launch, angle_after_launch
-)
+# # print(mesured_dopplershifts)
+
+
+# # Analyzing using onboard equipment
+# pos_after_launch = spacecraft_triliteration(448 / sec_per_year, distances)
+# vel_after_launch = calculate_velocity_from_doppler(
+#     mesured_dopplershifts[0], mesured_dopplershifts[1]
+# )
+# # vel_after_launch = calculate_velocity_from_doppler(
+# #     sun_doppler_shift[0], sun_doppler_shift[1]
+# # )
+# # ----------------------
+# # Launch results:
+# #  Total launch time (s): 448.02299999631754
+# #  Remaining fuel (kg): 6264.647279576635
+# #  Solar-xy-pos (Au): (0.06590544416834804, 0.00017508613228451168)
+# #  Solar-xy-vel (Au/yr): (2.413600055971701, 12.324180383036367)
+# # ----------------------
+# # print(pos_after_launch)
+# # print(f"Got:  {vel_after_launch}")
+# angle_after_launch = find_phi("sky_picture.png")
+
+# mission.verify_manual_orientation(
+#     pos_after_launch, vel_after_launch, angle_after_launch
+# )

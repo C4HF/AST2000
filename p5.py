@@ -5,6 +5,7 @@ import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
+from ast2000tools.shortcuts import SpaceMissionShortcuts
 from scipy.stats import norm
 import numba as nb
 from numba import njit
@@ -14,6 +15,7 @@ from P2 import simulate_orbits
 import h5py
 from part3 import generalized_launch_rocket
 from P1B import calculate_needed_fuel
+from p4 import spacecraft_triliteration, calculate_velocity_from_doppler, find_phi
 from PIL import Image
 from scipy import interpolate
 
@@ -315,7 +317,65 @@ best_launch_time_dt05 = 0.8368368368368369
     launch_time=best_launch_time_dt05,
     dt=0.01,
 )
-print(f"After launch v: {solar_x_vel}, {solar_y_vel}")
+###### Initializing space mission #######
+earth_orientation = 1.12150523 * best_launch_time_dt05 * 365 * 2 * np.pi
+time_diff = np.abs(orbit_0[0] - best_launch_time_dt05)
+least_time_diff = np.min(time_diff)
+idx__ = np.where(time_diff == least_time_diff)[0]
+initial_solar_x_pos = orbit_0[1][idx__] + (
+    (
+        (radii[0] / Au)
+        * np.cos((np.pi / 2) - np.pi / 2)
+        * np.cos(6.283185307179586 - earth_orientation)
+    )
+)  # starting y-postion in Au
+initial_solar_y_pos = orbit_0[2][idx__] + (
+    (
+        (radii[0] / Au)
+        * np.cos((np.pi / 2) - np.pi / 2)
+        * np.sin(6.283185307179586 - earth_orientation)
+    )
+)  # starting y-postion in Au
+# initial_solar_y_pos = orbit_0[2][idx__]
+mission.set_launch_parameters(
+    thrust=falcon_engine.thrust,
+    mass_loss_rate=falcon_engine.total_fuel_constant,
+    initial_fuel_mass=165000,
+    estimated_launch_duration=446.7099999963486,
+    # launch_position=[initial_solar_x_pos[0], initial_solar_y_pos[0]],
+    launch_position=[orbit_0[1, idx__][0], orbit_0[2, idx__][0]],
+    time_of_launch=best_launch_time_dt05,
+)
+mission.verify_launch_result(
+    (solar_x_pos[0], solar_y_pos[0])
+)  # verifies that the calculated launch-results are correct
+mission.launch_rocket()
+distances = mission.measure_distances()
+takenimage = mission.take_picture()
+mesured_dopplershifts = mission.measure_star_doppler_shifts()
+pos_after_launch = spacecraft_triliteration(
+    best_launch_time_dt05 + total_time / sec_per_year, distances
+)
+vel_after_launch = calculate_velocity_from_doppler(
+    mesured_dopplershifts[0], mesured_dopplershifts[1]
+)
+angle_after_launch = find_phi("sky_picture.png")
+
+mission.verify_manual_orientation(
+    pos_after_launch, vel_after_launch, angle_after_launch
+)
+time_diff = np.abs(orbit_0[0] - best_launch_time_dt05)
+least_time_diff = np.min(time_diff)
+idx_ = np.where(time_diff == least_time_diff)[0]
+initial_speed_planet = (
+    (orbit_0[1, idx_ + 1] - orbit_0[1, idx_])
+    / (orbits[0, 0, idx_ + 1] - orbits[0, 0, idx_]),
+    (orbit_0[2, idx_ + 1] - orbit_0[2, idx_])
+    / (orbits[0, 0, idx_ + 1] - orbits[0, 0, idx_]),
+)
+print(
+    f"Boost from launch: {initial_speed_planet[0] - solar_x_vel}, {initial_speed_planet[1]-solar_y_vel}"
+)
 
 (time_array, r_rocket1, v_rocket1, r_planets) = rocket_trajectory(
     best_launch_time_dt05 + (total_time / sec_per_year),
@@ -456,7 +516,7 @@ dist = np.min(dist_array)
 idx2 = np.where(dist_array == dist)[0]
 time_of_least_distance2 = time_array[idx2]
 dist_to_star = np.sqrt(r_rocket[0, 0, idx2] ** 2 + r_rocket[1, 0, idx2] ** 2)
-# gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
+gravitational_capture_dist = dist_to_star * np.sqrt(masses[1] / (10 * star_mass))
 
 dist_to_star_array = np.sqrt(r_rocket[0, 0, :] ** 2 + r_rocket[1, 0, :] ** 2)
 plt.plot(time_array, dist_array, label="Dist to planet")
@@ -465,45 +525,46 @@ plt.plot(
     dist_to_star_array * np.sqrt(masses[1] / (10 * star_mass)),
     label="Gravitational capture",
 )
-plt.scatter(time_array[idx2], dist_array[idx2], label="Shortest distance")
-plt.xlabel("T", fontsize=20)
+plt.scatter(
+    time_array[idx2],
+    dist_array[idx2],
+    label=f"Shortest distance: {dist:.2e}",
+)
+print(f"l = {gravitational_capture_dist}")
+plt.xlabel("Yr", fontsize=20)
 plt.ylabel("Au", fontsize=20)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
-plt.legend()
-plt.title("Distance to target planet vs. gravitational capture distance")
+plt.legend(fontsize=20)
+plt.title("Distance to target planet vs. gravitational capture distance", fontsize=20)
 plt.show()
 
 plt.plot(
     r_rocket[0, 0, 0 : int(idx2 + 1)],
     r_rocket[1, 0, 0 : int(idx2 + 1)],
-    label="Rocket trajectory after correctional boost",
+    label="Trj. aft. corr. boost",
 )
 plt.plot(
     r_rocket1[0, 0, 0 : int(idx1 + 1)],
     r_rocket1[1, 0, 0 : int(idx1 + 1)],
-    label="Rocket trajectory after launch",
+    label="Trj. aft. launch",
 )
 for i in range(7):
-    plt.plot(r_planets[0, i, :], r_planets[1, i, :], label=f"orbit{i}")
+    plt.plot(
+        r_planets[0, i, :],
+        r_planets[1, i, :],
+        linestyle="--",
+        alpha=0.5,
+        label=f"orbit{i}",
+    )
 
+plt.scatter(r_rocket[0, 0, idx2], r_rocket[1, 0, idx2], label="Min dist rocket", s=70)
+plt.scatter(r_planets[0, 1, idx2], r_planets[1, 1, idx2], label="Min dist planet", s=70)
 plt.scatter(
-    r_rocket[0, 0, idx2],
-    r_rocket[1, 0, idx2],
-    label="Shortest dist rocket",
+    r_rocket1[0, 0, idx1], r_rocket1[1, 0, idx1], label="Rocket before boost", s=70
 )
-plt.scatter(
-    r_planets[0, 1, idx2],
-    r_planets[1, 1, idx2],
-    label="Shortest dist planet",
-)
-plt.scatter(
-    r_rocket1[0, 0, idx1],
-    r_rocket1[1, 0, idx1],
-    label="Rocket before boost",
-)
-plt.scatter(0, 0, label="Sun")
-plt.scatter(r_rocket1[0, 0, 0], r_rocket1[1, 0, 0], label="Rocket after launch")
+plt.scatter(0, 0, label="Sun", s=70)
+plt.scatter(r_rocket1[0, 0, 0], r_rocket1[1, 0, 0], label="Rocket after launch", s=70)
 
 
 gravitational_capture_dist_array = np.sqrt(
@@ -529,10 +590,9 @@ v_rocket2_radial = -v_rocket2_shortest_dist * np.cos(angle)
 abs_v_stable = np.sqrt((G * masses[1]) / dist)
 abs_v_tangential = np.linalg.norm(v_rocket2_tangential)
 r = abs_v_stable / abs_v_tangential
-# v_stable = v2_planet1_shortest_dist[:, 0] + v_rocket2_tangential * r
-v_stable = v2_planet1_shortest_dist + v_rocket2_tangential * r
+v_stable = v2_planet1_shortest_dist[:, 0] + v_rocket2_tangential * r
 v_injection = v_stable - v_rocket1_shortest_dist
-
+print(f"V-stabil: {v_stable}")
 (time_array, r_rocket3, v_rocket3, r_planets) = rocket_trajectory(
     time_of_least_distance,
     r_rocket[0, 0, idx2],
@@ -547,19 +607,76 @@ fuel_injection = calculate_needed_fuel(
     falcon_engine, dry_rocket_mass + (fuel_weight - fuel_boost1), v_boost, dt=0.00001
 )
 
+code_unstable_orbit = 69696
+mission = SpaceMission(seed)
+shortcut = SpaceMissionShortcuts(mission, [code_unstable_orbit])
+
+################################################################
+#              PLACE SPACECRAFT IN UNSTABLE ORBIT              #
+################################################################
+#                   |      For Part 5      |
+#                   ------------------------
+
+"""
+DOCUMENTATION
+
+------------------------------------------------------------------------
+place_spacecraft_in_unstable_orbit() places the spacecraft in a
+randomized elliptical orbit around the specified planet.
+
+Parameters
+----------
+time  :  float
+    The time at which the spacecraft should be placed in orbit, in YEARS
+    from the initial system time.
+
+planet_idx  :  int
+    The index of the planet that the spacecraft should orbit.
+
+Raises
+------
+RuntimeError
+    When none of the provided codes are valid for unlocking this method.
+RuntimeError
+    When called before verify_manual_orientation() has been called
+    successfully.
+------------------------------------------------------------------------
+
+"""
+
+# you can only use this shortcut after successfully calling
+# mission.verify_manual_orientation(), as you did to complete Part 4
+time = time_of_least_distance2  # insert the time you want the spacecraft to be placed in orbit
+planet_idx = 1  # insert the index of your destination planet
+
+shortcut.place_spacecraft_in_unstable_orbit(time, planet_idx)
+
+# initiating landing sequence. Documentation on how to use your
+# LandingSequence instance can be found here:
+#     https://lars-frogner.github.io/ast2000tools/html/classes/ast2000to
+#     ols.space_mission.LandingSequence.html#ast2000tools.space_mission.
+#     LandingSequence
+
+# USE THE LANDING INSTANCE TO GET A STABLE ORBIT FOR YOUR SPACECRAFT:
+land = mission.begin_landing_sequence()
+# OBS!
+# this can be helpful:
+# print()
+# land.orient()
+# print()
 print(
     f"T: {time_of_least_distance2} yr. Boost: ({v_rocket2_shortest_dist[0] - v_stable[0]}, {v_rocket2_shortest_dist[1]-v_stable[1]}) Au/yr, V: ({v_stable[0]}, {v_stable[1]})"
 )
 plt.plot(
     r_rocket3[0, 0, :],
     r_rocket3[1, 0, :],
-    label="Rocket trajectory after injection",
+    label="Trj. aft. injection",
 )
 plt.xlabel("Au", fontsize=20)
 plt.ylabel("Au", fontsize=20)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
-plt.legend(fontsize=10)
+plt.legend(fontsize=15)
 plt.title("Rocket trajectory towards target planet", fontsize=20)
 plt.show()
 
@@ -568,4 +685,4 @@ print(f"Fuel before launch:{165000} kg")
 print(f"Fuel after launch:{fuel_weight} kg")
 print(f"Fuel after first boost: {fuel_weight - fuel_boost1} kg")
 print(f"Fuel after injection: {fuel_weight - fuel_boost1-fuel_injection} kg")
-print("------------")
+print("-------------")
