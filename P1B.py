@@ -323,11 +323,11 @@ def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=0.01):
     fuel_consumed."""
     thrust = engine.thrust
     fuel_consumption = engine.total_fuel_constant
-    start_speed = 0
+    speed = 0
     total_time = 0
     fuel_consumed = 0
-    while start_speed < speed_boost:
-        start_speed += (thrust / initial_rocket_mass) * dt
+    while speed < speed_boost:
+        speed += (thrust / initial_rocket_mass) * dt
         initial_rocket_mass -= fuel_consumption * dt
         total_time += dt
         fuel_consumed += fuel_consumption * dt

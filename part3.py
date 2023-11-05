@@ -312,32 +312,32 @@ for phi in phi_arrassss:
 
 """
 """Codeblock to verify simulated orbits."""
-"""
-step = 1
-mission.verify_planet_positions(
-    simulation_duration=3,
-    planet_positions=[
-        [
-            orbit_0[1, ::step],
-            orbit_1[1, ::step],
-            orbit_2[1, ::step],
-            orbit_3[1, ::step],
-            orbit_4[1, ::step],
-            orbit_5[1, ::step],
-            orbit_6[1, ::step],
-        ],
-        [
-            orbit_0[2, ::step],
-            orbit_1[2, ::step],
-            orbit_2[2, ::step],
-            orbit_3[2, ::step],
-            orbit_4[2, ::step],
-            orbit_5[2, ::step],
-            orbit_6[2, ::step],
-        ],
-    ],
-)
-"""
+
+# step = 1
+# mission.verify_planet_positions(
+#     simulation_duration=3,
+#     planet_positions=[
+#         [
+#             orbit_0[1, ::step],
+#             orbit_1[1, ::step],
+#             orbit_2[1, ::step],
+#             orbit_3[1, ::step],
+#             orbit_4[1, ::step],
+#             orbit_5[1, ::step],
+#             orbit_6[1, ::step],
+#         ],
+#         [
+#             orbit_0[2, ::step],
+#             orbit_1[2, ::step],
+#             orbit_2[2, ::step],
+#             orbit_3[2, ::step],
+#             orbit_4[2, ::step],
+#             orbit_5[2, ::step],
+#             orbit_6[2, ::step],
+#         ],
+#     ],
+# )
+
 """Codeblock to generate orbit-video."""
 """
 mission.generate_orbit_video(
