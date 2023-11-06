@@ -338,8 +338,9 @@ mission.verify_manual_orientation(
     solar_x_vel,
     solar_y_vel,
     total_flight_time=3.0 - (best_launch_time_dt05 + (total_time / sec_per_year)),
-    time_step=10e-6,
+    time_step=10e-5,
 )
+
 
 dist_array = np.sqrt(
     (r_rocket1[0, 0, :] - r_planets1[0, 1, :]) ** 2
@@ -368,7 +369,38 @@ dot_product = np.dot(unit_vector_1, unit_vector_2)
 angle = np.arccos(dot_product)
 v_rocket1_tangential = v_rocket1_shortest_dist * np.sin(angle)
 v_rocket1_radial = -v_rocket1_shortest_dist * np.cos(angle)
-
+print(f"Min dist: {dist1}")
+for i in range(7):
+    plt.plot(
+        r_planets1[0, i, :],
+        r_planets1[1, i, :],
+        linestyle="--",
+        alpha=0.5,
+        label=f"orbit{i}",
+    )
+plt.plot(
+    r_rocket1[0, 0, 0 : int(idx1 + 1)],
+    r_rocket1[1, 0, 0 : int(idx1 + 1)],
+    label="Trj. aft. launch",
+)
+plt.plot(
+    (r_rocket1[0, 0, idx1], r_planets1[0, 1, idx1]),
+    (r_rocket1[1, 0, idx1], r_planets1[1, 1, idx1]),
+    label=f"Dist: {dist1:.6f} Au",
+)
+plt.scatter(
+    r_planets1[0, 1, idx1], r_planets1[1, 1, idx1], label="Min dist planet", s=70
+)
+plt.scatter(r_rocket1[0, 0, idx1], r_rocket1[1, 0, idx1], label="Min dist rocket", s=70)
+plt.scatter(0, 0, label="Sun", s=70)
+plt.scatter(r_rocket1[0, 0, 0], r_rocket1[1, 0, 0], label="Rocket after launch", s=70)
+plt.xlabel("Au", fontsize=20)
+plt.ylabel("Au", fontsize=20)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.legend(fontsize=15)
+plt.title("Rocket trajectory after launch", fontsize=20)
+plt.show()
 
 #################################################################
 # #  Bruteforcing to find best angle for correctional boost   # #
@@ -600,8 +632,66 @@ plt.plot(
 # ################################################################
 # #   Interplanetary travel, with shortcut to unstable orbit     #
 # ################################################################
+code_stable_orbit = 75980
+shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
 
+################################################################
+#               PLACE SPACECRAFT IN STABLE ORBIT               #
+################################################################
+#                   |      For Part 6      |
+#                   ------------------------
 
+"""
+DOCUMENTATION
+
+------------------------------------------------------------------------
+place_spacecraft_in_stable_orbit() places the spacecraft in a circular
+orbit around the specified planet.
+
+Parameters
+----------
+
+time  :  float
+    The time at which the spacecraft should be placed in orbit, in YEARS
+    from the initial system time.
+
+orbital_height  :  float
+    The height of the orbit above the planet surface, in METERS.
+
+orbital_angle  :  float
+    The angle of the initial position of the spacecraft in orbit, in
+    RADIANS relative to the x-axis.
+
+planet_idx  :  int
+    The index of the planet that the spacecraft should orbit.
+
+Raises
+------
+
+RuntimeError
+    When none of the provided codes are valid for unlocking this method.
+RuntimeError
+    When called before verify_manual_orientation() has been called
+    successfully.
+------------------------------------------------------------------------
+
+"""
+
+time = # insert the time you want the spacecraft to be placed in orbit
+orbital_height = # insert the height of the orbit above the surface
+orbital_angle = # insert the angle of initial position of spacecraft here
+planet_idx = # insert the index of your destination planet
+
+shortcut.place_spacecraft_in_stable_orbit(time, orbital_height,
+    orbital_angle, planet_idx)
+
+# initiating landing sequence. Documentation on how to use your
+# LandingSequence instance can be found here:
+#     https://lars-frogner.github.io/ast2000tools/html/classes/ast2000to
+#     ols.space_mission.LandingSequence.html#ast2000tools.space_mission.
+#     LandingSequence
+
+land = mission.begin_landing_sequence()
 code_unstable_orbit = 69696
 shortcut = SpaceMissionShortcuts(mission, [code_unstable_orbit])
 shortcut.place_spacecraft_in_unstable_orbit(
