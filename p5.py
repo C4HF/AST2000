@@ -65,7 +65,6 @@ falcon_engine = Engine(
 with np.load("planet_trajectories.npz") as f:
     times = f["times"]
     exact_planet_positions = f["planet_positions"]
-
 for i, planet in enumerate(exact_planet_positions[0]):
     globals()[f"orbit_{i}"] = np.array(
         (
@@ -86,30 +85,58 @@ def rocket_trajectory(
     total_flight_time,
     time_step,
 ):
-    time_array = np.arange(initial_time, initial_time + total_flight_time, time_step)
-    x_pos_arr = np.zeros(len(time_array))
-    y_pos_arr = np.zeros(len(time_array))
-    x_vel_arr = np.zeros(len(time_array))
-    y_vel_arr = np.zeros(len(time_array))
+    """Function to calculate rocket trajectory while coasting in SolarSystem. Takes initial time, position, velocity,
+    desired coast-time and the timestep for the simulation (a smaller timestep increases accuracy). The function
+    interpolates the planet-orbits and use the posistion of the planets in each timestep to calculate the trajectory of the
+    rocket using a leapfrog-loop and Newtons gravitational formula. Returns the trajectory of rocket including time, velocity
+    and position, aswell as the interpolated planet orbits.
+    .
+    """
+    time_array = np.arange(
+        initial_time, initial_time + total_flight_time, time_step
+    )  # Creates the time_array of simulation
+    x_pos_arr = np.zeros(
+        len(time_array)
+    )  # Empty x-position-array to be filled with values in simulation
+    y_pos_arr = np.zeros(
+        len(time_array)
+    )  # Empty y-position-array to be filled with values in simulation
+    x_vel_arr = np.zeros(
+        len(time_array)
+    )  # Empty x-velocity-array to be filled with values in simulation
+    y_vel_arr = np.zeros(
+        len(time_array)
+    )  # Empty y-veloctiy-array to be filled with values in simulation
 
-    x_pos_arr[0] = initial_x_pos
-    y_pos_arr[0] = initial_y_pos
-    x_vel_arr[0] = initial_x_vel
-    y_vel_arr[0] = initial_y_vel
+    x_pos_arr[0] = initial_x_pos  # Setting initial x-position
+    y_pos_arr[0] = initial_y_pos  # Setting initial y-position
+    x_vel_arr[0] = initial_x_vel  # Setting initial x-velocity
+    y_vel_arr[0] = initial_y_vel  # Setting initial y-velocity
 
-    interpolated_orbits = [[], []]
+    interpolated_orbits = [[], []]  # Empty list to be filled with interpolated orbits
 
+    # Loop to interpolate simulated orbits to fit shape of time_array.
     for orbit in orbits:
-        f = interpolate.interp1d(orbit[0], orbit[1:3], axis=-1)
+        f = interpolate.interp1d(
+            orbit[0], orbit[1:3], axis=-1
+        )  # Using scipy.interpolate to interpolate orbits
         t = time_array
-        x, y = f(t)
-        interpolated_orbits[0].append(x)
-        interpolated_orbits[1].append(y)
+        x, y = f(
+            t
+        )  # Using interpolation-function to calculate planet-postions during the timesteps in time_array
+        interpolated_orbits[0].append(x)  # adding to list
+        interpolated_orbits[1].append(y)  # adding to list
 
-    r_planets = np.array(interpolated_orbits)
+    r_planets = np.array(
+        interpolated_orbits
+    )  # Turning interpolated_orbits-list to array
 
-    r_rocket = np.array([[x_pos_arr], [y_pos_arr]])
-    v_rocket = np.array([[x_vel_arr], [y_vel_arr]])
+    r_rocket = np.array(
+        [[x_pos_arr], [y_pos_arr]]
+    )  # Empty pos-array for rocket position, to be filled with values from simulation
+    v_rocket = np.array(
+        [[x_vel_arr], [y_vel_arr]]
+    )  # Empty vel-array for rocket position, to be filled with values from simulation
 
     G = 4 * (np.pi) ** 2  # Gravitational constant for Au
     a_sun = ((-G * star_mass) * r_rocket[:, :, 0]) / (
@@ -126,13 +153,13 @@ def rocket_trajectory(
         / (np.sqrt(np.sum((r_rocket[:, :, 0] - r_planets[:, :, 0]) ** 2)) ** 3)
     )  # Sets initial acceleration from planets according to N.2 law
     acc_old = a_sun + a_planets
-    # acc_old = a_planets
+    # Leapfrog-loop
     for i in range(0, len(time_array) - 1):
         r_rocket[:, :, i + 1] = (
             r_rocket[:, :, i]
             + v_rocket[:, :, i] * time_step
             + (acc_old * time_step**2) / 2
-        )
+        )  # Rocket pos at time i+1
 
         a_sun = (
             (-G * star_mass)
@@ -149,10 +176,12 @@ def rocket_trajectory(
             )
             / (np.sqrt(np.sum((r_rocket[:, :, i] - r_planets[:, :, i]) ** 2)) ** 3)
         )  # Sets initial acceleration from planets according to N.2 law
-        acc_new = a_sun + a_planets
+        acc_new = (
+            a_sun + a_planets
+        )  # Setting new acceleration to calculate velocity change
         v_rocket[:, :, i + 1] = (
             v_rocket[:, :, i] + (1 / 2) * (acc_old + acc_new) * time_step
-        )
+        )  # Calculating velocty of rocket in timestep i+1
         acc_old = acc_new
 
     return time_array, r_rocket, v_rocket, r_planets
@@ -254,13 +283,13 @@ print("-----------")
 """ 
 Searching parameters: # launch_times = np.linspace(0, 2, 1000), launch_phis = np.linspace(0, 2 * np.pi, 4), 
 with dt=0.01 and timestep=10e-5 
-Best result: (0.8368368368368369, 6.283185307179586, 8.240883598534517e-06)
+Best result: (Time (yr): 0.8368368368368369, Angle (radians):6.283185307179586, Min. dist. (Au): 8.240883598534517e-06)
 """
 best_launch_time_dt05 = 0.8368368368368369
 
 
 #################################################################
-# #                     Launching                             # #
+# #   Launching using best launchtime and timestep 10e-6      # #
 #################################################################
 (
     altitude,
@@ -281,7 +310,7 @@ best_launch_time_dt05 = 0.8368368368368369
 )
 
 #################################################################
-# #              Initializing space mission                   # #
+# #              Updating space_mission-instance              # #
 #################################################################
 time_diff = np.abs(orbit_0[0] - best_launch_time_dt05)
 least_time_diff = np.min(time_diff)
@@ -331,6 +360,8 @@ mission.verify_manual_orientation(
 #################################################################
 # #                 Rocket trajectory 1                       # #
 #################################################################
+# Simulating rocket trajectory after launch. ##
+
 (time_array1, r_rocket1, v_rocket1, r_planets1) = rocket_trajectory(
     best_launch_time_dt05 + (total_time / sec_per_year),
     solar_x_pos,
@@ -341,7 +372,7 @@ mission.verify_manual_orientation(
     time_step=10e-5,
 )
 
-
+## Finding minimal distance and time of minimal distance ##
 dist_array = np.sqrt(
     (r_rocket1[0, 0, :] - r_planets1[0, 1, :]) ** 2
     + (r_rocket1[1, 0, :] - r_planets1[1, 1, :]) ** 2
@@ -350,7 +381,7 @@ dist1 = np.min(dist_array)
 idx1 = np.where(dist_array == dist1)[0]
 time_of_least_distance1 = time_array1[idx1]
 
-"Code to calculate velocity vectors, used to calculate boost vector:"
+## Calculating different position and velocity-vectors ##
 v_planet1_shortest_dist = np.array(
     (r_planets1[:, 1, idx1] - r_planets1[:, 1, idx1 - 1])
     / (time_array1[idx1] - time_array1[idx1 - 1])
@@ -364,43 +395,18 @@ r_rocket1_shortest_dist = (r_rocket1[0, 0, idx1][0], r_rocket1[1, 0, idx1][0])
 r_planet1_shortest_dist = np.array((r_planets1[0, 0, idx1], r_planets1[1, 1, idx1]))
 r_radial = r_rocket1_shortest_dist - r_planet1_shortest_dist
 unit_vector_1 = v_rocket1_shortest_dist / np.linalg.norm(v_rocket1_shortest_dist)
-unit_vector_2 = r_radial / np.linalg.norm(r_radial)
-dot_product = np.dot(unit_vector_1, unit_vector_2)
-angle = np.arccos(dot_product)
+unit_vector_2 = r_radial / np.linalg.norm(
+    r_radial
+)  # radial position-vector relative to planet
+dot_product = np.dot(
+    unit_vector_1, unit_vector_2
+)  # rocket-velocity-vector in the x/y-plane
+angle = np.arccos(
+    dot_product
+)  # <---- Angle between rocket-velocity-vector and radial position-vector relative to planet. ####
 v_rocket1_tangential = v_rocket1_shortest_dist * np.sin(angle)
 v_rocket1_radial = -v_rocket1_shortest_dist * np.cos(angle)
-print(f"Min dist: {dist1}")
-for i in range(7):
-    plt.plot(
-        r_planets1[0, i, :],
-        r_planets1[1, i, :],
-        linestyle="--",
-        alpha=0.5,
-        label=f"orbit{i}",
-    )
-plt.plot(
-    r_rocket1[0, 0, 0 : int(idx1 + 1)],
-    r_rocket1[1, 0, 0 : int(idx1 + 1)],
-    label="Trj. aft. launch",
-)
-plt.plot(
-    (r_rocket1[0, 0, idx1], r_planets1[0, 1, idx1]),
-    (r_rocket1[1, 0, idx1], r_planets1[1, 1, idx1]),
-    label=f"Dist: {dist1:.6f} Au",
-)
-plt.scatter(
-    r_planets1[0, 1, idx1], r_planets1[1, 1, idx1], label="Min dist planet", s=70
-)
-plt.scatter(r_rocket1[0, 0, idx1], r_rocket1[1, 0, idx1], label="Min dist rocket", s=70)
-plt.scatter(0, 0, label="Sun", s=70)
-plt.scatter(r_rocket1[0, 0, 0], r_rocket1[1, 0, 0], label="Rocket after launch", s=70)
-plt.xlabel("Au", fontsize=20)
-plt.ylabel("Au", fontsize=20)
-plt.xticks(fontsize=20)
-plt.yticks(fontsize=20)
-plt.legend(fontsize=15)
-plt.title("Rocket trajectory after launch", fontsize=20)
-plt.show()
+
 
 #################################################################
 # #  Bruteforcing to find best angle for correctional boost   # #
@@ -466,20 +472,21 @@ for i, boost_angle in enumerate(boost_angles):
 """"
 *************
 Results:
-Current best angle: -0.8726646259971648
-Current shortest dist: 3.0515403005546108e-05
+Best angle (radians): -0.8726646259971648
+Shortest dist (Au): 3.0515403005546108e-05
 *************
 """
 
 best_angle = -0.8726646259971648
+
 boost_rocket_x = (
     v_rocket1_radial[0] * np.cos(best_angle) - v_rocket1_radial[1] * np.cos(best_angle)
-) * 100
+) * 100  # Rocket-boost x-component
 boost_rocket_y = (
     v_rocket1_radial[0] * np.sin(best_angle) + v_rocket1_radial[1] * np.cos(best_angle)
-) * 100
+) * 100  # Rocket-boost y-component
 
-"""Calculating needed fuel for correction boost """
+# Calculating needed fuel for first boost
 fuel_boost1 = calculate_needed_fuel(
     falcon_engine,
     dry_rocket_mass + fuel_weight,
@@ -490,6 +497,7 @@ fuel_boost1 = calculate_needed_fuel(
 #################################################################
 # #                 Rocket trajectory 2                       # #
 #################################################################
+## Simulating rocket trajectory after first correctional boost ##
 (time_array2, r_rocket2, v_rocket2, r_planets2) = rocket_trajectory(
     time_of_least_distance1,
     r_rocket1[0, 0, idx1],
@@ -500,41 +508,42 @@ fuel_boost1 = calculate_needed_fuel(
     time_step=10e-6,
 )
 
+## Finding minimal distance and time of minimal distance ##
 dist_array2 = np.sqrt(
     (r_rocket2[0, 0, :] - r_planets2[0, 1, :]) ** 2
     + (r_rocket2[1, 0, :] - r_planets2[1, 1, :]) ** 2
 )
-dist = np.min(dist_array)
-idx2 = np.where(dist_array == dist)[0]
+dist2 = np.min(dist_array)
+idx2 = np.where(dist_array == dist2)[0]
 time_of_least_distance2 = time_array2[idx2]
 dist_to_star2 = np.sqrt(r_rocket2[0, 0, idx2] ** 2 + r_rocket2[1, 0, idx2] ** 2)
 gravitational_capture_dist = dist_to_star2 * np.sqrt(
     system.masses[1] / (10 * star_mass)
-)
+)  # Calculating gravitational capture distance of planet (l)
 dist_to_star_array2 = np.sqrt(r_rocket2[0, 0, :] ** 2 + r_rocket2[1, 0, :] ** 2)
 
 
 #################################################################
 # # Plotting dist. from rocket traj. 2 to planet 1 with l     # #
 #################################################################
-# plt.plot(time_array2, dist_array2, label="Dist to planet")
-# plt.plot(
-#     time_array2,
-#     dist_to_star_array2 * np.sqrt(system.masses[1] / (10 * star_mass)),
-#     label="Gravitational capture",
-# )
-# plt.scatter(
-#     time_array2[idx2],
-#     dist_array[idx2],
-#     label=f"Shortest distance: {dist:.2e}",
-# )
-# plt.xlabel("Yr", fontsize=20)
-# plt.ylabel("Au", fontsize=20)
-# plt.xticks(fontsize=20)
-# plt.yticks(fontsize=20)
-# plt.legend(fontsize=20)
-# plt.title("Distance to target planet vs. gravitational capture distance", fontsize=20)
-# plt.show()
+plt.plot(time_array2, dist_array2, label="Dist to planet")
+plt.plot(
+    time_array2,
+    dist_to_star_array2 * np.sqrt(system.masses[1] / (10 * star_mass)),
+    label="Gravitational capture",
+)
+plt.scatter(
+    time_array2[idx2],
+    dist_array[idx2],
+    label=f"Shortest distance: {dist2:.2e}",
+)
+plt.xlabel("Yr", fontsize=20)
+plt.ylabel("Au", fontsize=20)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.legend(fontsize=20)
+plt.title("Distance to target planet vs. gravitational capture distance", fontsize=20)
+plt.show()
 
 
 #################################################################
@@ -543,33 +552,50 @@ dist_to_star_array2 = np.sqrt(r_rocket2[0, 0, :] ** 2 + r_rocket2[1, 0, :] ** 2)
 v2_planet1_shortest_dist = np.array(
     (r_planets2[:, 1, idx2] - r_planets2[:, 1, idx2 - 1])
     / (time_array2[idx2] - time_array2[idx2 - 1])
-)
-v_rocket2_shortest_dist = np.array((v_rocket2[0, 0, idx2][0], v_rocket2[1, 0, idx2][0]))
+)  # planet 1 velcotiry at shortest distance
+v_rocket2_shortest_dist = np.array(
+    (v_rocket2[0, 0, idx2][0], v_rocket2[1, 0, idx2][0])
+)  # rocket velcotiy at shortest distance
 r_rocket2_shortest_dist = (r_rocket2[0, 0, idx2][0], r_rocket2[1, 0, idx2][0])
 r_planet2_shortest_dist = np.array((r_planets2[0, 1, idx2], r_planets2[1, 1, idx2]))
-r_radial = r_rocket2_shortest_dist - r_planet2_shortest_dist
-unit_vector_1 = v_rocket2_shortest_dist / np.linalg.norm(v_rocket2_shortest_dist)
-unit_vector_2 = r_radial / np.linalg.norm(r_radial)
+r_radial = (
+    r_rocket2_shortest_dist - r_planet2_shortest_dist
+)  # radial position vector at shortest distance
+unit_vector_1 = v_rocket2_shortest_dist / np.linalg.norm(
+    v_rocket2_shortest_dist
+)  # Rocket velocity-unit-vector at shortest ditance
+unit_vector_2 = r_radial / np.linalg.norm(
+    r_radial
+)  # Rocket radial-postion-unit-vector at shortest ditance
 dot_product = np.dot(unit_vector_1, unit_vector_2)
-angle = np.arccos(dot_product)
-v_rocket2_tangential = v_rocket2_shortest_dist * np.sin(angle)
-v_rocket2_radial = -v_rocket2_shortest_dist * np.cos(angle)
-abs_v_stable = np.sqrt((G * system.masses[1]) / dist)
+angle = np.arccos(
+    dot_product
+)  # <---- Angle between radial-vector and rocket velocity-vector
+v_rocket2_tangential = v_rocket2_shortest_dist * np.sin(
+    angle
+)  # rocket tangential velcocity at shortest distance
+v_rocket2_radial = -v_rocket2_shortest_dist * np.cos(
+    angle
+)  # rocket radial velcocity at shortest distance
+abs_v_stable = np.sqrt((G * system.masses[1]) / dist2)  # absolute value of v-stable
 abs_v_tangential = np.linalg.norm(v_rocket2_tangential)
-r = abs_v_stable / abs_v_tangential
-v_stable = v2_planet1_shortest_dist[:, 0] + v_rocket2_tangential * r
+r = (
+    abs_v_stable / abs_v_tangential
+)  # Factor between absolut value of v-stable and current tangantiel rocket-velocity
+v_stable = (
+    v2_planet1_shortest_dist[:, 0] + v_rocket2_tangential * r
+)  # Calculating v_stable of injenction
 v_injection = v_stable - v_rocket1_shortest_dist
 v_boost = np.linalg.norm((v_rocket2[:, 0, idx2] - v_stable))
 fuel_injection = calculate_needed_fuel(
     falcon_engine, dry_rocket_mass + (fuel_weight - fuel_boost1), v_boost, dt=0.00001
 )  # Calculating needed fuel to perform injection
-# print(v_stable)
 
 
 #################################################################
 # #                 Rocket trajectory 3                       # #
 #################################################################
-
+## Simulating rocket trajectory after injection ##
 (time_array, r_rocket3, v_rocket3, r_planets) = rocket_trajectory(
     time_of_least_distance2,
     r_rocket2[0, 0, idx2],
@@ -580,7 +606,62 @@ fuel_injection = calculate_needed_fuel(
     time_step=10e-6,
 )
 
-"""Trying to fly: (I am no pilot...)"""
+#################################################################
+# #  Plotting all three simulated rocket trajectories         # #
+#################################################################
+for i in range(7):
+    plt.plot(
+        r_planets1[0, i, :],
+        r_planets1[1, i, :],
+        linestyle="--",
+        alpha=0.5,
+        label=f"orbit{i}",
+    )
+plt.plot(
+    r_rocket1[0, 0, 0 : int(idx1 + 1)],
+    r_rocket1[1, 0, 0 : int(idx1 + 1)],
+    label="Trj. aft. launch",
+)
+plt.plot(
+    r_rocket2[0, 0, 0 : int(idx2 + 1)],
+    r_rocket2[1, 0, 0 : int(idx2 + 1)],
+    label="Trj. aft. corr. boost",
+)
+plt.plot(
+    r_rocket3[0, 0, :],
+    r_rocket3[1, 0, :],
+    label="Trj. aft. injection",
+)
+
+plt.scatter(r_rocket2[0, 0, idx2], r_rocket2[1, 0, idx2], label="Min dist rocket", s=70)
+plt.scatter(
+    r_planets1[0, 1, idx2], r_planets1[1, 1, idx2], label="Min dist planet", s=70
+)
+plt.scatter(
+    r_rocket1[0, 0, idx1], r_rocket1[1, 0, idx1], label="Rocket before boost", s=70
+)
+plt.scatter(0, 0, label="Sun", s=70)
+plt.scatter(r_rocket1[0, 0, 0], r_rocket1[1, 0, 0], label="Rocket after launch", s=70)
+
+plt.scatter(
+    r_planets[0, 1, 0], r_planets[1, 1, 0], label="More accurate planet 1", s=70
+)
+
+plt.scatter(0.0593418, 0.0582803, label="Starting pos given unstable orbit2")
+
+plt.xlabel("Au", fontsize=20)
+plt.ylabel("Au", fontsize=20)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.legend(fontsize=15)
+plt.title("Rocket trajectory towards target planet", fontsize=20)
+plt.show()
+
+
+# ################################################################
+# #   Interplanetary travel, with shortcut to unstable orbit    ##
+# ################################################################
+"""Trying pilot the rocket using the Interplanetary-instance (not enough time)"""
 """
 flying = mission.begin_interplanetary_travel()
 flying.coast_until_time(1.36614)
@@ -629,126 +710,126 @@ plt.plot(
 """
 
 
-# ################################################################
-# #   Interplanetary travel, with shortcut to unstable orbit     #
-# ################################################################
-code_stable_orbit = 75980
-shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
+def analyse_final_orbit_and_plot(
+    type_of_orbit: str, orbit_time: float, time_step: float = 60
+):
+    """Function to create plot of final orbit around planet 1. Choose stable with
+    input "stable" or unstable with input "unstable". Orbit_time is the period to analyse
+    orbit in years. time_step is time_step of calculationg in seconds."""
+    ######## Here we are using a shortcut #########
+    if type_of_orbit == "unstable":
+        code_unstable_orbit = 69696
+        shortcut = SpaceMissionShortcuts(mission, [code_unstable_orbit])
+        shortcut.place_spacecraft_in_unstable_orbit(
+            time_of_least_distance2, 1
+        )  # <----- Shortcut to unstable orbit ######## Shortcut here ########
 
-################################################################
-#               PLACE SPACECRAFT IN STABLE ORBIT               #
-################################################################
-#                   |      For Part 6      |
-#                   ------------------------
+    elif type_of_orbit == "stable":
+        code_stable_orbit = 75980
+        shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
+        shortcut.place_spacecraft_in_stable_orbit(
+            time_of_least_distance2, 1000000, 0, 1
+        )  # <----- Using shortcut to stable orbit
 
-"""
-DOCUMENTATION
+    land = mission.begin_landing_sequence()
+    time = []
+    x_pos_list = []
+    y_pos_list = []
+    x_vel_list = []
+    y_vel_list = []
+    orient = land.orient()
+    pos = orient[1]
+    vel = orient[2]
+    time.append(0)
+    x_pos_list.append(pos[0])
+    y_pos_list.append(pos[1])
+    x_vel_list.append(vel[0])
+    y_vel_list.append(vel[1])
+    t = 0
+    revolutions = 0
+    # while t < 5 * sec_per_year:
+    while t < orbit_time * sec_per_year:
+        t += time_step
+        land.fall_until_time(t)
+        orient = land.orient()
+        pos = orient[1]
+        vel = orient[2]
+        time.append(t)
+        x_pos_list.append(pos[0])
+        y_pos_list.append(pos[1])
+        x_vel_list.append(vel[0])
+        y_vel_list.append(vel[1])
+        if (y_pos_list[-1] > y_pos_list[0]) & (
+            y_pos_list[-2] < y_pos_list[0]
+        ):  # counting number of revolutions by checking if planet has crossed x-axis in this dt
+            revolutions += 1
+    time_array = np.array(time)
+    pos_array = np.array((x_pos_list, y_pos_list))
+    vel_array = np.array((x_vel_list, y_vel_list))
+    abs_pos_array = np.sqrt(pos_array[0] ** 2 + pos_array[1] ** 2)
+    abs_vel_array = np.sqrt(vel_array[0] ** 2 + vel_array[1] ** 2)
 
-------------------------------------------------------------------------
-place_spacecraft_in_stable_orbit() places the spacecraft in a circular
-orbit around the specified planet.
+    ## Plotting results ##
+    # Orbit
+    plt.plot(pos_array[0], pos_array[1], label="Pos around planet 1 center")
+    plt.scatter(0, 0, label="Planet 1 center")
+    plt.xlabel("Meters [m]", fontsize=20)
+    plt.ylabel("Meters [m]", fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.axis("equal")
+    plt.title(
+        f"Untable orbit around planet 1 over 0.5 years. Number of revolutions: {revolutions}",
+        fontsize=20,
+    )
+    plt.legend(fontsize=20)
+    plt.show()
 
-Parameters
-----------
+    # Distance
+    plt.plot(
+        time_array / sec_per_year,
+        np.sqrt(pos_array[0] ** 2 + pos_array[1] ** 2),
+        label="Distance from planet center",
+    )
 
-time  :  float
-    The time at which the spacecraft should be placed in orbit, in YEARS
-    from the initial system time.
+    plt.plot(
+        time_array / sec_per_year,
+        np.full(len(time_array), np.mean(abs_pos_array)),
+        label="Mean distance from planet center",
+    )
+    plt.xlabel("Time [yr]", fontsize=20)
+    plt.ylabel("Distance [m]]", fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.title(
+        f"Distance to planet 1 center over 0.5 year",
+        fontsize=20,
+    )
+    plt.legend(fontsize=20)
+    plt.show()
 
-orbital_height  :  float
-    The height of the orbit above the planet surface, in METERS.
-
-orbital_angle  :  float
-    The angle of the initial position of the spacecraft in orbit, in
-    RADIANS relative to the x-axis.
-
-planet_idx  :  int
-    The index of the planet that the spacecraft should orbit.
-
-Raises
-------
-
-RuntimeError
-    When none of the provided codes are valid for unlocking this method.
-RuntimeError
-    When called before verify_manual_orientation() has been called
-    successfully.
-------------------------------------------------------------------------
-
-"""
-
-time = # insert the time you want the spacecraft to be placed in orbit
-orbital_height = # insert the height of the orbit above the surface
-orbital_angle = # insert the angle of initial position of spacecraft here
-planet_idx = # insert the index of your destination planet
-
-shortcut.place_spacecraft_in_stable_orbit(time, orbital_height,
-    orbital_angle, planet_idx)
-
-# initiating landing sequence. Documentation on how to use your
-# LandingSequence instance can be found here:
-#     https://lars-frogner.github.io/ast2000tools/html/classes/ast2000to
-#     ols.space_mission.LandingSequence.html#ast2000tools.space_mission.
-#     LandingSequence
-
-land = mission.begin_landing_sequence()
-code_unstable_orbit = 69696
-shortcut = SpaceMissionShortcuts(mission, [code_unstable_orbit])
-shortcut.place_spacecraft_in_unstable_orbit(
-    time_of_least_distance2, 1
-)  # <---- Using shortcut to unstable orbit
-land = mission.begin_landing_sequence()
-orient_land = land.orient()
+    # Velocity
+    G = 6.6743 * (10 ** (-11))  # Gravitational constant
+    plt.plot(
+        time_array / sec_per_year,
+        abs_vel_array,
+        label="Absolute velocity",
+    )
+    plt.plot(
+        time_array / sec_per_year,
+        np.full(len(time_array), np.mean(abs_vel_array)),
+        label="Mean absolute_velocity",
+    )
+    plt.ylabel("Velocity [m/s]", fontsize=20)
+    plt.xlabel("Time [yr]", fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.title(
+        f"Absolute velocity of rocket and mean-abs velocity around planet 1 over 1 year",
+        fontsize=20,
+    )
+    plt.legend(fontsize=20)
+    plt.show()
 
 
-#################################################################
-# #          Plotting simulated rocket trajectories           # #
-#################################################################
-
-# for i in range(7):
-#     plt.plot(
-#         r_planets1[0, i, :],
-#         r_planets1[1, i, :],
-#         linestyle="--",
-#         alpha=0.5,
-#         label=f"orbit{i}",
-#     )
-# plt.plot(
-#     r_rocket1[0, 0, 0 : int(idx1 + 1)],
-#     r_rocket1[1, 0, 0 : int(idx1 + 1)],
-#     label="Trj. aft. launch",
-# )
-# plt.plot(
-#     r_rocket2[0, 0, 0 : int(idx2 + 1)],
-#     r_rocket2[1, 0, 0 : int(idx2 + 1)],
-#     label="Trj. aft. corr. boost",
-# )
-# plt.plot(
-#     r_rocket3[0, 0, :],
-#     r_rocket3[1, 0, :],
-#     label="Trj. aft. injection",
-# )
-
-# plt.scatter(r_rocket2[0, 0, idx2], r_rocket2[1, 0, idx2], label="Min dist rocket", s=70)
-# plt.scatter(
-#     r_planets1[0, 1, idx2], r_planets1[1, 1, idx2], label="Min dist planet", s=70
-# )
-# plt.scatter(
-#     r_rocket1[0, 0, idx1], r_rocket1[1, 0, idx1], label="Rocket before boost", s=70
-# )
-# plt.scatter(0, 0, label="Sun", s=70)
-# plt.scatter(r_rocket1[0, 0, 0], r_rocket1[1, 0, 0], label="Rocket after launch", s=70)
-
-# plt.scatter(
-#     r_planets[0, 1, 0], r_planets[1, 1, 0], label="More accurate planet 1", s=70
-# )
-
-# plt.scatter(0.0593418, 0.0582803, label="Starting pos given unstable orbit2")
-
-# plt.xlabel("Au", fontsize=20)
-# plt.ylabel("Au", fontsize=20)
-# plt.xticks(fontsize=20)
-# plt.yticks(fontsize=20)
-# plt.legend(fontsize=15)
-# plt.title("Rocket trajectory towards target planet", fontsize=20)
-# plt.show()
+analyse_final_orbit_and_plot("stable", 0.05)
