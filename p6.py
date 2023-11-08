@@ -73,7 +73,7 @@ def plot_sigma():   #Plotter standardavviket til fluksen mot bølgelengdene
     plt.show()
 #plot_sigma()
 
-def chi_squared():
+def chi_squared(): #Chi-kvadrat minimering
     wavelength, flux, sigma = flux_sigma()
     
-chi_squared()
+#chi_squared()
