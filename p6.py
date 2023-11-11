@@ -44,7 +44,7 @@ def flux_sigma():  # Henter ut informasjon om fluksen og standardavviket for bø
     #     r"C:\Users\axlkl\AST2000\spectrum_seed63_600nm_3000nm.txt", "r"
     # )  # Åpner filen med info fra spektrallinjene ### Må fjerne navn fra fil
     flux_data = open(
-        r"Data/spectrum_seed63_600nm_3000nm.txt", "r"
+        r"Data/spectrum_seed75_600nm_3000nm.txt", "r"
     )  # <--- legg fil i data-mappen
     for line in flux_data:  # Går gjennom hver linje i filen. 2 verdier per linje.
         line = line.strip()  # Fjerner mellomrom og div.
@@ -104,6 +104,8 @@ CH4_spectral_lines = [1660, 2200]
 CO_spectral_lines = [2340]
 N20_spectral_lines = [2870]
 
+spectral_lines = [632, 690, 760, 720, 820, 940, 1400, 1600, 1660, 2200, 2340, 2870]
+
 N = 1000000
 temperature = np.linspace(150, 450, N)  # Expected temperatur-range in atmosphere
 velocity = np.linspace(-10, 10, N)
@@ -116,8 +118,8 @@ velocity = np.linspace(-10, 10, N)
 def plot_slice_of_flux_around_spectralline(m, lambda_0):
     """Function to plot a slice of the observed flux in a range around expected spectrallines."""
     lambda_array = (lambda_0 * velocity / const.c_km_pr_s) + lambda_0
-    std_array = lambda_0 * np.sqrt(const.k_B * temperature) / (const.c * m)
-    Fmin = 0.7
+    # std_array = lambda_0 * np.sqrt(const.k_B * temperature) / (const.c * m)
+    # Fmin = 0.7
     wavelength, flux, sigma = flux_sigma()
 
     lambda_max = np.max(lambda_array)
@@ -144,37 +146,26 @@ def plot_slice_of_flux_around_spectralline(m, lambda_0):
     weighet_flux2 = np.where(
         flux_slice < 1, flux_slice / (1 - noise_slice), weighet_flux1
     )
-    plt.plot(
-        wavelength_slice,
-        weighet_flux2,
-        label="observed flux down-weighted with noise",
-    )
+    # plt.plot(
+    #     wavelength_slice,
+    #     weighet_flux2,
+    #     label="observed flux down-weighted with noise",
+    # )
 
     plt.plot(
         wavelength_slice,
         np.full_like(wavelength_slice, 1),
         label="Normalized average flux",
     )
-    plt.title(f"Plot of flux around expected spectral line: {spectral_line} NM")
+    plt.plot(wavelength_slice, noise_slice + 0.9, label="Noise")
+    plt.title(f"Plot of flux around expected spectral line: {lambda_0} NM")
     plt.legend()
     plt.show()
 
 
-for spectral_line in O2_spectral_lines:
-    create_gauss_model(m=1, lambda_0=spectral_line)
-# plt.plot(lambda_array, F)
-# print(np.shape(F))
-# plt.hist(F, bins=10000)
+plot_slice_of_flux_around_spectralline(m=1, lambda_0=1660)
+# for spectral_line in spectral_lines:
+#     plot_slice_of_flux_around_spectralline(m=1, lambda_0=spectral_line)
 
-# gauss = np.random.normal(loc=lambda_array[N // 2], scale=std_array[N // 2], size=N)
-# sigma = np.linspace(-4 * std_array[N // 2], 4 * std_array[N // 2], N)
-# plt.plot(sigma, gauss)
-# plt.hist(gauss, bins=1000)
-# plt.show()
-# for lambda_ in lambda_array:
-#     for std in std_array:
-#         gauss = np.random.normal(loc=lambda_, scale=std, size=N)
-
-
-# create_gauss_model(2.65e-26, 632)
-# create_gauss_model(632, 2)
+# for spectral_line in H2O_spectral_lines:
+#     plot_slice_of_flux_around_spectralline(m=1, lambda_0=spectral_line)
