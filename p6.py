@@ -40,22 +40,14 @@ def flux_sigma():  # Henter ut informasjon om fluksen og standardavviket for bø
     )  # Lager tomme lister som skal fylles ut med info fra spektrallinjene
     flux = []
     sigma = []
-    # flux_data = open(
-    #     r"C:\Users\axlkl\AST2000\spectrum_seed63_600nm_3000nm.txt", "r"
-    # )  # Åpner filen med info fra spektrallinjene ### Må fjerne navn fra fil
-    flux_data = open(
-        r"Data/spectrum_seed75_600nm_3000nm.txt", "r"
-    )  # <--- legg fil i data-mappen
+    flux_data = open(r"Data/spectrum_seed63_600nm_3000nm.txt", "r")
     for line in flux_data:  # Går gjennom hver linje i filen. 2 verdier per linje.
         line = line.strip()  # Fjerner mellomrom og div.
         line = line.split()  # Separerer de to verdiene
         wavelength.append(float(line[0]))  # Legger til verdiene i de tomme listene.
         flux.append(float(line[1]))
     flux_data.close()  # Lukker filen
-    # flux_data = open(
-    #     r"C:\Users\axlkl\AST2000\sigma_noise.txt", "r"
-    # )  # Åpner filen med info fra spektrallinjene ### Må fjerne navn fra fil
-    flux_data = open(r"Data/sigma_noise.txt", "r")  # <--- legg fil i data-mappen
+    flux_data = open(r"Data/sigma_noise.txt", "r")  #
     for line in flux_data:  # Går gjennom hver linje i filen. 2 verdier per linje.
         line = line.strip()  # Fjerner mellomrom og div.
         line = line.split()  # Separerer de to verdiene
@@ -80,6 +72,7 @@ def plot_flux():  # Plotter fluksen mot bølgelengdene
     plt.show()
 
 
+# plot_flux()
 # plot_flux()
 
 
