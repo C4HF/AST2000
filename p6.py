@@ -44,7 +44,7 @@ def flux_sigma():  # Henter ut informasjon om fluksen og standardavviket for bø
     #     r"C:\Users\axlkl\AST2000\spectrum_seed63_600nm_3000nm.txt", "r"
     # )  # Åpner filen med info fra spektrallinjene ### Må fjerne navn fra fil
     flux_data = open(
-        r"Data/spectrum_seed63_600nm_3000nm.txt", "r"
+        r"C:\Users\axlkl\AST2000\Data\spectrum_seed63_600nm_3000nm.txt", "r"
     )  # <--- legg fil i data-mappen
     for line in flux_data:  # Går gjennom hver linje i filen. 2 verdier per linje.
         line = line.strip()  # Fjerner mellomrom og div.
@@ -67,7 +67,6 @@ def flux_sigma():  # Henter ut informasjon om fluksen og standardavviket for bø
         sigma,
     )  # Returnerer bølgelengder med tilhørende fluks og  densstandarddavik.
 
-
 def plot_flux():  # Plotter fluksen mot bølgelengdene
     wavelength, flux, sigma = flux_sigma()
 
@@ -79,9 +78,7 @@ def plot_flux():  # Plotter fluksen mot bølgelengdene
     plt.title("Spektrallinjer", fontsize=17)
     plt.show()
 
-
-# plot_flux()
-
+#plot_flux()
 
 def plot_sigma():  # Plotter standardavviket til fluksen mot bølgelengdene
     wavelength, flux, sigma = flux_sigma()
@@ -111,7 +108,6 @@ velocity = np.linspace(-10, 10, N)
 # F = lambda Fmin, lambda_, lambda_0, std: 1 + (Fmin - 1) * np.exp(
 #     -0.5 * ((lambda_ - lambda_0) / (std)) ** 2
 # )
-
 
 def plot_slice_of_flux_around_spectralline(m, lambda_0):
     """Function to plot a slice of the observed flux in a range around expected spectrallines."""
@@ -160,8 +156,8 @@ def plot_slice_of_flux_around_spectralline(m, lambda_0):
     plt.show()
 
 
-for spectral_line in O2_spectral_lines:
-    create_gauss_model(m=1, lambda_0=spectral_line)
+# for spectral_line in O2_spectral_lines:
+#     create_gauss_model(m=1, lambda_0=spectral_line)
 # plt.plot(lambda_array, F)
 # print(np.shape(F))
 # plt.hist(F, bins=10000)
@@ -178,3 +174,33 @@ for spectral_line in O2_spectral_lines:
 
 # create_gauss_model(2.65e-26, 632)
 # create_gauss_model(632, 2)
+
+def chi_squared():
+    wavelength, fluxi, sigmai = flux_sigma()
+    wavelength = np.array(wavelength)
+    NT = 100    #Nøykatighet for temperatur
+    Nv = 10000 #Nøyaktighet for hastighet
+    NF_min = 100 #Nøyaktighet for spektrallinjens fluks
+    lamba0O2 = [632, 690, 760]  #Definerer de forskjellige lambda_0
+    lamba0H2O = [720, 820, 940]
+    lamba0CO2 = [1400, 1600]
+    lamba0CH4 = [1660, 2200]
+    lamba0CO = [2340]
+    lamba0N20 = [2870]
+    mO2 = 1  #Definerer massene
+    T = np.linspace(150,450,NT) #Definerer temperaturen
+    v = np.linspace(-10000,10000,Nv) #Definerer hastigheten
+    F_cont = 1 #Hvor vi forventer å finne fluksen uten spektrallinjer eller støy
+    F_min = np.linspace(0.5,1,NF_min)
+    wavelength_idx_1 = np.where(wavelength <= 1000)      #Finner indekser for de oppstykkede bølgelengdene. 
+    wavelength_idx_2 = np.where((wavelength >= 1350) & (wavelength <= 1710)) #Gjør koden raskere da vi ignorer unødvendige
+    wavelength_idx_3 = np.where((wavelength >= 2150) & (wavelength <= 2340)) #deler av bølgelengdene
+    wavelength_idx_4 = np.where((wavelength >= 2800) & (wavelength <= 2950))
+    #Stykker opp chi-kvadratet i henhold til forventede spektrallinjer, og vil her
+    #loope over Fmin, lambda0, og standardavviket (massen og temperaturen til molekylene)
+    #i de oppstykkede delene av spektrallinjen
+    #For så å regne ut chi-kvadrat, og se på hvilke verdier av de tidligere loopene at vi får minst chi-kvadrat.
+    #Kommer til å bli mange for-løkker, og en treg kode. Viktig med mest mulig vektorisering
+    # sigma = (lamba0 / c) * (np.sqrt(k*T) / m)   
+
+chi_squared()
