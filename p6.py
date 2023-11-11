@@ -5,17 +5,8 @@ import ast2000tools.constants as const
 import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
-from scipy.stats import norm
-import numba as nb
-from numba import njit
-import math
-from scipy.optimize import curve_fit
+import pandas as pd
 
-# from P1B import Engine
-# from P2 import simulate_orbits
-# import h5py
-# from part3 import generalized_launch_rocket
-from PIL import Image
 
 utils.check_for_newer_version()
 
@@ -73,7 +64,6 @@ def plot_flux():  # Plotter fluksen mot bølgelengdene
 
 
 # plot_flux()
-# plot_flux()
 
 
 def plot_sigma():  # Plotter standardavviket til fluksen mot bølgelengdene
@@ -92,73 +82,94 @@ def plot_sigma():  # Plotter standardavviket til fluksen mot bølgelengdene
 # Spectral lines for each gas without doppler shift in nanometers
 O2_spectral_lines = [632, 690, 760]
 H2O_spectral_lines = [720, 820, 940]
-CO2_spectral_lines = [1400, 1600]
+CO2_spectral_lines = [1400, 1660]
 CH4_spectral_lines = [1660, 2200]
 CO_spectral_lines = [2340]
 N20_spectral_lines = [2870]
 
-spectral_lines = [632, 690, 760, 720, 820, 940, 1400, 1600, 1660, 2200, 2340, 2870]
+spectral_lines = [
+    632,
+    690,
+    760,
+    720,
+    820,
+    940,
+    1400,
+    1600,
+    1660,
+    2200,
+    2340,
+    2870,
+]  # list of all spectral lines
 
-N = 1000000
-temperature = np.linspace(150, 450, N)  # Expected temperatur-range in atmosphere
-velocity = np.linspace(-10, 10, N)
-
-# F = lambda Fmin, lambda_, lambda_0, std: 1 + (Fmin - 1) * np.exp(
-#     -0.5 * ((lambda_ - lambda_0) / (std)) ** 2
-# )
+vel_max = 10  # km/s
+vel_min = -10  # km/s
 
 
-def plot_slice_of_flux_around_spectralline(m, lambda_0):
+def plot_slice_of_flux_around_spectralline(lambda_0):
     """Function to plot a slice of the observed flux in a range around expected spectrallines."""
-    lambda_array = (lambda_0 * velocity / const.c_km_pr_s) + lambda_0
-    # std_array = lambda_0 * np.sqrt(const.k_B * temperature) / (const.c * m)
-    # Fmin = 0.7
-    wavelength, flux, sigma = flux_sigma()
+    wavelength, flux, sigma = flux_sigma()  # getting data
+    wavelength_arr = np.array(wavelength)
+    flux_arr = np.array(flux)
+    sigma_arr = np.array(sigma)
 
-    lambda_max = np.max(lambda_array)
-
-    lambda_diff_max = np.abs(wavelength - lambda_max)
+    # Max wavelength
+    lambda_max = (
+        lambda_0 * vel_max / const.c_km_pr_s
+    ) + lambda_0  # Applying dopplershift
+    lambda_diff_max = np.abs(wavelength_arr - lambda_max)
     least_diff_max = np.min(lambda_diff_max)
     idx_max = np.where(lambda_diff_max == least_diff_max)[0]
-    lambda_min = np.min(lambda_array)
-    lambda_diff_min = np.abs(wavelength - lambda_min)
+
+    # Min wavelength
+    lambda_min = (
+        lambda_0 * vel_min / const.c_km_pr_s
+    ) + lambda_0  # Applying dopplershift
+    lambda_diff_min = np.abs(wavelength_arr - lambda_min)
     least_diff_min = np.min(lambda_diff_min)
     idx_min = np.where(lambda_diff_min == least_diff_min)[0]
 
-    wavelength_slice = np.array(wavelength[idx_min[0] : idx_max[0] + 1])
-    flux_slice = np.array(flux[idx_min[0] : idx_max[0] + 1])
-    noise_slice = np.array(sigma[idx_min[0] : idx_max[0] + 1])
+    # Slicing observed data to only plot between min/max values
+    wavelength_slice = np.array(wavelength_arr[idx_min[0] : idx_max[0] + 1])
+    flux_slice = np.array(flux_arr[idx_min[0] : idx_max[0] + 1])
+    noise_slice = np.array(sigma_arr[idx_min[0] : idx_max[0] + 1]) + 1
 
+    # Smoothing data with rolling-average for readablity
+    window_size = 10  # number of points to calculate rolling average
+    flux_slice_pd = pd.Series(flux_slice)
+    smoothed_data = flux_slice_pd.rolling(window_size).mean()
+
+    # Plotting data
     plt.plot(
-        wavelength_slice,
-        flux_slice,
-        label="observed flux",
+        wavelength_slice, flux_slice, label="Observed flux", alpha=0.5, color="gray"
     )
-
-    weighet_flux1 = np.where(flux_slice > 1, flux_slice / (1 + noise_slice), flux_slice)
-    weighet_flux2 = np.where(
-        flux_slice < 1, flux_slice / (1 - noise_slice), weighet_flux1
-    )
-    # plt.plot(
-    #     wavelength_slice,
-    #     weighet_flux2,
-    #     label="observed flux down-weighted with noise",
-    # )
-
+    plt.plot(wavelength_slice, smoothed_data, label="Smoothed_data", color="red")
     plt.plot(
         wavelength_slice,
         np.full_like(wavelength_slice, 1),
-        label="Normalized average flux",
+        label="Base-line",
+        color="black",
     )
-    plt.plot(wavelength_slice, noise_slice + 0.9, label="Noise")
-    plt.title(f"Plot of flux around expected spectral line: {lambda_0} NM")
-    plt.legend()
+    plt.plot(
+        wavelength_slice,
+        noise_slice,
+        label="Noise-level + 1",
+        alpha=0.6,
+        linestyle="--",
+    )
+    plt.xlabel("Wavelentgh (NM)", fontsize=20)
+    plt.ylabel("Standardized flux (LM) ", fontsize=20)
+    plt.ticklabel_format(useOffset=False)
+    plt.xticks(size=20)
+    plt.yticks(size=20)
+    plt.grid(which="both", alpha=0.3)
+    plt.minorticks_on()
+    plt.title(f"Observed flux around: {lambda_0} NM", fontsize=20)
+    plt.legend(fontsize=20, loc="upper right")
     plt.show()
+    # plt.savefig(f"Data/flux_{lambda_0}_nm")
 
 
-plot_slice_of_flux_around_spectralline(m=1, lambda_0=1660)
-# for spectral_line in spectral_lines:
-#     plot_slice_of_flux_around_spectralline(m=1, lambda_0=spectral_line)
-
-# for spectral_line in H2O_spectral_lines:
-#     plot_slice_of_flux_around_spectralline(m=1, lambda_0=spectral_line)
+# plot_slice_of_flux_around_spectralline(lambda_0=1660)
+for spectral_line in spectral_lines:
+    plot_slice_of_flux_around_spectralline(lambda_0=spectral_line)
