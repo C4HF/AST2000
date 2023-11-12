@@ -6,6 +6,9 @@ import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
 import pandas as pd
+from scipy.optimize import minimize
+
+# from scipy import constants
 
 
 utils.check_for_newer_version()
@@ -171,5 +174,113 @@ def plot_slice_of_flux_around_spectralline(lambda_0):
 
 
 # plot_slice_of_flux_around_spectralline(lambda_0=1660)
-for spectral_line in spectral_lines:
-    plot_slice_of_flux_around_spectralline(lambda_0=spectral_line)
+# for spectral_line in spectral_lines:
+#     plot_slice_of_flux_around_spectralline(lambda_0=spectral_line)
+
+
+######################################################################
+##                 This part is not working yet                     ##
+######################################################################
+
+
+def F_gauss_line_profile(Fmin, lambda_0, std, lambda_array):
+    """The gaussian line profiel. Takes in Fmin, lambda_ lambda_0 and std."""
+    return 1 + (Fmin - 1) * np.exp(-0.5 * ((lambda_array - lambda_0) / std) ** 2)
+
+
+def chi_squared_minimization(params, flux_slice, sigma_slice):
+    """Function to loop over range of possible values for sepctralline, create a model
+    and compare it to observed data using chi-squared. The smaller chi-squared is,
+    the better the model."""
+    m, lambda_0, Fmin = params
+    lambda_array = (
+        lambda_0 * velocity / const.c_km_pr_s
+    ) + lambda_0  # Expected lambda-range based on dopplershift from radial velocity
+    std_array = (
+        lambda_0 * np.sqrt(const.k_B * temperature) / (const.c * m)
+    )  # Ecpectd std-rannge basen on expected temperature-range
+
+    least_chi = 100000
+    best_std = 0
+    best_lambda = 0
+    best_model = None
+
+    ## Double for loop to test all parameters in the expected range and find the best
+    ## parameters for the gaussian_line_profile.
+    for lambda_i in lambda_array:
+        for std_j in std_array:
+            model = F_gauss_line_profile(
+                Fmin, lambda_i, std_j, lambda_array
+            )  # creating gaussian-model with parameters
+            chi_squared = np.sum(
+                ((flux_slice - model) / sigma_slice) ** 2
+            )  # calculating chi_squared
+            if chi_squared < least_chi:  # keeping the best results
+                best_std = std_j
+                best_lambda = lambda_i
+                best_model = model
+
+    return best_std, best_lambda, best_model
+
+
+def get_slice(lambda_0):
+    """Function returns slices of the observed data in the wavelength range where
+    we ecxpect to find spectrallines. The range is calculated from the potential
+    dopplershift because of the rockets radial-velocity to the planet."""
+    wavelength, flux, sigma = flux_sigma()  # getting data
+    wavelength_arr = np.array(wavelength)
+    flux_arr = np.array(flux)
+    sigma_arr = np.array(sigma)
+    # Max wavelength
+    lambda_max = (
+        lambda_0 * vel_max / const.c_km_pr_s
+    ) + lambda_0  # Calculating dopplershift
+    lambda_diff_max = np.abs(wavelength_arr - lambda_max)
+    least_diff_max = np.min(lambda_diff_max)
+    idx_max = np.where(lambda_diff_max == least_diff_max)[0]
+
+    # Min wavelength
+    lambda_min = (
+        lambda_0 * vel_min / const.c_km_pr_s
+    ) + lambda_0  # Calculating dopplershift
+    lambda_diff_min = np.abs(wavelength_arr - lambda_min)
+    least_diff_min = np.min(lambda_diff_min)
+    idx_min = np.where(lambda_diff_min == least_diff_min)[0]
+
+    # Slicing observed data to only plot between min/max values
+    wavelength_slice = np.array(wavelength_arr[idx_min[0] : idx_max[0] + 1])
+    flux_slice = np.array(flux_arr[idx_min[0] : idx_max[0] + 1])
+    noise_slice = np.array(sigma_arr[idx_min[0] : idx_max[0] + 1]) + 1
+    return wavelength_slice, flux_slice, noise_slice
+
+
+# Parameters
+lambda_0 = 1660
+wavelength_slice, flux_slice, noise_slice = get_slice(lambda_0)
+N = len(flux_slice)
+temperature = np.linspace(150, 450, N)  # Expected temperatur-range in atmosphere
+velocity = np.linspace(-10, 10, N)
+m = 32 * 10e-3
+Fmin = 0.7
+params = (m, lambda_0, Fmin)
+best_std, best_lambda, best_model = chi_squared_minimization(
+    params, flux_slice, noise_slice
+)
+
+## Plotting results ##
+print(f"Best parameters: Std={best_std}, Lambda={best_lambda}")
+plt.figure(figsize=(10, 5))
+
+# Plot observed data
+plt.subplot(1, 2, 1)
+plt.plot(wavelength_slice, flux_slice, label="Observed Data")
+plt.title("Observed Data")
+plt.legend()
+
+# Plot fitted model
+plt.subplot(1, 2, 2)
+plt.plot(wavelength_slice, best_model, label="Fitted Model", color="orange")
+plt.title("Fitted Model")
+plt.legend()
+
+plt.show()
