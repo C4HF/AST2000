@@ -738,6 +738,7 @@ def analyse_final_orbit_and_plot(
     x_vel_list = []
     y_vel_list = []
     orient = land.orient()
+    land.look_in_direction_of_planet(planet_idx=1)
     pos = orient[1]
     vel = orient[2]
     time.append(0)
@@ -748,8 +749,14 @@ def analyse_final_orbit_and_plot(
     t = 0
     revolutions = 0
     # while t < 5 * sec_per_year:
+    land.look_in_direction_of_planet(planet_idx=1)
+    # land.start_video()
+    # land.look_in_direction_of_planet(planet_idx=1)
+    land.take_picture(filename=f"landing_picture_t0.xml")
     while t < orbit_time * sec_per_year:
         t += time_step
+        # land.look_in_direction_of_planet(planet_idx=1)
+        # land.take_picture(filename=f"landing_picture_{t}.xml")
         land.fall_until_time(t)
         orient = land.orient()
         pos = orient[1]
@@ -763,6 +770,9 @@ def analyse_final_orbit_and_plot(
             y_pos_list[-2] < y_pos_list[0]
         ):  # counting number of revolutions by checking if planet has crossed x-axis in this dt
             revolutions += 1
+    # land.finish_video(filename="orbit_video.xml")
+    land.look_in_direction_of_planet(planet_idx=1)
+    land.take_picture(filename=f"landing_picture_t5.xml")
     time_array = np.array(time)
     pos_array = np.array((x_pos_list, y_pos_list))
     vel_array = np.array((x_vel_list, y_vel_list))
@@ -832,4 +842,4 @@ def analyse_final_orbit_and_plot(
     plt.show()
 
 
-analyse_final_orbit_and_plot("stable", 0.05)
+# analyse_final_orbit_and_plot("stable", 1, 60 * 60 * 24)
