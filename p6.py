@@ -199,7 +199,7 @@ def chi_squared_minimization(params, flux_slice, sigma_slice):
     std_array = (
         lambda_0 * np.sqrt(const.k_B * temperature) / (const.c * m)
     )  # Ecpectd std-rannge basen on expected temperature-range
-    F_range = np.linspace(1, 1 - Fmin, 100)
+    F_range = np.linspace(1, 1 - Fmin, 10)
     least_chi = 100000
     best_std = 0
     best_lambda = 0
@@ -271,8 +271,8 @@ best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
 
 ## Plotting results ##
 print(f"Best parameters: Std={best_std}, Lambda={best_lambda}", "Fmin={best_fmin}")
-plt.figure(figsize=(10, 5))
-
+# plt.figure(figsize=(10, 5))
+plt.plot()
 # Plot observed data
 plt.subplot(1, 2, 1)
 plt.plot(wavelength_slice, flux_slice, label="Observed Data")
