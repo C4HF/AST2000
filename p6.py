@@ -183,9 +183,9 @@ def plot_slice_of_flux_around_spectralline(lambda_0):
 ######################################################################
 
 
-def F_gauss_line_profile(Fmin, lambda_0, std, lambda_array):
+def F_gauss_line_profile(Fmin, lambda_0, std, lambda_array, f):
     """The gaussian line profiel. Takes in Fmin, lambda_ lambda_0 and std."""
-    return 1 + (Fmin - 1) * np.exp(-0.5 * ((lambda_array - lambda_0) / std) ** 2)
+    return 1 + (f - 1) * np.exp(-0.5 * ((lambda_array - lambda_0) / std) ** 2)
 
 
 def chi_squared_minimization(params, flux_slice, sigma_slice):
@@ -199,7 +199,7 @@ def chi_squared_minimization(params, flux_slice, sigma_slice):
     std_array = (
         lambda_0 * np.sqrt(const.k_B * temperature) / (const.c * m)
     )  # Ecpectd std-rannge basen on expected temperature-range
-
+    F_range = np.linspace(1, 1 - Fmin, 100)
     least_chi = 100000
     best_std = 0
     best_lambda = 0
@@ -209,18 +209,20 @@ def chi_squared_minimization(params, flux_slice, sigma_slice):
     ## parameters for the gaussian_line_profile.
     for lambda_i in lambda_array:
         for std_j in std_array:
-            model = F_gauss_line_profile(
-                Fmin, lambda_i, std_j, lambda_array
-            )  # creating gaussian-model with parameters
-            chi_squared = np.sum(
-                ((flux_slice - model) / sigma_slice) ** 2
-            )  # calculating chi_squared
-            if chi_squared < least_chi:  # keeping the best results
-                best_std = std_j
-                best_lambda = lambda_i
-                best_model = model
+            for f in F_range:
+                model = F_gauss_line_profile(
+                    Fmin, lambda_i, std_j, lambda_array, f
+                )  # creating gaussian-model with parameters
+                chi_squared = np.sum(
+                    ((flux_slice - model) / sigma_slice) ** 2
+                )  # calculating chi_squared
+                if chi_squared < least_chi:  # keeping the best results
+                    best_std = std_j
+                    best_lambda = lambda_i
+                    best_fmin = f
+                    best_model = model
 
-    return best_std, best_lambda, best_model
+    return best_std, best_lambda, best_fmin, best_model
 
 
 def get_slice(lambda_0):
@@ -263,12 +265,12 @@ velocity = np.linspace(-10, 10, N)
 m = 32 * 10e-3
 Fmin = 0.7
 params = (m, lambda_0, Fmin)
-best_std, best_lambda, best_model = chi_squared_minimization(
+best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
     params, flux_slice, noise_slice
 )
 
 ## Plotting results ##
-print(f"Best parameters: Std={best_std}, Lambda={best_lambda}")
+print(f"Best parameters: Std={best_std}, Lambda={best_lambda}", "Fmin={best_fmin}")
 plt.figure(figsize=(10, 5))
 
 # Plot observed data
