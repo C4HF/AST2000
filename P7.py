@@ -1,4 +1,3 @@
-
 ########## Ikke kodemal #############################
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,21 +33,20 @@ G = 6.6743 * (10 ** (-11))  # Gravitational constant
 m_H2 = const.m_H2
 k_B = const.k_B
 
-lander_mass = mission.lander_mass #90.0 kg
-lander_area = mission.lander_area #0.3 m^2
+lander_mass = mission.lander_mass  # 90.0 kg
+lander_area = mission.lander_area  # 0.3 m^2
 
-def Landing(inital_time, inital_position, inital_velocity, simulation_time):
-    air_resistance = 
-    gravity = 
-    rotation = 
-    return (final_time, final_position, final_velocity)
-
+# def Landing(inital_time, inital_position, inital_velocity, simulation_time):
+#     air_resistance =
+#     gravity =
+#     rotation =
+#     return (final_time, final_position, final_velocity)
 
 
 def landing_trajectory(
     initial_time,
-    initial_pos
-    initial_vel
+    initial_pos,
+    initial_vel,
     total_simulation_time,
     time_step,
 ):
@@ -60,7 +58,7 @@ def landing_trajectory(
     .
     """
     time_array = np.arange(
-        initial_time, initial_time + total_flight_time, time_step
+        initial_time, initial_time + total_simulation_time, time_step
     )  # Creates the time_array of simulation
     x_pos_arr = np.zeros(
         len(time_array)
@@ -75,28 +73,28 @@ def landing_trajectory(
         len(time_array)
     )  # Empty y-veloctiy-array to be filled with values in simulation
 
-    x_pos_arr[0] = initial_x_pos  # Setting initial x-position
-    y_pos_arr[0] = initial_y_pos  # Setting initial y-position
-    x_vel_arr[0] = initial_x_vel  # Setting initial x-velocity
-    y_vel_arr[0] = initial_y_vel  # Setting initial y-velocity
+    x_pos_arr[0] = initial_pos[0]  # Setting initial x-position
+    y_pos_arr[0] = initial_pos[1]  # Setting initial y-position
+    x_vel_arr[0] = initial_vel[0]  # Setting initial x-velocity
+    y_vel_arr[0] = initial_vel[1]  # Setting initial y-velocity
 
-    interpolated_orbits = [[], []]  # Empty list to be filled with interpolated orbits
+    # interpolated_orbits = [[], []]  # Empty list to be filled with interpolated orbits
 
-    # Loop to interpolate simulated orbits to fit shape of time_array.
-    for orbit in orbits:
-        f = interpolate.interp1d(
-            orbit[0], orbit[1:3], axis=-1
-        )  # Using scipy.interpolate to interpolate orbits
-        t = time_array
-        x, y = f(
-            t
-        )  # Using interpolation-function to calculate planet-postions during the timesteps in time_array
-        interpolated_orbits[0].append(x)  # adding to list
-        interpolated_orbits[1].append(y)  # adding to list
+    # # Loop to interpolate simulated orbits to fit shape of time_array.
+    # for orbit in orbits:
+    #     f = interpolate.interp1d(
+    #         orbit[0], orbit[1:3], axis=-1
+    #     )  # Using scipy.interpolate to interpolate orbits
+    #     t = time_array
+    #     x, y = f(
+    #         t
+    #     )  # Using interpolation-function to calculate planet-postions during the timesteps in time_array
+    #     interpolated_orbits[0].append(x)  # adding to list
+    #     interpolated_orbits[1].append(y)  # adding to list
 
-    r_planets = np.array(
-        interpolated_orbits
-    )  # Turning interpolated_orbits-list to array
+    # r_planets = np.array(
+    #     interpolated_orbits
+    # )  # Turning interpolated_orbits-list to array
 
     r_rocket = np.array(
         [[x_pos_arr], [y_pos_arr]]
