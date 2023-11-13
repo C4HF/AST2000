@@ -276,13 +276,17 @@ plt.figure(figsize=(10, 5))
 # Plot observed data
 plt.subplot(1, 2, 1)
 plt.plot(wavelength_slice, flux_slice, label="Observed Data")
+plt.xlabel("Wavelength (nm)", fontsize=20)
+plt.ylabel("Flux (Lm)", fontsize=20)
 plt.title("Observed Data")
-plt.legend()
+plt.legend(fontsize=20)
 
 # Plot fitted model
 plt.subplot(1, 2, 2)
 plt.plot(wavelength_slice, best_model, label="Fitted Model", color="orange")
-plt.title("Fitted Model")
-plt.legend()
+plt.xlabel("Wavelength (nm)")
+plt.ylabel("Flux (Lm)", fontsize=20)
+plt.title("Fitted Model", fontsize=20)
+plt.legend(fontsize=20)
 
 plt.show()
