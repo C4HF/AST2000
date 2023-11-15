@@ -7,6 +7,7 @@ from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
 import pandas as pd
 from scipy.optimize import minimize
+from numba import njit
 
 # from scipy import constants
 
@@ -76,7 +77,7 @@ def plot_sigma():  # Plotter standardavviket til fluksen mot bølgelengdene
     plt.ylabel("Standardavvik", fontsize=17)
     plt.xticks(fontsize="17")
     plt.yticks(fontsize="17")
-    plt.title("Standardavvik for hverw bølgelengde", fontsize=17)
+    plt.title("Standardavvik for hver bølgelengde", fontsize=17)
     plt.show()
 
 
@@ -104,6 +105,26 @@ spectral_lines = [
     2340,
     2870,
 ]  # list of all spectral lines
+m_O2 = 2.6566962 * 10e-26
+m_H2O = 2.989 * 10e-26
+m_CO2 = 2.403 * 10e-26
+m_CH4 = 4.435 * 10e-26
+m_CO = 4.012 * 10e-26
+m_N2O = 7.819 * 10e-26
+masses = [
+    m_O2,
+    m_O2,
+    m_O2,
+    m_H2O,
+    m_H2O,
+    m_H2O,
+    m_CO2,
+    m_CO2,
+    m_CH4,
+    m_CH4,
+    m_CO,
+    m_N2O,
+]
 
 vel_max = 10  # km/s
 vel_min = -10  # km/s
@@ -161,7 +182,7 @@ def plot_slice_of_flux_around_spectralline(lambda_0):
         linestyle="--",
     )
     plt.xlabel("Wavelentgh (NM)", fontsize=20)
-    plt.ylabel("Standardized flux (LM) ", fontsize=20)
+    plt.ylabel("Standardized flux (watt/m^2) ", fontsize=20)
     plt.ticklabel_format(useOffset=False)
     plt.xticks(size=20)
     plt.yticks(size=20)
@@ -169,11 +190,10 @@ def plot_slice_of_flux_around_spectralline(lambda_0):
     plt.minorticks_on()
     plt.title(f"Observed flux around: {lambda_0} NM", fontsize=20)
     plt.legend(fontsize=20, loc="upper right")
-    plt.show()
+    # plt.show()
     # plt.savefig(f"Data/flux_{lambda_0}_nm")
 
 
-# plot_slice_of_flux_around_spectralline(lambda_0=1660)
 # for spectral_line in spectral_lines:
 #     plot_slice_of_flux_around_spectralline(lambda_0=spectral_line)
 
@@ -183,23 +203,34 @@ def plot_slice_of_flux_around_spectralline(lambda_0):
 ######################################################################
 
 
+@njit
 def F_gauss_line_profile(Fmin, lambda_0, std, lambda_array, f):
     """The gaussian line profiel. Takes in Fmin, lambda_ lambda_0 and std."""
-    return 1 + (f - 1) * np.exp(-0.5 * ((lambda_array - lambda_0) / std) ** 2)
+    return 1 + (Fmin - 1) * np.exp(-0.5 * ((lambda_array - lambda_0) / std) ** 2)
 
 
-def chi_squared_minimization(params, flux_slice, sigma_slice):
+@njit
+def chi_squared_minimization(
+    params, flux_slice, sigma_slice, velocity1, velocity2, temperature
+):
     """Function to loop over range of possible values for sepctralline, create a model
     and compare it to observed data using chi-squared. The smaller chi-squared is,
     the better the model."""
     m, lambda_0, Fmin = params
-    lambda_array = (
-        lambda_0 * velocity / const.c_km_pr_s
+    lambda_array1 = (
+        lambda_0 * velocity1 / const.c_km_pr_s
     ) + lambda_0  # Expected lambda-range based on dopplershift from radial velocity
-    std_array = (
-        lambda_0 * np.sqrt(const.k_B * temperature) / (const.c * m)
-    )  # Ecpectd std-rannge basen on expected temperature-range
-    F_range = np.linspace(1, 1 - Fmin, 10)
+    lambda_array2 = (
+        lambda_0 * velocity2 / const.c_km_pr_s
+    ) + lambda_0  # Expected lambda-range based on dopplershift from radial velocity
+    # std_array = (
+    #     lambda_0 * 10e9 * np.sqrt(const.k_B * temperature / (const.c_km_pr_s * m))
+    # )  # Ecpectd std-range basen on expected temperature-range
+    std_array = (lambda_0 / const.c) * np.sqrt(
+        const.k_B * temperature / m
+    )  # Ecpectd std-range basen on expected temperature-range
+    print(np.min(std_array), np.max(std_array))
+    F_range = np.linspace(Fmin, 1, 10)
     least_chi = 100000
     best_std = 0
     best_lambda = 0
@@ -207,11 +238,11 @@ def chi_squared_minimization(params, flux_slice, sigma_slice):
 
     ## Double for loop to test all parameters in the expected range and find the best
     ## parameters for the gaussian_line_profile.
-    for lambda_i in lambda_array:
+    for lambda_i in lambda_array2:
         for std_j in std_array:
             for f in F_range:
                 model = F_gauss_line_profile(
-                    Fmin, lambda_i, std_j, lambda_array, f
+                    Fmin, lambda_i, std_j, lambda_array1, f
                 )  # creating gaussian-model with parameters
                 chi_squared = np.sum(
                     ((flux_slice - model) / sigma_slice) ** 2
@@ -221,6 +252,7 @@ def chi_squared_minimization(params, flux_slice, sigma_slice):
                     best_lambda = lambda_i
                     best_fmin = f
                     best_model = model
+                    least_chi = chi_squared
 
     return best_std, best_lambda, best_fmin, best_model
 
@@ -233,6 +265,7 @@ def get_slice(lambda_0):
     wavelength_arr = np.array(wavelength)
     flux_arr = np.array(flux)
     sigma_arr = np.array(sigma)
+
     # Max wavelength
     lambda_max = (
         lambda_0 * vel_max / const.c_km_pr_s
@@ -252,41 +285,45 @@ def get_slice(lambda_0):
     # Slicing observed data to only plot between min/max values
     wavelength_slice = np.array(wavelength_arr[idx_min[0] : idx_max[0] + 1])
     flux_slice = np.array(flux_arr[idx_min[0] : idx_max[0] + 1])
-    noise_slice = np.array(sigma_arr[idx_min[0] : idx_max[0] + 1]) + 1
+    noise_slice = np.array(sigma_arr[idx_min[0] : idx_max[0] + 1])
     return wavelength_slice, flux_slice, noise_slice
 
 
 # Parameters
-lambda_0 = 1660
-wavelength_slice, flux_slice, noise_slice = get_slice(lambda_0)
-N = len(flux_slice)
-temperature = np.linspace(150, 450, N)  # Expected temperatur-range in atmosphere
-velocity = np.linspace(-10, 10, N)
-m = 32 * 10e-3
-Fmin = 0.7
-params = (m, lambda_0, Fmin)
-best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
-    params, flux_slice, noise_slice
-)
+for i, lambda_0 in enumerate(spectral_lines):
+    m = masses[i]  # Using molecule mass
+    wavelength_slice, flux_slice, noise_slice = get_slice(lambda_0)
+    N1 = len(flux_slice)
+    N2 = 800
+    velocity1 = np.linspace(-10, 10, N1)
+    temperature = np.linspace(150, 450, N2)  # Expected temperatur-range in atmosphere
+    velocity2 = np.linspace(-10, 10, N2)
+    # m = 2.6566962 * 10e-26
 
-## Plotting results ##
-print(f"Best parameters: Std={best_std}, Lambda={best_lambda}", "Fmin={best_fmin}")
-# plt.figure(figsize=(10, 5))
-plt.plot()
-# Plot observed data
-plt.subplot(1, 2, 1)
-plt.plot(wavelength_slice, flux_slice, label="Observed Data")
-plt.xlabel("Wavelength (nm)", fontsize=20)
-plt.ylabel("Flux (Lm)", fontsize=20)
-plt.title("Observed Data")
-plt.legend(fontsize=20)
+    # m = 1
+    Fmin = 0.7
+    params = (m, lambda_0, Fmin)
+    best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
+        params, flux_slice, noise_slice, velocity1, velocity2, temperature
+    )
 
-# Plot fitted model
-plt.subplot(1, 2, 2)
-plt.plot(wavelength_slice, best_model, label="Fitted Model", color="orange")
-plt.xlabel("Wavelength (nm)")
-plt.ylabel("Flux (Lm)", fontsize=20)
-plt.title("Fitted Model", fontsize=20)
-plt.legend(fontsize=20)
+    # estimated_T = (best_std**2 * m * const.c**2) / (lambda_0**2 * k_B)
+    estimated_v = (best_lambda - lambda_0) * const.c_km_pr_s / lambda_0
 
-plt.show()
+    ## Plotting results ##
+    plot_slice_of_flux_around_spectralline(lambda_0=lambda_0)
+    print(f"Best parameters: Std={best_std}, Lambda={best_lambda}")
+
+    # plt.plot(wavelength_slice, flux_slice, label="Observed Data")
+    plt.plot(
+        wavelength_slice,
+        best_model,
+        label=f"Gaussian model (V={estimated_v:.2f}km/s, T={estimated_v:.2f}k)",
+        color="orange",
+    )
+    plt.xlabel("Wavelength (nm)", fontsize=20)
+    plt.ylabel("Flux (watt/m^2)", fontsize=20)
+    plt.title(f"Observed flux around {lambda_0} nm", fontsize=20)
+    plt.legend(fontsize=20)
+
+    plt.show()
