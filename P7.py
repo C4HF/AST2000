@@ -107,7 +107,9 @@ def landing_trajectory(
     )  # calculating the atmospheric wind
 
     v_drag = -(v_lander[:, :, 0] + wind)  # calculating the total drag-veloctiy
-
+    # print(
+    #     f"rho: {rho}, Cd: {Cd}, lander_area: {lander_area}, abs vdrag: {np.linalg.norm(v_drag)},vdrag vector {v_drag}"
+    # )
     Fd[:, :, 0] = (
         1 / 2 * rho * Cd * lander_area * np.linalg.norm(v_drag) * v_drag
     )  # calculating the force of air-resistance
@@ -125,7 +127,7 @@ def landing_trajectory(
 
     # Leapfrog-loop
     for i in range(0, len(time_array) - 1):
-        print(f"Calculating {i}/{len(time_array) - 1}")
+        # print(f"Calculating {i}/{len(time_array) - 1}")
         if np.linalg.norm(r_lander[:, :, i]) <= planet_radius + 500:
             lander_area = lander_area + parachute_area
 
@@ -155,6 +157,7 @@ def landing_trajectory(
             / (rho * lander_area * (np.linalg.norm(r_lander[:, :, i])) ** 2)
         )  # calculating terminal-velocity
         v_drag = -(v_lander[:, :, i] + wind)  # calculating drag velocity
+
         Fd[:, :, i] = (
             1 / 2 * rho * Cd * lander_area * np.linalg.norm(v_drag) * v_drag
         )  # air resistance
@@ -174,7 +177,7 @@ def landing_trajectory(
 
 
 time_array, r_lander, v_lander, v_terminal, Fd = landing_trajectory(
-    0, (-2000000 - planet_radius, 0, 0), (1000, 500, 0), 30000, 10e-4
+    0, (-100000 - planet_radius, 0, 0), (1000, 500, 0), 30000, 10e-4
 )
 
 theta = np.linspace(0, 2 * np.pi, 1000)
@@ -191,7 +194,7 @@ plt.xlabel("x pos (m)", fontsize=20)
 plt.ylabel("y pos (m)", fontsize=20)
 plt.legend(fontsize=20)
 plt.title("Lander pos during landing", fontsize=20)
-plt.show()
+# plt.show()
 
 absolute_v = np.linalg.norm(
     np.stack((v_lander[0, 0, :], v_lander[1, 0, :]), -1), axis=-1
@@ -203,7 +206,7 @@ plt.xlabel("Time (s)", fontsize=20)
 plt.ylabel("Velocity (m/s)", fontsize=20)
 plt.legend(fontsize=20)
 plt.title("Velocity of lander vs estimated terminal velocity", fontsize=20)
-plt.show()
+# plt.show()
 
 absolute_Fd = np.linalg.norm(np.stack((Fd[0, 0, :], Fd[1, 0, :]), -1), axis=-1)
 
@@ -215,7 +218,7 @@ plt.xlabel("Time (s)", fontsize=20)
 plt.ylabel("Force from drag (N)", fontsize=20)
 plt.legend(fontsize=20)
 plt.title("Dragforce on lander during landing", fontsize=20)
-plt.show()
+# plt.show()
 
 
 # # Visualizing our atmospheric model
