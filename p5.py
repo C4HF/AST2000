@@ -516,6 +516,7 @@ dist_array2 = np.sqrt(
 dist2 = np.min(dist_array)
 idx2 = np.where(dist_array == dist2)[0]
 time_of_least_distance2 = time_array2[idx2]
+
 dist_to_star2 = np.sqrt(r_rocket2[0, 0, idx2] ** 2 + r_rocket2[1, 0, idx2] ** 2)
 gravitational_capture_dist = dist_to_star2 * np.sqrt(
     system.masses[1] / (10 * star_mass)
@@ -848,47 +849,3 @@ def analyse_final_orbit_and_plot(
 
 
 # analyse_final_orbit_and_plot("stable", 1, 60 * 60 * 24)
-
-######## Here we are using a shortcut #########
-code_stable_orbit = 75980
-shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
-shortcut.place_spacecraft_in_stable_orbit(
-    time_of_least_distance2, 1000000, 0, 1
-)  # <----- Using shortcut to stable orbit
-
-land = mission.begin_landing_sequence()
-land.start_video()
-land.look_in_direction_of_planet(
-    planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=0
-)
-land.fall(2500)
-land.look_in_direction_of_planet(
-    planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=np.pi / 10
-)
-land.fall(2500)
-land.look_in_direction_of_planet(
-    planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=np.pi - (np.pi / 10)
-)
-land.fall(2500)
-land.look_in_direction_of_planet(
-    planet_idx=1, relative_polar_angle=np.pi / 10, relative_azimuth_angle=0
-)
-land.fall(2500)
-
-
-orient = land.orient()
-vel = orient[2]
-
-land.adjust_parachute_area(24.5)
-# print(land.orient())
-land.look_in_direction_of_planet(
-    planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=0
-)
-land.launch_lander(-0.05 * vel)
-# land.launch_lander((-500000, 0, 0))
-land.fall(2000)
-land.deploy_parachute()
-land.fall(10000)
-land.finish_video(
-    filename="Lander_video3.xml", number_of_frames=3000, radial_camera_offset=0.0
-)
