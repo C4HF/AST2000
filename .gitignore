@@ -178,16 +178,14 @@ orbit_video.xml
 himmelkule.npy
 
 #bilder
+XMLs
 exampleWithRedLine.png
 Direction_images
 sky_picture.png
 
-# Snarveier
+#Snarveier
 snarvei_unstable_orbit.py
+snarvei_stable_orbit.py
 
 # Data
-XMLs
 Data
-sigma_noise.txt
-spectrum_seed63_600nm_3000nm.txt
-
