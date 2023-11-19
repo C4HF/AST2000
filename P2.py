@@ -205,7 +205,51 @@ def save_orbits_to_file(T, dt):
         h5f.close()
 
 
-#save_orbits_to_file(T=3, dt=10e-6)
+# save_orbits_to_file(T=3, dt=10e-6)
+# for i in range(len(initial_positions[0])):
+#         (
+#             x_pos,
+#             y_pos,
+#             x_vel,
+#             y_vel,
+#             t_array,
+#             count_revolutions,
+#             period,
+#             relative_displacement,
+#         ) = simulate_orbits(
+#             initial_positions[0][i],
+#             initial_positions[1][i],
+#             initial_velocities[0][i],
+#             initial_velocities[1][i],
+#             T=3,
+#             dt=10e-7,
+#         )
+#         globals()[f"orbit_{i}"] = (x_pos, y_pos)
+
+# step = 1
+# mission.verify_planet_positions(
+#     simulation_duration=3,
+#     planet_positions=[
+#         [
+#             orbit_0[1, ::step],
+#             orbit_1[1, ::step],
+#             orbit_2[1, ::step],
+#             orbit_3[1, ::step],
+#             orbit_4[1, ::step],
+#             orbit_5[1, ::step],
+#             orbit_6[1, ::step],
+#         ],
+#         [
+#             orbit_0[2, ::step],
+#             orbit_1[2, ::step],
+#             orbit_2[2, ::step],
+#             orbit_3[2, ::step],
+#             orbit_4[2, ::step],
+#             orbit_5[2, ::step],
+#             orbit_6[2, ::step],
+#         ],
+#     ],
+# )
 
 
 def plot_orbits(T, dt):

@@ -317,19 +317,20 @@ class Engine:
 """Kode 1D"""
 
 
-def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=10):
+def calculate_needed_fuel(engine, initial_rocket_mass, speed_boost, dt=0.01):
     """Funksjonen regner ut hvor mye drivstoff vi trenger for å øke hastigheten med en ønsket mengde.
     Tar inn variabler (thrust, fuel_consumption, initial_rocket_mass, speed_boost) og returnerer
     fuel_consumed."""
     thrust = engine.thrust
-    fuel_consumption = engine.fuel_cons
-    start_speed = 0
+    fuel_consumption = engine.total_fuel_constant
+    speed = 0
     total_time = 0
-    while start_speed < speed_boost:
-        start_speed += (thrust / initial_rocket_mass) * dt
+    fuel_consumed = 0
+    while speed < speed_boost:
+        speed += (thrust / initial_rocket_mass) * dt
         initial_rocket_mass -= fuel_consumption * dt
         total_time += dt
-    fuel_consumed = total_time * fuel_consumption
+        fuel_consumed += fuel_consumption * dt
     return fuel_consumed
 
 
