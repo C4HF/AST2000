@@ -21,12 +21,12 @@ G_AU = 4 * (np.pi) ** 2  # Gravitational constant using AU
 G = 6.6743 * (10 ** (-11))  # Gravitational constant
 m_H2 = const.m_H2
 k_B = const.k_B
-m_O2 = 2.6566962 * 10e-26  # mass of molecule in kg  <---- found in atmosphere
-m_H2O = 2.989 * 10e-26  # mass of molecule in kg <---- found in atmosphere
-m_CO2 = 2.403 * 10e-26  # mass of molecule in kg
-m_CH4 = 4.435 * 10e-26  # mass of molecule in kg <---- found in atmosphere
-m_CO = 4.012 * 10e-26  # mass of molecule in kg
-m_N2O = 7.819 * 10e-26  # mass of molecule in kg
+# m_O2 = 2.6566962 * 10e-26  # mass of molecule in kg  <---- found in atmosphere
+# m_H2O = 2.989 * 10e-26  # mass of molecule in kg <---- found in atmosphere
+# m_CO2 = 2.403 * 10e-26  # mass of molecule in kg
+# m_CH4 = 4.435 * 10e-26  # mass of molecule in kg <---- found in atmosphere
+# m_CO = 4.012 * 10e-26  # mass of molecule in kg
+# m_N2O = 7.819 * 10e-26  # mass of molecule in kg
 
 
 lander_mass = mission.lander_mass  # 90.0 kg
@@ -175,6 +175,53 @@ def landing_trajectory(
 
     return time_array, r_lander, v_lander, v_terminal, Fd
 
+
+#################################################################
+# #              Updating space_mission-instance              # #
+#################################################################
+time_diff = np.abs(orbit_0[0] - best_launch_time_dt05)
+least_time_diff = np.min(time_diff)
+idx_ = np.where(time_diff == least_time_diff)[0]
+initial_solar_x_pos = orbit_0[1][idx_] + (
+    (
+        (homeplanet_radius / Au)
+        * np.cos((np.pi / 2) - np.pi / 2)
+        * np.cos(6.283185307179586)
+    )
+)  # starting y-postion in Au
+initial_solar_y_pos = orbit_0[2][idx_] + (
+    (
+        (homeplanet_radius / Au)
+        * np.cos((np.pi / 2) - np.pi / 2)
+        * np.sin(6.283185307179586)
+    )
+)  # starting y-postion in Au
+mission.set_launch_parameters(
+    thrust=falcon_engine.thrust,
+    mass_loss_rate=falcon_engine.total_fuel_constant,
+    initial_fuel_mass=165000,
+    estimated_launch_duration=446.7099999963486,
+    # launch_position=[initial_solar_x_pos[0], initial_solar_y_pos[0]],
+    launch_position=[initial_solar_x_pos[0], initial_solar_y_pos[0]],
+    time_of_launch=orbit_0[0, idx_],
+)
+mission.launch_rocket()
+mission.verify_launch_result(
+    (solar_x_pos[0], solar_y_pos[0])
+)  # verifies that the calculated launch-results are correct
+distances = mission.measure_distances()
+takenimage = mission.take_picture()
+mesured_dopplershifts = mission.measure_star_doppler_shifts()
+pos_after_launch = spacecraft_triliteration(
+    best_launch_time_dt05 + total_time / sec_per_year, distances
+)
+vel_after_launch = calculate_velocity_from_doppler(
+    mesured_dopplershifts[0], mesured_dopplershifts[1]
+)
+angle_after_launch = find_phi("sky_picture.png")
+mission.verify_manual_orientation(
+    pos_after_launch, vel_after_launch, angle_after_launch
+)
 
 time_array, r_lander, v_lander, v_terminal, Fd = landing_trajectory(
     0, (-100000 - planet_radius, 0, 0), (1000, 500, 0), 30000, 10e-4
