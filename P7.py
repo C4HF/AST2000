@@ -229,13 +229,17 @@ def landing_trajectory(
 #     break_index,
 #     touchdown_angle,
 # ) = landing_trajectory(
-#     2.53 * sec_per_year, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-2
+#     2.53 * sec_per_year, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-3
 # )
 
 # theta = np.linspace(0, 2 * np.pi, 1000000)
-# circle_x = planet_radius * np.cos(theta)
-# circle_y = planet_radius * np.sin(theta)
-# planet_surface = np.array((circle_x, circle_y, np.zeros_like(circle_x)))
+# surface_x = planet_radius * np.cos(theta)
+# surface_y = planet_radius * np.sin(theta)
+# planet_surface = np.array((surface_x, surface_y, np.zeros_like(surface_x)))
+
+# atmosphere_x = (planet_radius + 10000) * np.cos(theta)
+# atmosphere_y = (planet_radius + 10000) * np.sin(theta)
+# planet_atmosphere = np.array((atmosphere_x, atmosphere_y, np.zeros_like(atmosphere_x)))
 
 # plt.scatter(0, 0)
 # plt.scatter(r_lander[0, 0, 0], r_lander[1, 0, 0], label="Lander launch")
@@ -249,7 +253,10 @@ def landing_trajectory(
 #     r_lander[1, 0, break_index],
 #     label="Touchdown!",
 # )
-# plt.plot(circle_x, circle_y, label="Planet surface")
+# plt.plot(surface_x, surface_y, label="Planet surface")
+# plt.plot(
+#     atmosphere_x, atmosphere_y, label="Planet atmosphere", linestyle="--", color="blue"
+# )
 # plt.plot(r_lander[0, 0, : break_index + 1], r_lander[1, 0, : break_index + 1])
 # plt.axis("equal")
 # plt.xlabel("x pos (m)", fontsize=20)
@@ -315,21 +322,19 @@ def landing_trajectory(
 # #              Visualizing atmosphere                       # #
 #################################################################
 x = np.linspace(-500, 500, 1000)  # meters along surface
-y = np.linspace(1, 1000000, 1000)  # meters above surface
+y = np.linspace(1, 100000, 10000)  # meters above surface
 X, Y = np.meshgrid(x, y)
 ilen, jlen = np.shape(Y)
 wind_field = np.zeros((ilen, jlen, 2))  # grid to fill wind vectors
 density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
 wind_drag_field = np.zeros((ilen, jlen, 2))  # grid to fill with dragforce vectors
-print(planet_radius)
+
 # Looping over all positions i meshgrid and calculating value
 for i in range(ilen):
     for j in range(jlen):
-        wind_field[i, j] = (2 * np.pi * np.abs(Y[i, j] - planet_radius) / P) * np.array(
-            (-1, 0)
-        )
+        wind_field[i, j] = (2 * np.pi * np.abs(Y[i, j]) / P) * -np.array((1, 0))
         density_field[i, j] = rho0 * np.exp(
-            -K * np.abs(np.linalg.norm(Y[i, j]) - planet_radius)
+            -K * np.abs(np.linalg.norm(Y[i, j]))
         )  # expression for rho (simplified model using isotherm atmosphere)
         wind_drag_field[i, j] = (
             1
@@ -347,6 +352,8 @@ plt.quiver(
 )
 plt.xlabel("X (meters along surface)", fontsize=20)
 plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
 plt.title("Atmospheric wind vector field", fontsize=20)
 plt.show()
 
@@ -366,6 +373,8 @@ stream = plt.streamplot(
 cbar = plt.colorbar(stream.lines, label="Wind Speed (m/s)")
 plt.xlabel("X (meters along surface)", fontsize=20)
 plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
 plt.title("Windspeed at different altitudes", fontsize=20)
 plt.show()
 
@@ -375,6 +384,8 @@ plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
 plt.colorbar(label="Density (kg/m^3)")
 plt.xlabel("X (meters along surface)", fontsize=20)
 plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
 plt.title("Atmospheric density at different altitudes", fontsize=20)
 plt.show()
 
@@ -386,6 +397,8 @@ plt.quiver(
 )
 plt.xlabel("X (meters along surface)", fontsize=20)
 plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
 plt.title("Wind drag at different altitudes", fontsize=20)
 plt.show()
 
