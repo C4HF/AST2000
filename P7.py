@@ -321,86 +321,86 @@ def landing_trajectory(
 #################################################################
 # #              Visualizing atmosphere                       # #
 #################################################################
-x = np.linspace(-500, 500, 1000)  # meters along surface
-y = np.linspace(1, 100000, 10000)  # meters above surface
-X, Y = np.meshgrid(x, y)
-ilen, jlen = np.shape(Y)
-wind_field = np.zeros((ilen, jlen, 2))  # grid to fill wind vectors
-density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
-wind_drag_field = np.zeros((ilen, jlen, 2))  # grid to fill with dragforce vectors
+# x = np.linspace(-500, 500, 1000)  # meters along surface
+# y = np.linspace(1, 100000, 1000)  # meters above surface
+# X, Y = np.meshgrid(x, y)
+# ilen, jlen = np.shape(Y)
+# wind_field = np.zeros((ilen, jlen, 2))  # grid to fill wind vectors
+# density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
+# wind_drag_field = np.zeros((ilen, jlen, 2))  # grid to fill with dragforce vectors
 
-# Looping over all positions i meshgrid and calculating value
-for i in range(ilen):
-    for j in range(jlen):
-        wind_field[i, j] = (2 * np.pi * np.abs(Y[i, j]) / P) * -np.array((1, 0))
-        density_field[i, j] = rho0 * np.exp(
-            -K * np.abs(np.linalg.norm(Y[i, j]))
-        )  # expression for rho (simplified model using isotherm atmosphere)
-        wind_drag_field[i, j] = (
-            1
-            / 2
-            * density_field[i, j]
-            * Cd
-            * lander_area
-            * np.linalg.norm(wind_field[i, j])
-            * wind_field[i, j]
-        )  # calculating the force of air-resistance
-
-
-plt.quiver(
-    X[::10, ::10], Y[::10, ::10], wind_field[::10, ::10, 0], wind_field[::10, ::10, 1]
-)
-plt.xlabel("X (meters along surface)", fontsize=20)
-plt.ylabel("Y (meters above surface)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.title("Atmospheric wind vector field", fontsize=20)
-plt.show()
-
-# Calculating the magnitude of the wind
-magnitude = np.sqrt(wind_field[:, :, 0] ** 2 + wind_field[:, :, 1] ** 2)
-
-# Plotting the streamline plot with color representing magnitude
-stream = plt.streamplot(
-    X,
-    Y,
-    wind_field[:, :, 0],
-    wind_field[:, :, 1],
-    color=magnitude,
-    cmap="viridis",
-    density=2,
-)
-cbar = plt.colorbar(stream.lines, label="Wind Speed (m/s)")
-plt.xlabel("X (meters along surface)", fontsize=20)
-plt.ylabel("Y (meters above surface)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.title("Windspeed at different altitudes", fontsize=20)
-plt.show()
+# # Looping over all positions i meshgrid and calculating value
+# for i in range(ilen):
+#     for j in range(jlen):
+#         wind_field[i, j] = (2 * np.pi * np.abs(Y[i, j]) / P) * -np.array((1, 0))
+#         density_field[i, j] = rho0 * np.exp(
+#             -K * np.abs(np.linalg.norm(Y[i, j]))
+#         )  # expression for rho (simplified model using isotherm atmosphere)
+#         wind_drag_field[i, j] = (
+#             1
+#             / 2
+#             * density_field[i, j]
+#             * Cd
+#             * lander_area
+#             * np.linalg.norm(wind_field[i, j])
+#             * wind_field[i, j]
+#         )  # calculating the force of air-resistance
 
 
-# Contour plot of atmospheric density
-plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
-plt.colorbar(label="Density (kg/m^3)")
-plt.xlabel("X (meters along surface)", fontsize=20)
-plt.ylabel("Y (meters above surface)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.title("Atmospheric density at different altitudes", fontsize=20)
-plt.show()
+# plt.quiver(
+#     X[::10, ::10], Y[::10, ::10], wind_field[::10, ::10, 0], wind_field[::10, ::10, 1]
+# )
+# plt.xlabel("X (meters along surface)", fontsize=20)
+# plt.ylabel("Y (meters above surface)", fontsize=20)
+# plt.xticks(size=20)
+# plt.yticks(size=20)
+# plt.title("Atmospheric wind vector field", fontsize=20)
+# plt.show()
 
-plt.quiver(
-    X[::10, ::10],
-    Y[::10, ::10],
-    wind_drag_field[::10, ::10, 0],
-    wind_drag_field[::10, ::10, 1],
-)
-plt.xlabel("X (meters along surface)", fontsize=20)
-plt.ylabel("Y (meters above surface)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.title("Wind drag at different altitudes", fontsize=20)
-plt.show()
+# # Calculating the magnitude of the wind
+# magnitude = np.sqrt(wind_field[:, :, 0] ** 2 + wind_field[:, :, 1] ** 2)
+
+# # Plotting the streamline plot with color representing magnitude
+# stream = plt.streamplot(
+#     X,
+#     Y,
+#     wind_field[:, :, 0],
+#     wind_field[:, :, 1],
+#     color=magnitude,
+#     cmap="viridis",
+#     density=2,
+# )
+# cbar = plt.colorbar(stream.lines, label="Wind Speed (m/s)")
+# plt.xlabel("X (meters along surface)", fontsize=20)
+# plt.ylabel("Y (meters above surface)", fontsize=20)
+# plt.xticks(size=20)
+# plt.yticks(size=20)
+# plt.title("Windspeed at different altitudes", fontsize=20)
+# plt.show()
+
+
+# # Contour plot of atmospheric density
+# plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
+# plt.colorbar(label="Density (kg/m^3)")
+# plt.xlabel("X (meters along surface)", fontsize=20)
+# plt.ylabel("Y (meters above surface)", fontsize=20)
+# plt.xticks(size=20)
+# plt.yticks(size=20)
+# plt.title("Atmospheric density at different altitudes", fontsize=20)
+# plt.show()
+
+# plt.quiver(
+#     X[::10, ::10],
+#     Y[::10, ::10],
+#     wind_drag_field[::10, ::10, 0],
+#     wind_drag_field[::10, ::10, 1],
+# )
+# plt.xlabel("X (meters along surface)", fontsize=20)
+# plt.ylabel("Y (meters above surface)", fontsize=20)
+# plt.xticks(size=20)
+# plt.yticks(size=20)
+# plt.title("Wind drag at different altitudes", fontsize=20)
+# plt.show()
 
 # #################################################################
 # # #             Launching using best launchtime               # #
