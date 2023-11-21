@@ -84,7 +84,7 @@ def landing_trajectory(
     """
     lander_area = mission.lander_area  # 0.3 m^2
     time_array = np.arange(
-        initial_time, initial_time + total_simulation_time, time_step
+        0, total_simulation_time, time_step
     )  # Creates the time_array of simulation
     x_pos_arr = np.zeros(
         len(time_array)
@@ -114,7 +114,7 @@ def landing_trajectory(
 
     Fd = np.zeros_like(v_lander)
     rho = rho0 * np.e ** (
-        -K * (np.linalg.norm(r_lander[:, :, 0]) - planet_radius)
+        -K * np.abs(np.linalg.norm(r_lander[:, :, 0]) - planet_radius)
     )  # expression for rho (simplified model using isotherm atmosphere)
 
     v_terminal[0] = np.sqrt(
@@ -124,16 +124,14 @@ def landing_trajectory(
     )  # Calculating initial terminal velocity
 
     wind_magnitude = (
-        2 * np.pi * (np.linalg.norm(r_lander[:, :, 0]) - planet_radius) / P
+        2 * np.pi * np.abs(np.linalg.norm(r_lander[:, :, 0]) - planet_radius) / P
     )  # the wind from planet rotation at radius R from center
     wind = wind_magnitude * np.dot(
         rotation_matrix, r_lander[:, :, 0] / np.linalg.norm(r_lander[:, :, 0])
     )  # calculating the atmospheric wind
 
-    v_drag = -v_lander[:, :, 0] - wind  # calculating the total drag-veloctiy
-    # print(
-    #     f"rho: {rho}, Cd: {Cd}, lander_area: {lander_area}, abs vdrag: {np.linalg.norm(v_drag)},vdrag vector {v_drag}"
-    # )
+    v_drag = -v_lander[:, :, 0] + wind  # calculating the total drag-veloctiy
+
     Fd[:, :, 0] = (
         1 / 2 * rho * Cd * lander_area * np.square(v_drag)
     )  # calculating the force of air-resistance
@@ -147,15 +145,15 @@ def landing_trajectory(
     # Leapfrog-loop
     for i in range(0, len(time_array) - 1):
         print(f"Calculating {i}/{len(time_array) - 1}")
-        if np.linalg.norm(r_lander[:, :, i]) <= planet_radius + 500:
+        if np.linalg.norm(r_lander[:, :, i]) <= planet_radius + 2000:
             lander_area = lander_and_parachute_area
             if deploy_index == None:
                 deploy_index = i
-            break
 
         if np.linalg.norm(r_lander[:, :, i]) <= planet_radius or np.linalg.norm(
             r_lander[:, :, i]
         ) > 2 * np.linalg.norm(r_lander[:, :, 0]):
+            break_index = i
             break
 
         r_lander[:, :, i + 1] = (
@@ -165,20 +163,21 @@ def landing_trajectory(
         )  # Rocket pos at time i+1
 
         rho = rho0 * np.exp(
-            -K * (np.linalg.norm(r_lander[:, :, i]) - planet_radius)
+            -K * np.abs(np.linalg.norm(r_lander[:, :, i]) - planet_radius)
         )  # expression for rho (simplified model using isotherm atmosphere)
         wind_magnitude = (
-            2 * np.pi * (np.linalg.norm(r_lander[:, :, i + 1]) - planet_radius) / P
+            2 * np.pi * np.abs(np.linalg.norm(r_lander[:, :, i]) - planet_radius) / P
         )  # the wind from planet rotation at radius R from center
         wind = wind_magnitude * np.dot(
             rotation_matrix, r_lander[:, :, i] / np.linalg.norm(r_lander[:, :, i])
         )  # calulating atmospheric wind
-        v_terminal[i + 1] = np.sqrt(
-            G
-            * (2 * lander_mass * planet_mass)
-            / (rho * lander_area * (np.linalg.norm(r_lander[:, :, i])) ** 2)
-        )  # calculating terminal-velocity
-        v_drag = -v_lander[:, :, i] - wind  # calculating drag velocity
+        if rho > 1:
+            v_terminal[i] = np.sqrt(
+                G
+                * (2 * lander_mass * planet_mass)
+                / (rho * lander_area * (np.linalg.norm(r_lander[:, :, i])) ** 2)
+            )  # calculating terminal-velocity
+        v_drag = -v_lander[:, :, i] + wind  # calculating drag velocity
 
         Fd[:, :, i] = (
             1 / 2 * rho * Cd * lander_area * np.square(v_drag)
@@ -194,8 +193,22 @@ def landing_trajectory(
             v_lander[:, :, i] + (1 / 2) * (acc_old + acc_new) * time_step
         )  # Calculating velocty of rocket in timestep i+1
         acc_old = acc_new
+    relative_angle = np.arcsin(r_lander[1, 0, break_index] / planet_radius)
 
-    return time_array, r_lander, v_lander, v_terminal, Fd, deploy_index
+    planet_rotation_angle = (initial_time + time_array[break_index] / P) * 2 * np.pi - (
+        initial_time + time_array[break_index] // P
+    ) * 2 * np.pi
+    touchdown_angle = planet_rotation_angle + relative_angle
+    return (
+        time_array,
+        r_lander,
+        v_lander,
+        v_terminal,
+        Fd,
+        deploy_index,
+        break_index,
+        touchdown_angle,
+    )
 
 
 # Initial position and velocity after using shortcut to stable orbit:
@@ -206,143 +219,175 @@ def landing_trajectory(
 # Position: (1.0687e+07, 0, 0) m
 # Velocity: (0, 4944.39, 0) m/s
 
-time_array, r_lander, v_lander, v_terminal, Fd, deploy_index = landing_trajectory(
-    0, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-3
-)
+# (
+#     time_array,
+#     r_lander,
+#     v_lander,
+#     v_terminal,
+#     Fd,
+#     deploy_index,
+#     break_index,
+#     touchdown_angle,
+# ) = landing_trajectory(
+#     2.53 * sec_per_year, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-2
+# )
 
-theta = np.linspace(0, 2 * np.pi, 1000)
-circle_x = planet_radius * np.cos(theta)
-circle_y = planet_radius * np.sin(theta)
-planet_surface = np.array((circle_x, circle_y, np.zeros_like(circle_x)))
+# theta = np.linspace(0, 2 * np.pi, 1000000)
+# circle_x = planet_radius * np.cos(theta)
+# circle_y = planet_radius * np.sin(theta)
+# planet_surface = np.array((circle_x, circle_y, np.zeros_like(circle_x)))
 
-plt.scatter(0, 0)
-plt.scatter(r_lander[0, 0, 0], r_lander[1, 0, 0], label="Lander launch")
-plt.scatter(
-    r_lander[0, 0, deploy_index],
-    r_lander[1, 0, deploy_index],
-    label="Parachute deployment",
-)
-plt.plot(circle_x, circle_y, label="Planet surface")
-plt.plot(r_lander[0, 0, :], r_lander[1, 0, :])
-plt.axis("equal")
-plt.xlabel("x pos (m)", fontsize=20)
-plt.ylabel("y pos (m)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.legend(fontsize=20)
-plt.title("Lander pos during landing", fontsize=20)
-plt.show()
+# plt.scatter(0, 0)
+# plt.scatter(r_lander[0, 0, 0], r_lander[1, 0, 0], label="Lander launch")
+# plt.scatter(
+#     r_lander[0, 0, deploy_index],
+#     r_lander[1, 0, deploy_index],
+#     label="Parachute deployment",
+# )
+# plt.scatter(
+#     r_lander[0, 0, break_index],
+#     r_lander[1, 0, break_index],
+#     label="Touchdown!",
+# )
+# plt.plot(circle_x, circle_y, label="Planet surface")
+# plt.plot(r_lander[0, 0, : break_index + 1], r_lander[1, 0, : break_index + 1])
+# plt.axis("equal")
+# plt.xlabel("x pos (m)", fontsize=20)
+# plt.ylabel("y pos (m)", fontsize=20)
+# plt.xticks(size=20)
+# plt.yticks(size=20)
+# plt.legend(fontsize=20)
+# plt.title(
+#     f"Lander-position, touchdown at touchdown at azimuthangle: {touchdown_angle:.2f} radians",
+#     fontsize=20,
+# )
+# plt.show()
 
-absolute_v = np.linalg.norm(
-    np.stack((v_lander[0, 0, :], v_lander[1, 0, :]), -1), axis=-1
-)
-plt.plot(time_array, absolute_v, label="Absolute vel lander")
-plt.scatter(
-    time_array[deploy_index], absolute_v[deploy_index], label="Parachute deployment"
-)
-plt.plot(time_array, v_terminal, label="Terminal vel")
-plt.plot(time_array, np.full_like(v_terminal, 3), label="Velocity limit for landing")
-plt.xlabel("Time (s)", fontsize=20)
-plt.ylabel("Velocity (m/s)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.legend(fontsize=20)
-plt.title("Velocity of lander vs estimated terminal velocity", fontsize=20)
-plt.show()
+# absolute_v = np.linalg.norm(
+#     np.stack(
+#         (v_lander[0, 0, : break_index + 1], v_lander[1, 0, : break_index + 1]), -1
+#     ),
+#     axis=-1,
+# )
+# plt.plot(time_array[: break_index + 1], absolute_v, label="Absolute vel lander")
+# plt.scatter(
+#     time_array[deploy_index], absolute_v[deploy_index], label="Parachute deployment"
+# )
+# plt.plot(
+#     time_array[: break_index + 1], v_terminal[: break_index + 1], label="Terminal vel"
+# )
+# plt.plot(
+#     time_array[: break_index + 1],
+#     np.full_like(time_array[: break_index + 1], 3),
+#     label="Velocity limit for landing",
+# )
+# plt.xlabel("Time (s)", fontsize=20)
+# plt.ylabel("Velocity (m/s)", fontsize=20)
+# plt.xticks(size=20)
+# plt.yticks(size=20)
+# plt.legend(fontsize=20)
+# plt.title("Velocity of lander vs estimated terminal velocity", fontsize=20)
+# plt.show()
 
-absolute_Fd = np.linalg.norm(np.stack((Fd[0, 0, :], Fd[1, 0, :]), -1), axis=-1)
+# absolute_Fd = np.linalg.norm(
+#     np.stack((Fd[0, 0, : break_index + 1], Fd[1, 0, : break_index + 1]), -1), axis=-1
+# )
 
-plt.plot(time_array, absolute_Fd, label="Force from drag")
-plt.scatter(
-    time_array[deploy_index], absolute_Fd[deploy_index], label="Parachute deployment"
-)
-plt.plot(
-    time_array, np.full_like(absolute_Fd, 250000), label="Break limit of parachute"
-)
-plt.xlabel("Time (s)", fontsize=20)
-plt.ylabel("Force from drag (N)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.legend(fontsize=20)
-plt.title("Dragforce on lander during landing", fontsize=20)
-plt.show()
+# plt.plot(time_array[: break_index + 1], absolute_Fd, label="Force from drag")
+# plt.scatter(
+#     time_array[deploy_index], absolute_Fd[deploy_index], label="Parachute deployment"
+# )
+# plt.plot(
+#     time_array[: break_index + 1],
+#     np.full_like(absolute_Fd, 250000),
+#     label="Break limit of parachute",
+# )
+# plt.xlabel("Time (s)", fontsize=20)
+# plt.ylabel("Force from drag (N)", fontsize=20)
+# plt.xticks(size=20)
+# plt.yticks(size=20)
+# plt.legend(fontsize=20)
+# plt.title("Dragforce on lander during landing", fontsize=20)
+# plt.show()
 
 
 #################################################################
 # #              Visualizing atmosphere                       # #
 #################################################################
-# x = np.linspace(-500, 500, 1000)  # meters along surface
-# y = np.linspace(0, 2000000, 1000)  # meters above surface
-# X, Y = np.meshgrid(x, y)
-# ilen, jlen = np.shape(X)
-# wind_field = np.zeros((ilen, jlen, 2))  # grid to fill wind vectors
-# density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
-# wind_drag_field = np.zeros((ilen, jlen, 2))  # grid to fill with dragforce vectors
-
-# # Looping over all positions i meshgrid and calculating value
-# for i in range(ilen):
-#     for j in range(jlen):
-#         wind_field[i, j] = (2 * np.pi * Y[i, j] / P) * np.array((1, 0))
-#         density_field[i, j] = rho0 * np.exp(
-#             -K * np.linalg.norm(Y[i, j] + planet_radius)
-#         )  # expression for rho (simplified model using isotherm atmosphere)
-#         wind_drag_field[i, j] = (
-#             1
-#             / 2
-#             * density_field[i, j]
-#             * Cd
-#             * lander_area
-#             * np.linalg.norm(wind_field[i, j])
-#             * wind_field[i, j]
-#         )  # calculating the force of air-resistance
-
-
-# plt.quiver(
-#     X[::10, ::10], Y[::10, ::10], wind_field[::10, ::10, 0], wind_field[::10, ::10, 1]
-# )
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.title("Atmospheric wind vector field", fontsize=20)
-# plt.show()
-
-# # Calculating the magnitude of the wind
-# magnitude = np.sqrt(wind_field[:, :, 0] ** 2 + wind_field[:, :, 1] ** 2)
-
-# # Plotting the streamline plot with color representing magnitude
-# stream = plt.streamplot(
-#     X,
-#     Y,
-#     wind_field[:, :, 0],
-#     wind_field[:, :, 1],
-#     color=magnitude,
-#     cmap="viridis",
-#     density=2,
-# )
-# cbar = plt.colorbar(stream.lines, label="Wind Speed (m/s)")
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.title("Windspeed at different altitudes", fontsize=20)
-# plt.show()
+x = np.linspace(-500, 500, 1000)  # meters along surface
+y = np.linspace(1, 1000000, 1000)  # meters above surface
+X, Y = np.meshgrid(x, y)
+ilen, jlen = np.shape(Y)
+wind_field = np.zeros((ilen, jlen, 2))  # grid to fill wind vectors
+density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
+wind_drag_field = np.zeros((ilen, jlen, 2))  # grid to fill with dragforce vectors
+print(planet_radius)
+# Looping over all positions i meshgrid and calculating value
+for i in range(ilen):
+    for j in range(jlen):
+        wind_field[i, j] = (2 * np.pi * np.abs(Y[i, j] - planet_radius) / P) * np.array(
+            (-1, 0)
+        )
+        density_field[i, j] = rho0 * np.exp(
+            -K * np.abs(np.linalg.norm(Y[i, j]) - planet_radius)
+        )  # expression for rho (simplified model using isotherm atmosphere)
+        wind_drag_field[i, j] = (
+            1
+            / 2
+            * density_field[i, j]
+            * Cd
+            * lander_area
+            * np.linalg.norm(wind_field[i, j])
+            * wind_field[i, j]
+        )  # calculating the force of air-resistance
 
 
-# # Contour plot of atmospheric density
-# plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
-# plt.colorbar(label="Density (kg/m^3)", fontsize=20)
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.title("Atmospheric density at different altitudes", fontsize=20)
-# plt.show()
+plt.quiver(
+    X[::10, ::10], Y[::10, ::10], wind_field[::10, ::10, 0], wind_field[::10, ::10, 1]
+)
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.title("Atmospheric wind vector field", fontsize=20)
+plt.show()
 
-# plt.quiver(
-#     X[::10, ::10],
-#     Y[::10, ::10],
-#     wind_drag_field[::10, ::10, 0],
-#     wind_drag_field[::10, ::10, 1],
-# )
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.title("Wind drag at different altitudes", fontsize=20)
-# plt.show()
+# Calculating the magnitude of the wind
+magnitude = np.sqrt(wind_field[:, :, 0] ** 2 + wind_field[:, :, 1] ** 2)
+
+# Plotting the streamline plot with color representing magnitude
+stream = plt.streamplot(
+    X,
+    Y,
+    wind_field[:, :, 0],
+    wind_field[:, :, 1],
+    color=magnitude,
+    cmap="viridis",
+    density=2,
+)
+cbar = plt.colorbar(stream.lines, label="Wind Speed (m/s)")
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.title("Windspeed at different altitudes", fontsize=20)
+plt.show()
+
+
+# Contour plot of atmospheric density
+plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
+plt.colorbar(label="Density (kg/m^3)")
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.title("Atmospheric density at different altitudes", fontsize=20)
+plt.show()
+
+plt.quiver(
+    X[::10, ::10],
+    Y[::10, ::10],
+    wind_drag_field[::10, ::10, 0],
+    wind_drag_field[::10, ::10, 1],
+)
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.title("Wind drag at different altitudes", fontsize=20)
+plt.show()
 
 # #################################################################
 # # #             Launching using best launchtime               # #
