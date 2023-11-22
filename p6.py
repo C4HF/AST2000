@@ -285,40 +285,78 @@ def get_slice(lambda_0):
 
 
 # Parameters
-for i, lambda_0 in enumerate(spectral_lines):
-    m = masses[i]  # Using molecule mass
-    wavelength_slice, flux_slice, noise_slice = get_slice(lambda_0)
-    N1 = len(flux_slice)
-    N2 = 800
-    velocity1 = np.linspace(-10, 10, N1)
-    temperature = np.linspace(150, 450, N2)  # Expected temperatur-range in atmosphere
-    velocity2 = np.linspace(-10, 10, N2)
-    # m = 2.6566962 * 10e-26
+# for i, lambda_0 in enumerate(spectral_lines):
+#     m = masses[i]  # Using molecule mass
+#     wavelength_slice, flux_slice, noise_slice = get_slice(lambda_0)
+#     N1 = len(flux_slice)
+#     N2 = 800
+#     velocity1 = np.linspace(-10, 10, N1)
+#     temperature = np.linspace(150, 450, N2)  # Expected temperatur-range in atmosphere
+#     velocity2 = np.linspace(-10, 10, N2)
+#     # m = 2.6566962 * 10e-26
 
-    # m = 1
-    Fmin = 0.7
-    params = (m, lambda_0, Fmin)
-    best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
-        params, flux_slice, noise_slice, velocity1, velocity2, temperature
-    )
+#     # m = 1
+#     Fmin = 0.7
+#     params = (m, lambda_0, Fmin)
+#     best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
+#         params, flux_slice, noise_slice, velocity1, velocity2, temperature
+#     )
 
-    # estimated_T = (best_std**2 * m * const.c**2) / (lambda_0**2 * k_B)
-    estimated_v = (best_lambda - lambda_0) * const.c_km_pr_s / lambda_0
+#     # estimated_T = (best_std**2 * m * const.c**2) / (lambda_0**2 * k_B)
+#     estimated_v = (best_lambda - lambda_0) * const.c_km_pr_s / lambda_0
 
-    ## Plotting results ##
-    plot_slice_of_flux_around_spectralline(lambda_0=lambda_0)
-    print(f"Best parameters: Std={best_std}, Lambda={best_lambda}")
+#     ## Plotting results ##
+#     plot_slice_of_flux_around_spectralline(lambda_0=lambda_0)
+#     print(f"Best parameters: Std={best_std}, Lambda={best_lambda}")
 
-    # plt.plot(wavelength_slice, flux_slice, label="Observed Data")
-    plt.plot(
-        wavelength_slice,
-        best_model,
-        label=f"Gaussian model (V={estimated_v:.2f}km/s, T={estimated_v:.2f}k)",
-        color="orange",
-    )
-    plt.xlabel("Wavelength (nm)", fontsize=20)
-    plt.ylabel("Flux (watt/m^2)", fontsize=20)
-    plt.title(f"Observed flux around {lambda_0} nm", fontsize=20)
-    plt.legend(fontsize=20)
+#     # plt.plot(wavelength_slice, flux_slice, label="Observed Data")
+#     plt.plot(
+#         wavelength_slice,
+#         best_model,
+#         label=f"Gaussian model (V={estimated_v:.2f}km/s, T={estimated_v:.2f}k)",
+#         color="orange",
+#     )
+#     plt.xlabel("Wavelength (nm)", fontsize=20)
+#     plt.ylabel("Flux (watt/m^2)", fontsize=20)
+#     plt.title(f"Observed flux around {lambda_0} nm", fontsize=20)
+#     plt.legend(fontsize=20)
 
-    plt.show()
+#     plt.show()
+
+
+#################################################################
+# #              Visualizing atmosphere-density               # #
+#################################################################
+planet_mass = system.masses[1] * SM  # kg
+planet_radius = system.radii[1] * 1000  # radius in meters
+g0 = (G * planet_mass) / planet_radius**2  # gravitational acceleration at surface
+mu = 22  # mean molecular weight
+T0 = 296.9  # surface temperature in kelvin found in part 3
+K = (2 * g0 * mu * m_H2) / (k_B * T0)
+rho0 = system.atmospheric_densities[1]  # density of atmosphere at surface
+P = system.rotational_periods[1] * (
+    60 * 60 * 24
+)  # rotational period of planet in seconds
+x = np.linspace(-500, 500, 1000)  # meters along surface
+y = np.linspace(1, 10000, 10000)  # meters above surface
+X, Y = np.meshgrid(x, y)
+ilen, jlen = np.shape(Y)
+density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
+
+
+# Looping over all positions i meshgrid and calculating value
+for i in range(ilen):
+    for j in range(jlen):
+        density_field[i, j] = rho0 * np.exp(
+            -K * np.abs(np.linalg.norm(Y[i, j]))
+        )  # expression for rho (simplified model using isotherm atmosphere)
+
+# Contour plot of atmospheric density
+plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
+plt.colorbar(label="Density (kg/m^3)")
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.title("Atmospheric density at different altitudes", fontsize=20)
+plt.show()
