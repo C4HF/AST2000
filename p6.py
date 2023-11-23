@@ -338,18 +338,9 @@ P = system.rotational_periods[1] * (
     60 * 60 * 24
 )  # rotational period of planet in seconds
 x = np.linspace(-500, 500, 1000)  # meters along surface
-y = np.linspace(1, 10000, 10000)  # meters above surface
+y = np.linspace(1, 20000, 10000)  # meters above surface
 X, Y = np.meshgrid(x, y)
-ilen, jlen = np.shape(Y)
-density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
-
-
-# Looping over all positions i meshgrid and calculating value
-for i in range(ilen):
-    for j in range(jlen):
-        density_field[i, j] = rho0 * np.exp(
-            -K * np.abs(np.linalg.norm(Y[i, j]))
-        )  # expression for rho (simplified model using isotherm atmosphere)
+density_field = rho0 * np.exp(-K * Y)
 
 # Contour plot of atmospheric density
 plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
