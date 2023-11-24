@@ -235,9 +235,6 @@ def landing_trajectory(
 
 
 # Initial position and velocity after using shortcut to stable orbit:
-# 1 million meters above surface
-# Position: (6.68704e+06, 0, 0) m
-# Velocity: (0, 6250.65, 0) m/s
 # 5 milion meters above surface
 # Position: (1.0687e+07, 0, 0) m
 # Velocity: (0, 4944.39, 0) m/s
@@ -253,145 +250,339 @@ def landing_trajectory(
     touchdown_angle,
     absolute_v,
 ) = landing_trajectory(
-    2.53 * sec_per_year, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-4
+    2.53 * sec_per_year, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-3
 )
 
-# theta = np.linspace(0, 2 * np.pi, 1000000)
-# surface_x = planet_radius * np.cos(theta)
-# surface_y = planet_radius * np.sin(theta)
-# planet_surface = np.array((surface_x, surface_y, np.zeros_like(surface_x)))
 
-# atmosphere_x = (planet_radius + 12000) * np.cos(theta)
-# atmosphere_y = (planet_radius + 12000) * np.sin(theta)
-# planet_atmosphere = np.array((atmosphere_x, atmosphere_y, np.zeros_like(atmosphere_x)))
+# #################################################################
+# # #             Launching using best launchtime               # #
+# #################################################################
+best_launch_time_dt05 = 0.8368368368368369  # years
+(
+    altitude,
+    vertical_velocity,
+    total_time,
+    fuel_weight,
+    solar_x_pos,
+    solar_y_pos,
+    solar_x_vel,
+    solar_y_vel,
+) = generalized_launch_rocket(
+    falcon_engine,
+    fuel_weight=165000,
+    launch_theta=np.pi / 2,
+    launch_phi=6.283185307179586,
+    launch_time=best_launch_time_dt05,
+    dt=0.01,
+)
 
-# plt.scatter(0, 0)
-# plt.scatter(r_lander[0, 0, 0], r_lander[1, 0, 0], label="Lander launch")
-# plt.scatter(
-#     r_lander[0, 0, deploy_index],
-#     r_lander[1, 0, deploy_index],
-#     label=f"Parachute deployment (t = {time_array[deploy_index]} s)",
-# )
-# plt.scatter(
-#     r_lander[0, 0, break_index],
-#     r_lander[1, 0, break_index],
-#     label="Touchdown!",
-# )
-# plt.plot(surface_x, surface_y, label="Planet surface")
-# plt.plot(
-#     atmosphere_x,
-#     atmosphere_y,
-#     label="Planet atmosphere 12km",
-#     linestyle="--",
-#     color="blue",
-# )
-# plt.plot(r_lander[0, 0, : break_index + 1], r_lander[1, 0, : break_index + 1])
-# plt.axis("equal")
-# plt.xlabel("x pos (m)", fontsize=20)
-# plt.ylabel("y pos (m)", fontsize=20)
-# plt.xticks(size=20)
-# plt.yticks(size=20)
-# plt.legend(fontsize=20)
-# plt.title(
-#     f"Lander-position, touchdown at azimuthangle: {np.degrees(touchdown_angle):.2f} degrees",
-#     fontsize=20,
-# )
-# plt.show()
+#################################################################
+# #              Updating space_mission-instance              # #
+#################################################################
 
-# absolute_v = np.linalg.norm(
-#     np.stack(
-#         (v_lander[0, 0, : break_index + 1], v_lander[1, 0, : break_index + 1]), -1
-#     ),
-#     axis=-1,
-# )
-# altitude = (
-#     np.linalg.norm(
-#         np.stack(
-#             (r_lander[0, 0, : break_index + 1], r_lander[1, 0, : break_index + 1]), -1
-#         ),
-#         axis=-1,
-#     )
-#     - planet_radius
-# )
-
-# density = rho0 * np.exp(-K * altitude)
-# step = 10
-# scatter = plt.scatter(
-#     time_array[: break_index + 1 : step],
-#     np.full_like(time_array[: break_index + 1 : step], -250),
-#     c=density[::step],
-#     cmap="viridis",
-#     marker="|",
-#     s=400,
-#     vmin=min(density),
-#     vmax=max(density),
-# )
-# cbar = plt.colorbar(
-#     scatter, label="Atmospheric density (kg/m^3)", orientation="vertical", pad=0.02
-# )
-# cbar.ax.yaxis.label.set_fontsize(20)
-# plt.plot(
-#     time_array[: break_index + 1],
-#     absolute_v,
-#     label="Absolute vel lander",
-# )
-# plt.plot(
-#     time_array[: break_index + 1], v_terminal[: break_index + 1], label="Terminal vel"
-# )
-# plt.plot(
-#     time_array[: break_index + 1],
-#     np.full_like(time_array[: break_index + 1], 3),
-#     label="Velocity limit for landing",
-# )
-
-# plt.scatter(
-#     time_array[deploy_index], absolute_v[deploy_index], label="Parachute deployment"
-# )
-
-# plt.xlabel("Time (s)", fontsize=20)
-# plt.ylabel("Absolute Velocity (m/s)", fontsize=20)
-# plt.xticks(size=20)
-# plt.yticks(size=20)
-# plt.title("Absolute velocity and atmospheric density during landing", fontsize=20)
-# plt.legend(fontsize=20)
-# plt.show()
+time_diff = np.abs(orbit_0[0] - best_launch_time_dt05)
+least_time_diff = np.min(time_diff)
+idx_ = np.where(time_diff == least_time_diff)[0]
+initial_solar_x_pos = orbit_0[1][idx_] + (
+    (
+        (homeplanet_radius / Au)
+        * np.cos((np.pi / 2) - np.pi / 2)
+        * np.cos(6.283185307179586)
+    )
+)  # starting y-postion in Au
+initial_solar_y_pos = orbit_0[2][idx_] + (
+    (
+        (homeplanet_radius / Au)
+        * np.cos((np.pi / 2) - np.pi / 2)
+        * np.sin(6.283185307179586)
+    )
+)  # starting y-postion in Au
+mission.set_launch_parameters(
+    thrust=falcon_engine.thrust,
+    mass_loss_rate=falcon_engine.total_fuel_constant,
+    initial_fuel_mass=165000,
+    estimated_launch_duration=446.7099999963486,
+    # launch_position=[initial_solar_x_pos[0], initial_solar_y_pos[0]],
+    launch_position=[initial_solar_x_pos[0], initial_solar_y_pos[0]],
+    time_of_launch=orbit_0[0, idx_],
+)
+mission.launch_rocket()
+mission.verify_launch_result(
+    (solar_x_pos[0], solar_y_pos[0])
+)  # verifies that the calculated launch-results are correct
+distances = mission.measure_distances()
+takenimage = mission.take_picture()
+mesured_dopplershifts = mission.measure_star_doppler_shifts()
+pos_after_launch = spacecraft_triliteration(
+    best_launch_time_dt05 + total_time / sec_per_year, distances
+)
+vel_after_launch = calculate_velocity_from_doppler(
+    mesured_dopplershifts[0], mesured_dopplershifts[1]
+)
+angle_after_launch = find_phi("sky_picture.png")
+mission.verify_manual_orientation(
+    pos_after_launch, vel_after_launch, angle_after_launch
+)
 
 
-# absolute_Fd = np.linalg.norm(
-#     np.stack((Fd[0, 0, : break_index + 1], Fd[1, 0, : break_index + 1]), -1), axis=-1
-# )
+#################################################################
+# #                      Landing!                             # #
+#################################################################
 
-# plt.plot(time_array[: break_index + 1], absolute_Fd, label="Force from drag")
-# plt.scatter(
-#     time_array[deploy_index], absolute_Fd[deploy_index], label="Parachute deployment"
-# )
-# step = 10
-# scatter = plt.scatter(
-#     time_array[: break_index + 1 : step],
-#     np.full_like(time_array[: break_index + 1 : step], -250),
-#     c=density[::step],
-#     cmap="viridis",
-#     marker="|",
-#     s=400,
-#     vmin=min(density),
-#     vmax=max(density),
-# )
-# cbar = plt.colorbar(
-#     scatter, label="Atmospheric density (kg/m^3)", orientation="vertical", pad=0.02
-# )
-# cbar.ax.yaxis.label.set_fontsize(20)
-# plt.plot(
-#     time_array[: break_index + 1],
-#     np.full_like(absolute_Fd, 250000),
-#     label="Break limit of parachute",
-# )
-# plt.xlabel("Time (s)", fontsize=20)
-# plt.ylabel("Force from drag (N)", fontsize=20)
-# plt.xticks(size=20)
-# plt.yticks(size=20)
-# plt.legend(fontsize=20)
-# plt.title("Dragforce on lander during landing", fontsize=20)
-# plt.show()
+
+def actual_lander_trajectory(time_step: float = 0.1):
+    """Function to create plot of actual landing trajectory. Returns arrays used for plotting."""
+    ######## Here we are using a shortcut #########
+    time_of_least_distance2 = 2.53
+    code_stable_orbit = 75980
+    shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
+    shortcut.place_spacecraft_in_stable_orbit(
+        time_of_least_distance2, 5000000, 0, 1
+    )  # <----- Using shortcut to stable orbit
+
+    land = mission.begin_landing_sequence()
+    land.adjust_parachute_area(24.5)
+    orient = land.orient()
+    pos = orient[1]
+    vel = orient[2]
+    land.launch_lander(-0.5 * vel)
+    time = []
+    x_pos_list = []
+    y_pos_list = []
+    x_vel_list = []
+    y_vel_list = []
+    absolute_radial_v_list = []
+
+    time.append(0)
+    x_pos_list.append(pos[0])
+    y_pos_list.append(pos[1])
+    x_vel_list.append(vel[0])
+    y_vel_list.append(vel[1])
+    radial_unit = -np.array(pos) / np.linalg.norm(np.array(pos))
+    radial_vel = np.dot(radial_unit, np.array(vel)) * radial_unit
+    absolute_radial_v_list.append(np.linalg.norm(radial_vel))
+
+    t = 0
+    altitude = np.linalg.norm(pos) - planet_radius
+    deployed = False
+    real_deploy_indx = 0
+    i = 0
+    while altitude > 0:
+        i += 1
+        t += time_step
+        land.fall_until_time(t)
+        orient = land.orient()
+        pos = orient[1]
+        altitude = np.linalg.norm(pos) - planet_radius
+        vel = orient[2]
+        if altitude < parachute_launch_altitude and deployed == False:
+            land.deploy_parachute()
+            real_deploy_indx = i
+            deployed = True
+        time.append(t)
+        x_pos_list.append(pos[0])
+        y_pos_list.append(pos[1])
+        x_vel_list.append(vel[0])
+        y_vel_list.append(vel[1])
+        radial_unit = -np.array(pos) / np.linalg.norm(np.array(pos))
+        radial_vel = np.dot(radial_unit, np.array(vel)) * radial_unit
+        absolute_radial_v_list.append(np.linalg.norm(radial_vel))
+
+    time_array = np.array(time)
+    pos_array = np.array((x_pos_list, y_pos_list))
+    vel_array = np.array((x_vel_list, y_vel_list))
+    abs_radial_vel = np.array(absolute_radial_v_list)
+    abs_pos_array = np.sqrt(pos_array[0] ** 2 + pos_array[1] ** 2)
+
+    return (
+        time_array,
+        pos_array,
+        vel_array,
+        abs_pos_array,
+        abs_radial_vel,
+        real_deploy_indx,
+    )
+
+
+(
+    time_array_real,
+    pos_array_real,
+    vel_array_real,
+    abs_pos_array_real,
+    abs_vel_array_real,
+    real_deploy_indx,
+) = actual_lander_trajectory()
+
+
+#################################################################
+# #                      Plotting results                     # #
+#################################################################
+### Landing trajectory ###
+theta = np.linspace(0, 2 * np.pi, 1000000)
+surface_x = planet_radius * np.cos(theta)
+surface_y = planet_radius * np.sin(theta)
+planet_surface = np.array((surface_x, surface_y, np.zeros_like(surface_x)))
+
+atmosphere_x = (planet_radius + 12000) * np.cos(theta)
+atmosphere_y = (planet_radius + 12000) * np.sin(theta)
+planet_atmosphere = np.array((atmosphere_x, atmosphere_y, np.zeros_like(atmosphere_x)))
+
+plt.scatter(0, 0)
+plt.scatter(r_lander[0, 0, 0], r_lander[1, 0, 0], label="Lander launch")
+plt.scatter(
+    r_lander[0, 0, deploy_index],
+    r_lander[1, 0, deploy_index],
+    label=f"P.depl.(t={time_array[deploy_index]:.0f}s)",
+)
+plt.scatter(
+    pos_array_real[0, real_deploy_indx],
+    pos_array_real[1, real_deploy_indx],
+    label=f"Real p.depl.(t={time_array_real[real_deploy_indx]:.0f}s)",
+)
+plt.scatter(
+    r_lander[0, 0, break_index],
+    r_lander[1, 0, break_index],
+    label="Sim touchdown",
+)
+plt.scatter(
+    pos_array_real[0, -1],
+    pos_array_real[1, -1],
+    label=f"Real touchdown",
+)
+plt.plot(surface_x, surface_y, label="Planet surface")
+plt.plot(
+    atmosphere_x,
+    atmosphere_y,
+    label="Atmosphere 12km",
+    linestyle="--",
+    color="blue",
+)
+plt.plot(
+    r_lander[0, 0, : break_index + 1],
+    r_lander[1, 0, : break_index + 1],
+    label="Sim traject.",
+    ls="--",
+)
+plt.plot(pos_array_real[0], pos_array_real[1], label="Real traject.")
+
+plt.axis("equal")
+plt.xlabel("x pos (m)", fontsize=20)
+plt.ylabel("y pos (m)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.legend(fontsize=17)
+plt.title(
+    f"Lander-trajectory, sim-touchdown: {np.degrees(touchdown_angle):.2f} deg, actual-touchdown: 32.78 deg (Azimuth)",
+    fontsize=20,
+)
+plt.show()
+
+
+### Velocity ###
+altitude = (
+    np.linalg.norm(
+        np.stack(
+            (r_lander[0, 0, : break_index + 1], r_lander[1, 0, : break_index + 1]), -1
+        ),
+        axis=-1,
+    )
+    - planet_radius
+)
+
+density = rho0 * np.exp(-K * altitude)
+step = 10
+scatter = plt.scatter(
+    time_array[: break_index + 1 : step],
+    np.full_like(time_array[: break_index + 1 : step], -250),
+    c=density[::step],
+    cmap="viridis",
+    marker="|",
+    s=400,
+    vmin=min(density),
+    vmax=max(density),
+)
+cbar = plt.colorbar(
+    scatter, label="Atmospheric density (kg/m^3)", orientation="vertical", pad=0.02
+)
+cbar.ax.yaxis.label.set_fontsize(20)
+plt.plot(
+    time_array[: break_index + 1],
+    absolute_v[: break_index + 1],
+    label="Sim vel",
+    ls="--",
+)
+plt.plot(
+    time_array_real,
+    abs_vel_array_real,
+    label="Real vel",
+)
+plt.plot(
+    time_array[: break_index + 1],
+    v_terminal[: break_index + 1],
+    label="Sim term. vel",
+)
+plt.plot(
+    time_array[: break_index + 1],
+    np.full_like(time_array[: break_index + 1], 3),
+    label="Safe vel-limit",
+)
+
+plt.scatter(
+    time_array[deploy_index],
+    absolute_v[deploy_index],
+    label="P-depl.",
+)
+plt.scatter(
+    time_array_real[real_deploy_indx],
+    abs_vel_array_real[real_deploy_indx],
+    label="Real p-depl",
+)
+
+plt.xlabel("Time (s)", fontsize=20)
+plt.ylabel("Absolute Velocity (m/s)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.title(
+    "Absolute radial velocity and atmospheric density during landing", fontsize=20
+)
+plt.legend(fontsize=20)
+plt.show()
+
+
+### Force ###
+absolute_Fd = np.linalg.norm(
+    np.stack((Fd[0, 0, : break_index + 1], Fd[1, 0, : break_index + 1]), -1), axis=-1
+)
+
+plt.plot(time_array[: break_index + 1], absolute_Fd, label="Force from drag")
+plt.scatter(time_array[deploy_index], absolute_Fd[deploy_index], label="P-depl.")
+step = 10
+scatter = plt.scatter(
+    time_array[: break_index + 1 : step],
+    np.full_like(time_array[: break_index + 1 : step], -250),
+    c=density[::step],
+    cmap="viridis",
+    marker="|",
+    s=400,
+    vmin=min(density),
+    vmax=max(density),
+)
+cbar = plt.colorbar(
+    scatter, label="Atmospheric density (kg/m^3)", orientation="vertical", pad=0.02
+)
+cbar.ax.yaxis.label.set_fontsize(20)
+plt.plot(
+    time_array[: break_index + 1],
+    np.full_like(absolute_Fd, 250000),
+    label="Break limit of parachute",
+)
+plt.xlabel("Time (s)", fontsize=20)
+plt.ylabel("Force from drag (N)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.legend(fontsize=20)
+plt.title("Simulated dragforce on lander during landing", fontsize=20)
+plt.show()
 
 
 #################################################################
@@ -487,377 +678,3 @@ def landing_trajectory(
 # plt.yticks(size=20)
 # plt.title("Wind drag at different altitudes", fontsize=20)
 # plt.show()
-
-# #################################################################
-# # #             Launching using best launchtime               # #
-# #################################################################
-best_launch_time_dt05 = 0.8368368368368369  # years
-(
-    altitude,
-    vertical_velocity,
-    total_time,
-    fuel_weight,
-    solar_x_pos,
-    solar_y_pos,
-    solar_x_vel,
-    solar_y_vel,
-) = generalized_launch_rocket(
-    falcon_engine,
-    fuel_weight=165000,
-    launch_theta=np.pi / 2,
-    launch_phi=6.283185307179586,
-    launch_time=best_launch_time_dt05,
-    dt=0.01,
-)
-
-#################################################################
-# #              Updating space_mission-instance              # #
-#################################################################
-
-time_diff = np.abs(orbit_0[0] - best_launch_time_dt05)
-least_time_diff = np.min(time_diff)
-idx_ = np.where(time_diff == least_time_diff)[0]
-initial_solar_x_pos = orbit_0[1][idx_] + (
-    (
-        (homeplanet_radius / Au)
-        * np.cos((np.pi / 2) - np.pi / 2)
-        * np.cos(6.283185307179586)
-    )
-)  # starting y-postion in Au
-initial_solar_y_pos = orbit_0[2][idx_] + (
-    (
-        (homeplanet_radius / Au)
-        * np.cos((np.pi / 2) - np.pi / 2)
-        * np.sin(6.283185307179586)
-    )
-)  # starting y-postion in Au
-mission.set_launch_parameters(
-    thrust=falcon_engine.thrust,
-    mass_loss_rate=falcon_engine.total_fuel_constant,
-    initial_fuel_mass=165000,
-    estimated_launch_duration=446.7099999963486,
-    # launch_position=[initial_solar_x_pos[0], initial_solar_y_pos[0]],
-    launch_position=[initial_solar_x_pos[0], initial_solar_y_pos[0]],
-    time_of_launch=orbit_0[0, idx_],
-)
-mission.launch_rocket()
-mission.verify_launch_result(
-    (solar_x_pos[0], solar_y_pos[0])
-)  # verifies that the calculated launch-results are correct
-distances = mission.measure_distances()
-takenimage = mission.take_picture()
-mesured_dopplershifts = mission.measure_star_doppler_shifts()
-pos_after_launch = spacecraft_triliteration(
-    best_launch_time_dt05 + total_time / sec_per_year, distances
-)
-vel_after_launch = calculate_velocity_from_doppler(
-    mesured_dopplershifts[0], mesured_dopplershifts[1]
-)
-angle_after_launch = find_phi("sky_picture.png")
-mission.verify_manual_orientation(
-    pos_after_launch, vel_after_launch, angle_after_launch
-)
-
-
-#################################################################
-# #                      Landing!                             # #
-#################################################################
-# time_of_least_distance2 = 2.53
-# code_stable_orbit = 75980
-# shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
-# shortcut.place_spacecraft_in_stable_orbit(
-#     time_of_least_distance2, 5000000, 0, 1
-# )  # <----- Using shortcut to stable orbit
-
-
-# land = mission.begin_landing_sequence()
-# land.adjust_parachute_area(24.5)
-# orient = land.orient()
-# vel = orient[2]
-# land.launch_lander(-0.5 * vel)
-# land.fall(2365.168)
-# land.orient()
-# land.deploy_parachute()
-# land.fall(10000)
-
-# land.start_video()
-# land.look_in_direction_of_planet(
-#     planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=0
-# )
-# land.fall(2500)
-# land.look_in_direction_of_planet(
-#     planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=np.pi / 10
-# )
-# land.fall(2500)
-# land.look_in_direction_of_planet(
-#     planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=np.pi - (np.pi / 10)
-# )
-# land.fall(2500)
-# land.look_in_direction_of_planet(
-#     planet_idx=1, relative_polar_angle=np.pi / 10, relative_azimuth_angle=0
-# )
-# land.fall(2500)
-
-
-# # print(land.orient())
-# land.look_in_direction_of_planet(
-#     planet_idx=1, relative_polar_angle=0, relative_azimuth_angle=0
-# )
-
-# # land.launch_lander((-500000, 0, 0))
-# land.fall(2000)
-
-# land.fall(10000)
-# land.finish_video(
-#     filename="Lander_video3.xml", number_of_frames=3000, radial_camera_offset=0.0
-# )
-
-
-def actual_lander_trajectory(time_step: float = 1):
-    """Function to create plot of actual landing trajectory. Returns arrays used for plotting."""
-    ######## Here we are using a shortcut #########
-    time_of_least_distance2 = 2.53
-    code_stable_orbit = 75980
-    shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
-    shortcut.place_spacecraft_in_stable_orbit(
-        time_of_least_distance2, 5000000, 0, 1
-    )  # <----- Using shortcut to stable orbit
-
-    land = mission.begin_landing_sequence()
-    land.adjust_parachute_area(24.5)
-    orient = land.orient()
-    pos = orient[1]
-    vel = orient[2]
-    land.launch_lander(-0.5 * vel)
-    time = []
-    x_pos_list = []
-    y_pos_list = []
-    x_vel_list = []
-    y_vel_list = []
-    absolute_radial_v_list = []
-
-    time.append(0)
-    x_pos_list.append(pos[0])
-    y_pos_list.append(pos[1])
-    x_vel_list.append(vel[0])
-    y_vel_list.append(vel[1])
-    radial_unit = -np.array(pos) / np.linalg.norm(np.array(pos))
-    radial_vel = np.dot(radial_unit, np.array(vel)) * radial_unit
-    absolute_radial_v_list.append(np.linalg.norm(radial_vel))
-
-    t = 0
-    altitude = np.linalg.norm(pos) - planet_radius
-    deployed = False
-    real_deploy_indx = 0
-    i = 0
-    while altitude > 0:
-        i += 1
-        t += time_step
-        land.fall_until_time(t)
-        orient = land.orient()
-        pos = orient[1]
-        altitude = np.linalg.norm(pos) - planet_radius
-        vel = orient[2]
-        if altitude < parachute_launch_altitude and deployed == False:
-            land.deploy_parachute()
-            real_deploy_indx = i
-            deployed = True
-        time.append(t)
-        x_pos_list.append(pos[0])
-        y_pos_list.append(pos[1])
-        x_vel_list.append(vel[0])
-        y_vel_list.append(vel[1])
-        radial_unit = -np.array(pos) / np.linalg.norm(np.array(pos))
-        radial_vel = np.dot(radial_unit, np.array(vel)) * radial_unit
-        absolute_radial_v_list.append(np.linalg.norm(radial_vel))
-
-    time_array = np.array(time)
-    pos_array = np.array((x_pos_list, y_pos_list))
-    vel_array = np.array((x_vel_list, y_vel_list))
-    abs_radial_vel = np.array(absolute_radial_v_list)
-    abs_pos_array = np.sqrt(pos_array[0] ** 2 + pos_array[1] ** 2)
-
-    return (
-        time_array,
-        pos_array,
-        vel_array,
-        abs_pos_array,
-        abs_radial_vel,
-        real_deploy_indx,
-    )
-
-
-(
-    time_array_real,
-    pos_array_real,
-    vel_array_real,
-    abs_pos_array_real,
-    abs_vel_array_real,
-    real_deploy_indx,
-) = actual_lander_trajectory()
-
-
-## Position ##
-theta = np.linspace(0, 2 * np.pi, 1000000)
-surface_x = planet_radius * np.cos(theta)
-surface_y = planet_radius * np.sin(theta)
-planet_surface = np.array((surface_x, surface_y, np.zeros_like(surface_x)))
-
-atmosphere_x = (planet_radius + 12000) * np.cos(theta)
-atmosphere_y = (planet_radius + 12000) * np.sin(theta)
-planet_atmosphere = np.array((atmosphere_x, atmosphere_y, np.zeros_like(atmosphere_x)))
-
-plt.scatter(0, 0)
-plt.scatter(r_lander[0, 0, 0], r_lander[1, 0, 0], label="Lander launch")
-plt.scatter(
-    r_lander[0, 0, deploy_index],
-    r_lander[1, 0, deploy_index],
-    label=f"P.depl.(t = {time_array[deploy_index]}s)",
-)
-plt.scatter(
-    pos_array_real[0, real_deploy_indx],
-    pos_array_real[1, real_deploy_indx],
-    label=f"Real p.depl.(t = {time_array_real[real_deploy_indx]}s)",
-)
-plt.scatter(
-    r_lander[0, 0, break_index],
-    r_lander[1, 0, break_index],
-    label="Sim touchdown",
-)
-plt.scatter(
-    pos_array_real[0, -1],
-    pos_array_real[1, -1],
-    label=f"Real touchdown",
-)
-plt.plot(surface_x, surface_y, label="Planet surface")
-plt.plot(
-    atmosphere_x,
-    atmosphere_y,
-    label="Atmosphere 12km",
-    linestyle="--",
-    color="blue",
-)
-plt.plot(
-    r_lander[0, 0, : break_index + 1],
-    r_lander[1, 0, : break_index + 1],
-    label="Sim traject.",
-)
-plt.plot(pos_array_real[0], pos_array_real[1], label="Real traject.")
-
-plt.axis("equal")
-plt.xlabel("x pos (m)", fontsize=20)
-plt.ylabel("y pos (m)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.legend(fontsize=18)
-plt.title(
-    f"Lander-trajectory, sim-touchdown: {np.degrees(touchdown_angle):.2f} deg, actual-touchdown: 32.78 deg (Azimuth)",
-    fontsize=20,
-)
-plt.show()
-
-
-## Velocity ##
-altitude = (
-    np.linalg.norm(
-        np.stack(
-            (r_lander[0, 0, : break_index + 1], r_lander[1, 0, : break_index + 1]), -1
-        ),
-        axis=-1,
-    )
-    - planet_radius
-)
-
-density = rho0 * np.exp(-K * altitude)
-step = 10
-scatter = plt.scatter(
-    time_array[: break_index + 1 : step],
-    np.full_like(time_array[: break_index + 1 : step], -250),
-    c=density[::step],
-    cmap="viridis",
-    marker="|",
-    s=400,
-    vmin=min(density),
-    vmax=max(density),
-)
-cbar = plt.colorbar(
-    scatter, label="Atmospheric density (kg/m^3)", orientation="vertical", pad=0.02
-)
-cbar.ax.yaxis.label.set_fontsize(20)
-plt.plot(
-    time_array[: break_index + 1],
-    absolute_v[: break_index + 1],
-    label="Sim vel",
-)
-plt.plot(
-    time_array_real,
-    abs_vel_array_real,
-    label="Real vel",
-)
-plt.plot(
-    time_array[: break_index + 1],
-    v_terminal[: break_index + 1],
-    label="Sim term. vel",
-)
-plt.plot(
-    time_array[: break_index + 1],
-    np.full_like(time_array[: break_index + 1], 3),
-    label="Safe vel-limit",
-)
-
-plt.scatter(
-    time_array[deploy_index],
-    absolute_v[deploy_index],
-    label="P-depl.",
-)
-plt.scatter(
-    time_array_real[real_deploy_indx],
-    abs_vel_array_real[real_deploy_indx],
-    label="Real p-depl",
-)
-
-plt.xlabel("Time (s)", fontsize=20)
-plt.ylabel("Absolute Velocity (m/s)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.title(
-    "Absolute radial velocity and atmospheric density during landing", fontsize=20
-)
-plt.legend(fontsize=20)
-plt.show()
-
-
-## Force ##
-absolute_Fd = np.linalg.norm(
-    np.stack((Fd[0, 0, : break_index + 1], Fd[1, 0, : break_index + 1]), -1), axis=-1
-)
-
-plt.plot(time_array[: break_index + 1], absolute_Fd, label="Force from drag")
-plt.scatter(time_array[deploy_index], absolute_Fd[deploy_index], label="P-depl.")
-step = 10
-scatter = plt.scatter(
-    time_array[: break_index + 1 : step],
-    np.full_like(time_array[: break_index + 1 : step], -250),
-    c=density[::step],
-    cmap="viridis",
-    marker="|",
-    s=400,
-    vmin=min(density),
-    vmax=max(density),
-)
-cbar = plt.colorbar(
-    scatter, label="Atmospheric density (kg/m^3)", orientation="vertical", pad=0.02
-)
-cbar.ax.yaxis.label.set_fontsize(20)
-plt.plot(
-    time_array[: break_index + 1],
-    np.full_like(absolute_Fd, 250000),
-    label="Break limit of parachute",
-)
-plt.xlabel("Time (s)", fontsize=20)
-plt.ylabel("Force from drag (N)", fontsize=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.legend(fontsize=20)
-plt.title("Dragforce on lander during landing", fontsize=20)
-plt.show()
