@@ -9,7 +9,7 @@ from ast2000tools.shortcuts import SpaceMissionShortcuts
 from P1B import Engine
 from p4 import spacecraft_triliteration, calculate_velocity_from_doppler, find_phi
 from part3 import generalized_launch_rocket
-import math
+
 
 utils.check_for_newer_version()
 
@@ -24,8 +24,8 @@ c_AU = 63239.7263  # Speed of light in Au/yr
 c = const.c * (sec_per_year / Au)  # Speed of light in Au/yr
 G_AU = 4 * (np.pi) ** 2  # Gravitational constant using AU
 G = 6.6743 * (10 ** (-11))  # Gravitational constant
-m_H2 = const.m_H2
-k_B = const.k_B
+m_H2 = const.m_H2  # mass hydrgoen kg
+k_B = const.k_B  # Boltzmann constant
 
 
 lander_mass = mission.lander_mass  # 90.0 kg
@@ -61,9 +61,10 @@ for i, planet in enumerate(exact_planet_positions[0]):
     )
 orbits = np.array([orbit_0, orbit_1, orbit_2, orbit_3, orbit_4, orbit_5, orbit_6])
 
+
 falcon_engine = Engine(
     N=2 * 10**4, L=3.775 * 10e-8, n_A=1, T=3300, t_c=10e-11, dt=10e-14
-)
+)  # Our last generation-engine
 
 
 #################################################################
@@ -72,12 +73,12 @@ falcon_engine = Engine(
 
 
 def landing_trajectory(
-    initial_time,
-    initial_pos,
-    initial_vel,
-    total_simulation_time,
-    time_step,
-):
+    initial_time: float,
+    initial_pos: np.ndarray,
+    initial_vel: np.ndarray,
+    total_simulation_time: float,
+    time_step: float,
+) -> tuple:
     """Function to calculate lander trajectory while falling through the atmosphere of planet 1.
     Takes initial time, position, velocity, simulation time and the timestep for the
     simulation (a smaller timestep increases accuracy). The function uses a leapfrog-loop to calculate
@@ -113,48 +114,55 @@ def landing_trajectory(
     v_lander = np.array(
         [[x_vel_arr], [y_vel_arr]]
     )  # Empty vel-array for rocket position, to be filled with values from simulation
-    absolute_v_radial = np.zeros_like(time_array)
+    absolute_v_radial = np.zeros_like(
+        time_array
+    )  # Empty array to be filled with absolue radial velocity during simualtion (m/s)
+    Fd = np.zeros_like(
+        v_lander
+    )  # empty array to be filled with drag force scalars during simualtion
     radial_unit = -np.array((r_lander[0, 0, 0], r_lander[1, 0, 0])) / np.linalg.norm(
         np.array((r_lander[0, 0, 0], r_lander[1, 0, 0]))
-    )
+    )  # finding unit-vector of radial-direction
     radial_vel = (
         np.dot(radial_unit, np.array((v_lander[0, 0, 0], v_lander[1, 0, 0])))
         * radial_unit
-    )
+    )  # finding the radial-component of the velocity vector
     absolute_v_radial[0] = np.linalg.norm(radial_vel)
-    Fd = np.zeros_like(v_lander)
+
     rho = rho0 * np.e ** (
         -K * np.abs(np.linalg.norm(r_lander[:, :, 0]) - planet_radius)
-    )  # expression for rho (simplified model using isotherm atmosphere)
+    )  # expression for rho (simplified model using isotherm atmosphere) (kg/m^3)
 
     v_terminal[0] = np.sqrt(
         G
         * (2 * lander_mass * planet_mass)
         / (rho * lander_area * (np.linalg.norm(r_lander[:, :, 0])) ** 2)
-    )  # Calculating initial terminal velocity
+    )  # Calculating initial terminal velocity (m/s)
 
     wind_magnitude = (
         2 * np.pi * np.abs(np.linalg.norm(r_lander[:, :, 0])) / P
-    )  # the wind from planet rotation at radius R from center
+    )  # the wind from planet rotation at radius R from center (m/s)
     wind = wind_magnitude * np.dot(
         rotation_matrix, r_lander[:, :, 0] / np.linalg.norm(r_lander[:, :, 0])
-    )  # calculating the atmospheric wind
+    )  # calculating the atmospheric wind (m/s)
 
-    v_drag = -v_lander[:, :, 0] + wind  # calculating the total drag-veloctiy
+    v_drag = -v_lander[:, :, 0] + wind  # calculating the total drag-veloctiy (m/s)
 
     Fd[:, :, 0] = (
         1 / 2 * rho * Cd * lander_area * np.square(v_drag)
-    )  # calculating the force of air-resistance
+    )  # calculating the force of air-resistance (N)
     a_drag = Fd[:, :, 0] / lander_mass  # acceleration from drag
     a_planet = ((-G * planet_mass) * r_lander[:, :, 0]) / (
         np.linalg.norm(r_lander[:, :, 0]) ** 3
     )  # Sets initial acceleration from planet according to N.2 law
-    acc_old = a_planet + a_drag  # total acceleration
+    acc_old = a_planet + a_drag  # total acceleration (m/s^2)
 
     deploy_index = None
     # Leapfrog-loop
     for i in range(0, len(time_array) - 1):
-        print(f"Calculating {i}/{len(time_array) - 1}")
+        print(
+            f"Current altitude: {(np.linalg.norm(r_lander[:,0,i]) - planet_radius)/1000:.2f} km"
+        )
         if (
             np.linalg.norm(r_lander[:, :, i])
             <= planet_radius + parachute_launch_altitude
@@ -173,29 +181,29 @@ def landing_trajectory(
             r_lander[:, :, i]
             + v_lander[:, :, i] * time_step
             + (acc_old * time_step**2) / 2
-        )  # Rocket pos at time i+1
+        )  # Rocket pos at time i+1 (m)
 
         rho = rho0 * np.exp(
             -K * np.abs(np.linalg.norm(r_lander[:, :, i]) - planet_radius)
-        )  # expression for rho (simplified model using isotherm atmosphere)
+        )  # expression for rho (simplified model using isotherm atmosphere) (kg/m^3)
         wind_magnitude = (
             2 * np.pi * np.abs(np.linalg.norm(r_lander[:, :, i])) / P
-        )  # the wind from planet rotation at radius R from center
+        )  # the wind from planet rotation at radius R from center (m/s)
         wind = wind_magnitude * np.dot(
             rotation_matrix, r_lander[:, :, i] / np.linalg.norm(r_lander[:, :, i])
-        )  # calulating atmospheric wind
+        )  # calulating atmospheric wind (m/s)
         if rho > 1:
             v_terminal[i] = np.sqrt(
                 G
                 * (2 * lander_mass * planet_mass)
                 / (rho * lander_area * (np.linalg.norm(r_lander[:, :, i])) ** 2)
-            )  # calculating terminal-velocity
-        v_drag = -v_lander[:, :, i] + wind  # calculating drag velocity
+            )  # calculating terminal-velocity (m/s)
+        v_drag = -v_lander[:, :, i] + wind  # calculating drag velocity (m/s)
 
         Fd[:, :, i] = (
             1 / 2 * rho * Cd * lander_area * np.square(v_drag)
         )  # air resistance
-        a_drag = Fd[:, :, i] / lander_mass  # acceleration from air resistance
+        a_drag = Fd[:, :, i] / lander_mass  # acceleration from air resistance (m/s^2)
         a_planet = ((-G * planet_mass) * r_lander[:, :, i]) / (
             np.linalg.norm(r_lander[:, :, i]) ** 3
         )  # Sets initial acceleration from planet according to N.2 law # Sets initial acceleration from sun according to N.2 law
@@ -204,22 +212,23 @@ def landing_trajectory(
         )  # Setting new acceleration to calculate velocity change
         v_lander[:, :, i + 1] = (
             v_lander[:, :, i] + (1 / 2) * (acc_old + acc_new) * time_step
-        )  # Calculating velocty of rocket in timestep i+1
+        )  # Calculating velocty of rocket in timestep i+1 (m/s)
         radial_unit = -np.array(
             (r_lander[0, 0, i], r_lander[1, 0, i])
         ) / np.linalg.norm(np.array((r_lander[0, 0, i], r_lander[1, 0, i])))
         radial_vel = (
             np.dot(radial_unit, np.array((v_lander[0, 0, i], v_lander[1, 0, i])))
             * radial_unit
-        )
-        absolute_v_radial[i] = np.linalg.norm(radial_vel)
+        )  # radial velocity (m/s)
+        absolute_v_radial[i] = np.linalg.norm(radial_vel)  # absolute radial vel (m/s)
         acc_old = acc_new
 
+    # Calculating the number of revolutions of planet 1 until initial time, and the adding the landing position
     relative_angle = np.arcsin(r_lander[1, 0, break_index] / planet_radius)
     planet_rotation_angle = (initial_time + time_array[break_index] / P) * 2 * np.pi - (
         initial_time + time_array[break_index] // P
     ) * 2 * np.pi
-    touchdown_angle = -planet_rotation_angle + relative_angle
+    touchdown_angle = -planet_rotation_angle + relative_angle  # radians
 
     return (
         time_array,
@@ -239,6 +248,7 @@ def landing_trajectory(
 # Position: (1.0687e+07, 0, 0) m
 # Velocity: (0, 4944.39, 0) m/s
 
+# Calling landing trajectory simulation with initial position and velocity taken from lander.orient()
 (
     time_array,
     r_lander,
@@ -254,10 +264,10 @@ def landing_trajectory(
 )
 
 
-# #################################################################
-# # #             Launching using best launchtime               # #
-# #################################################################
-best_launch_time_dt05 = 0.8368368368368369  # years
+##################################################################
+# #              Launching using best launchtime               # #
+##################################################################
+best_launch_time_dt05 = 0.8368368368368369  # found in part 5, (years)
 (
     altitude,
     vertical_velocity,
@@ -322,7 +332,7 @@ vel_after_launch = calculate_velocity_from_doppler(
 angle_after_launch = find_phi("sky_picture.png")
 mission.verify_manual_orientation(
     pos_after_launch, vel_after_launch, angle_after_launch
-)
+)  # verifying our orientation software
 
 
 #################################################################
@@ -330,8 +340,9 @@ mission.verify_manual_orientation(
 #################################################################
 
 
-def actual_lander_trajectory(time_step: float = 0.1):
-    """Function to create plot of actual landing trajectory. Returns arrays used for plotting."""
+def actual_lander_trajectory(time_step: float = 0.1) -> tuple:
+    """Function to run landing commands and store data of lander.
+    Returns arrays used for plotting."""
     ######## Here we are using a shortcut #########
     time_of_least_distance2 = 2.53
     code_stable_orbit = 75980
@@ -340,12 +351,13 @@ def actual_lander_trajectory(time_step: float = 0.1):
         time_of_least_distance2, 5000000, 0, 1
     )  # <----- Using shortcut to stable orbit
 
-    land = mission.begin_landing_sequence()
-    land.adjust_parachute_area(24.5)
-    orient = land.orient()
+    land = mission.begin_landing_sequence()  # initiating landing
+    land.adjust_parachute_area(24.5)  # setting parachute to 24.5 m^2
+    orient = land.orient()  # fetching current velcotiy and position
     pos = orient[1]
     vel = orient[2]
     land.launch_lander(-0.5 * vel)
+    # Empty lists to be filled with data
     time = []
     x_pos_list = []
     y_pos_list = []
@@ -353,41 +365,58 @@ def actual_lander_trajectory(time_step: float = 0.1):
     y_vel_list = []
     absolute_radial_v_list = []
 
+    # Appending initial values
     time.append(0)
     x_pos_list.append(pos[0])
     y_pos_list.append(pos[1])
     x_vel_list.append(vel[0])
     y_vel_list.append(vel[1])
-    radial_unit = -np.array(pos) / np.linalg.norm(np.array(pos))
-    radial_vel = np.dot(radial_unit, np.array(vel)) * radial_unit
-    absolute_radial_v_list.append(np.linalg.norm(radial_vel))
+    radial_unit = -np.array(pos) / np.linalg.norm(
+        np.array(pos)
+    )  # calculating radial unit vecotr
+    radial_vel = (
+        np.dot(radial_unit, np.array(vel)) * radial_unit
+    )  # calculating radial velocity (m/s)
+    absolute_radial_v_list.append(
+        np.linalg.norm(radial_vel)
+    )  # calculating and eppending radial absvelocity (m/s)
 
+    # Initial parameters
     t = 0
     altitude = np.linalg.norm(pos) - planet_radius
-    deployed = False
-    real_deploy_indx = 0
-    i = 0
-    while altitude > 0:
+    deployed = False  # boolean value to keep track of if parachute is deployed
+    real_deploy_indx = 0  # to be updated with index of parachute deployment
+    i = 0  # keeping track of index
+    while altitude > 0:  # while lander is above surface
         i += 1
         t += time_step
-        land.fall_until_time(t)
-        orient = land.orient()
+        land.fall_until_time(t)  # fall until next timestep
+        orient = land.orient()  # fetching current velcotiy and position
         pos = orient[1]
-        altitude = np.linalg.norm(pos) - planet_radius
+        altitude = np.linalg.norm(pos) - planet_radius  # updating altitude
         vel = orient[2]
-        if altitude < parachute_launch_altitude and deployed == False:
+        if (
+            altitude < parachute_launch_altitude and deployed == False
+        ):  # checking if altitude is less than, og equal to deployment altitude, and checking if parachute is already deployed
             land.deploy_parachute()
             real_deploy_indx = i
             deployed = True
-        time.append(t)
-        x_pos_list.append(pos[0])
-        y_pos_list.append(pos[1])
-        x_vel_list.append(vel[0])
-        y_vel_list.append(vel[1])
-        radial_unit = -np.array(pos) / np.linalg.norm(np.array(pos))
-        radial_vel = np.dot(radial_unit, np.array(vel)) * radial_unit
-        absolute_radial_v_list.append(np.linalg.norm(radial_vel))
+        time.append(t)  # appending time
+        x_pos_list.append(pos[0])  # appending x-pos
+        y_pos_list.append(pos[1])  # appending y-pos
+        x_vel_list.append(vel[0])  # appending x-vel
+        y_vel_list.append(vel[1])  # apending y-vel
+        radial_unit = -np.array(pos) / np.linalg.norm(
+            np.array(pos)
+        )  # calculating radial unit vecotr
+        radial_vel = (
+            np.dot(radial_unit, np.array(vel)) * radial_unit
+        )  # calculating radial vel
+        absolute_radial_v_list.append(
+            np.linalg.norm(radial_vel)
+        )  # calculating and appending abs radial vel
 
+    # Converting lists to arrays
     time_array = np.array(time)
     pos_array = np.array((x_pos_list, y_pos_list))
     vel_array = np.array((x_vel_list, y_vel_list))
@@ -404,6 +433,7 @@ def actual_lander_trajectory(time_step: float = 0.1):
     )
 
 
+# Running land-sequence and storing data
 (
     time_array_real,
     pos_array_real,
@@ -417,16 +447,19 @@ def actual_lander_trajectory(time_step: float = 0.1):
 #################################################################
 # #                      Plotting results                     # #
 #################################################################
-### Landing trajectory ###
+
+# Finding surface
 theta = np.linspace(0, 2 * np.pi, 1000000)
 surface_x = planet_radius * np.cos(theta)
 surface_y = planet_radius * np.sin(theta)
 planet_surface = np.array((surface_x, surface_y, np.zeros_like(surface_x)))
 
+# Finding estimated atmosphere limit
 atmosphere_x = (planet_radius + 12000) * np.cos(theta)
 atmosphere_y = (planet_radius + 12000) * np.sin(theta)
 planet_atmosphere = np.array((atmosphere_x, atmosphere_y, np.zeros_like(atmosphere_x)))
 
+# Plotting landing trajectory #
 plt.scatter(0, 0)
 plt.scatter(r_lander[0, 0, 0], r_lander[1, 0, 0], label="Lander launch")
 plt.scatter(
@@ -478,7 +511,7 @@ plt.title(
 plt.show()
 
 
-### Velocity ###
+### Plotting radial velocity ###
 altitude = (
     np.linalg.norm(
         np.stack(
@@ -487,7 +520,7 @@ altitude = (
         axis=-1,
     )
     - planet_radius
-)
+)  # finding altitude over time (m)
 
 density = rho0 * np.exp(-K * altitude)
 step = 10
@@ -549,7 +582,7 @@ plt.legend(fontsize=20)
 plt.show()
 
 
-### Force ###
+### Plotting dragforce ###
 absolute_Fd = np.linalg.norm(
     np.stack((Fd[0, 0, : break_index + 1], Fd[1, 0, : break_index + 1]), -1), axis=-1
 )
@@ -588,93 +621,93 @@ plt.show()
 #################################################################
 # #              Visualizing atmosphere                       # #
 #################################################################
-# x = np.linspace(-500, 500, 1000)  # meters along surface
-# y = np.linspace(1, 1000, 1000)  # meters above surface
-# X, Y = np.meshgrid(x, y)
-# ilen, jlen = np.shape(Y)
-# wind_field = np.zeros((ilen, jlen, 2))  # grid to fill wind vectors
-# density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
-# wind_drag_field = np.zeros((ilen, jlen, 2))  # grid to fill with dragforce vectors
+x = np.linspace(-500, 500, 1000)  # meters along surface
+y = np.linspace(1, 1000, 1000)  # meters above surface
+X, Y = np.meshgrid(x, y)
+ilen, jlen = np.shape(Y)
+wind_field = np.zeros((ilen, jlen, 2))  # grid to fill wind vectors
+density_field = np.zeros((ilen, jlen))  # grid to fill with density scalars
+wind_drag_field = np.zeros((ilen, jlen, 2))  # grid to fill with dragforce vectors
 
-# # Looping over all positions i meshgrid and calculating value
-# for i in range(ilen):
-#     for j in range(jlen):
-#         wind_field[i, j] = (2 * np.pi * np.abs(Y[i, j]) / P) * -np.array((1, 0))
-#         density_field[i, j] = rho0 * np.exp(
-#             -K * np.abs(np.linalg.norm(Y[i, j]))
-#         )  # expression for rho (simplified model using isotherm atmosphere)
-#         wind_drag_field[i, j] = -(
-#             1
-#             / 2
-#             * density_field[i, j]
-#             * Cd
-#             * lander_and_parachute_area
-#             * np.square(wind_field[i, j])
-#         )  # calculating the force of air-resistance
+# Looping over all positions i meshgrid and calculating value
+for i in range(ilen):
+    for j in range(jlen):
+        wind_field[i, j] = (2 * np.pi * np.abs(Y[i, j]) / P) * -np.array((1, 0))
+        density_field[i, j] = rho0 * np.exp(
+            -K * np.abs(np.linalg.norm(Y[i, j]))
+        )  # expression for rho (simplified model using isotherm atmosphere)
+        wind_drag_field[i, j] = -(
+            1
+            / 2
+            * density_field[i, j]
+            * Cd
+            * lander_and_parachute_area
+            * np.square(wind_field[i, j])
+        )  # calculating the force of air-resistance
 
-# # Calculating the magnitude of the wind
-# magnitude = np.sqrt(wind_field[:, :, 0] ** 2 + wind_field[:, :, 1] ** 2)
+# Calculating the magnitude of the wind
+magnitude = np.sqrt(wind_field[:, :, 0] ** 2 + wind_field[:, :, 1] ** 2)
 
-# quiver = plt.quiver(
-#     X[::10, ::10],
-#     Y[::10, ::10],
-#     wind_field[::10, ::10, 0],
-#     wind_field[::10, ::10, 1],
-#     magnitude[::10, ::10],
-#     cmap="viridis",
-# )
-# cbar = plt.colorbar(quiver, label="Wind Speed (m/s)")
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.xticks(size=20)
-# plt.yticks(size=20)
-# plt.title("Atmospheric wind vector field", fontsize=20)
-# plt.show()
-
-
-# # Plotting the streamline plot with color representing magnitude
-# stream = plt.streamplot(
-#     X,
-#     Y,
-#     wind_field[:, :, 0],
-#     wind_field[:, :, 1],
-#     color=magnitude,
-#     cmap="viridis",
-#     density=2,
-# )
-# cbar = plt.colorbar(stream.lines, label="Wind Speed (m/s)")
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.xticks(size=20)
-# plt.yticks(size=20)
-# plt.title("Windspeed at different altitudes", fontsize=20)
-# plt.show()
+quiver = plt.quiver(
+    X[::10, ::10],
+    Y[::10, ::10],
+    wind_field[::10, ::10, 0],
+    wind_field[::10, ::10, 1],
+    magnitude[::10, ::10],
+    cmap="viridis",
+)
+cbar = plt.colorbar(quiver, label="Wind Speed (m/s)")
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.title("Atmospheric wind vector field", fontsize=20)
+plt.show()
 
 
-# # Contour plot of atmospheric density
-# plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
-# plt.colorbar(label="Density (kg/m^3)")
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.xticks(size=20)
-# plt.yticks(size=20)
-# plt.title("Atmospheric density at different altitudes", fontsize=20)
-# plt.show()
+# Plotting the streamline plot with color representing magnitude
+stream = plt.streamplot(
+    X,
+    Y,
+    wind_field[:, :, 0],
+    wind_field[:, :, 1],
+    color=magnitude,
+    cmap="viridis",
+    density=2,
+)
+cbar = plt.colorbar(stream.lines, label="Wind Speed (m/s)")
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.title("Windspeed at different altitudes", fontsize=20)
+plt.show()
 
-# magnitude_drag = np.sqrt(wind_drag_field[:, :, 0] ** 2 + wind_drag_field[:, :, 1] ** 2)
 
-# quiver_drag = plt.quiver(
-#     X[::10, ::10],
-#     Y[::10, ::10],
-#     wind_drag_field[::10, ::10, 0],
-#     wind_drag_field[::10, ::10, 1],
-#     magnitude_drag[::10, ::10],
-#     cmap="viridis",
-# )
-# cbar = plt.colorbar(quiver_drag, label="Force wind-drag (N)")
-# plt.xlabel("X (meters along surface)", fontsize=20)
-# plt.ylabel("Y (meters above surface)", fontsize=20)
-# plt.xticks(size=20)
-# plt.yticks(size=20)
-# plt.title("Wind drag at different altitudes", fontsize=20)
-# plt.show()
+# Contour plot of atmospheric density
+plt.contourf(X, Y, density_field, cmap="viridis", levels=20)
+plt.colorbar(label="Density (kg/m^3)")
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.title("Atmospheric density at different altitudes", fontsize=20)
+plt.show()
+
+magnitude_drag = np.sqrt(wind_drag_field[:, :, 0] ** 2 + wind_drag_field[:, :, 1] ** 2)
+
+quiver_drag = plt.quiver(
+    X[::10, ::10],
+    Y[::10, ::10],
+    wind_drag_field[::10, ::10, 0],
+    wind_drag_field[::10, ::10, 1],
+    magnitude_drag[::10, ::10],
+    cmap="viridis",
+)
+cbar = plt.colorbar(quiver_drag, label="Force wind-drag (N)")
+plt.xlabel("X (meters along surface)", fontsize=20)
+plt.ylabel("Y (meters above surface)", fontsize=20)
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.title("Wind drag at different altitudes", fontsize=20)
+plt.show()
