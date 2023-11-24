@@ -6,10 +6,7 @@ import ast2000tools.utils as utils
 from ast2000tools.space_mission import SpaceMission
 from ast2000tools.solar_system import SolarSystem
 import pandas as pd
-from scipy.optimize import minimize
 from numba import njit
-
-# from scipy import constants
 
 
 utils.check_for_newer_version()
@@ -27,6 +24,10 @@ G_AU = 4 * (np.pi) ** 2  # Gravitational constant using AU
 G = 6.6743 * (10 ** (-11))  # Gravitational constant
 m_H2 = const.m_H2
 k_B = const.k_B
+
+#################################################################
+# #             Data reading                                  # #
+#################################################################
 
 
 def flux_sigma():  # Henter ut informasjon om fluksen og standardavviket for bølgelengdene i spektrallinjene.
@@ -83,51 +84,10 @@ def plot_sigma():  # Plotter standardavviket til fluksen mot bølgelengdene
 
 # plot_sigma()
 
-# Spectral lines for each gas without doppler shift in nanometers
-O2_spectral_lines = [632, 690, 760]
-H2O_spectral_lines = [720, 820, 940]
-CO2_spectral_lines = [1400, 1660]
-CH4_spectral_lines = [1660, 2200]
-CO_spectral_lines = [2340]
-N20_spectral_lines = [2870]
 
-spectral_lines = [
-    632,
-    690,
-    760,
-    720,
-    820,
-    940,
-    1400,
-    1600,
-    1660,
-    2200,
-    2340,
-    2870,
-]  # list of all spectral lines
-m_O2 = 2.6566962 * 10e-26
-m_H2O = 2.989 * 10e-26
-m_CO2 = 2.403 * 10e-26
-m_CH4 = 4.435 * 10e-26
-m_CO = 4.012 * 10e-26
-m_N2O = 7.819 * 10e-26
-masses = [
-    m_O2,
-    m_O2,
-    m_O2,
-    m_H2O,
-    m_H2O,
-    m_H2O,
-    m_CO2,
-    m_CO2,
-    m_CH4,
-    m_CH4,
-    m_CO,
-    m_N2O,
-]
-
-vel_max = 10  # km/s
-vel_min = -10  # km/s
+#################################################################
+# #             Dataanalyse                                   # #
+#################################################################
 
 
 def plot_slice_of_flux_around_spectralline(lambda_0):
@@ -208,7 +168,7 @@ def F_gauss_line_profile(Fmin, lambda_0, std, lambda_array, f):
 def chi_squared_minimization(
     params, flux_slice, sigma_slice, velocity1, velocity2, temperature
 ):
-    """Function to loop over range of possible values for sepctralline, create a model
+    """Function to loop over range of possible values for sepctralline, creates a gauss-model
     and compare it to observed data using chi-squared. The smaller chi-squared is,
     the better the model."""
     m, lambda_0, Fmin = params
@@ -284,48 +244,96 @@ def get_slice(lambda_0):
     return wavelength_slice, flux_slice, noise_slice
 
 
+#################################################################
+# #             Spektrallinjer og konstanter                  # #
+#################################################################
+# Spectral lines for each gas without doppler shift in nanometers
+O2_spectral_lines = [632, 690, 760]  # nm
+H2O_spectral_lines = [720, 820, 940]  # nm
+CO2_spectral_lines = [1400, 1660]  # nm
+CH4_spectral_lines = [1660, 2200]  # nm
+CO_spectral_lines = [2340]  # nm
+N20_spectral_lines = [2870]  # nm
+
+spectral_lines = [
+    632,
+    690,
+    760,
+    720,
+    820,
+    940,
+    1400,
+    1600,
+    1660,
+    2200,
+    2340,
+    2870,
+]  # list of all spectral lines (nm)
+m_O2 = 2.6566962 * 10e-26  # kg
+m_H2O = 2.989 * 10e-26  # kg
+m_CO2 = 2.403 * 10e-26  # kg
+m_CH4 = 4.435 * 10e-26  # kg
+m_CO = 4.012 * 10e-26  # kg
+m_N2O = 7.819 * 10e-26  # kg
+masses = [
+    m_O2,
+    m_O2,
+    m_O2,
+    m_H2O,
+    m_H2O,
+    m_H2O,
+    m_CO2,
+    m_CO2,
+    m_CH4,
+    m_CH4,
+    m_CO,
+    m_N2O,
+]
+
+vel_max = 10  # km/s
+vel_min = -10  # km/s
 # Parameters
-# for i, lambda_0 in enumerate(spectral_lines):
-#     m = masses[i]  # Using molecule mass
-#     wavelength_slice, flux_slice, noise_slice = get_slice(lambda_0)
-#     N1 = len(flux_slice)
-#     N2 = 800
-#     velocity1 = np.linspace(-10, 10, N1)
-#     temperature = np.linspace(150, 450, N2)  # Expected temperatur-range in atmosphere
-#     velocity2 = np.linspace(-10, 10, N2)
-#     # m = 2.6566962 * 10e-26
+for i, lambda_0 in enumerate(spectral_lines):
+    m = masses[i]  # Using molecule mass
+    wavelength_slice, flux_slice, noise_slice = get_slice(lambda_0)
+    N1 = len(flux_slice)
+    N2 = 800
+    velocity1 = np.linspace(-10, 10, N1)
+    temperature = np.linspace(150, 450, N2)  # Expected temperatur-range in atmosphere
+    velocity2 = np.linspace(-10, 10, N2)
+    # m = 2.6566962 * 10e-26
 
-#     # m = 1
-#     Fmin = 0.7
-#     params = (m, lambda_0, Fmin)
-#     best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
-#         params, flux_slice, noise_slice, velocity1, velocity2, temperature
-#     )
+    # m = 1
+    Fmin = 0.7
+    params = (m, lambda_0, Fmin)
+    best_std, best_lambda, best_fmin, best_model = chi_squared_minimization(
+        params, flux_slice, noise_slice, velocity1, velocity2, temperature
+    )
 
-#     # estimated_T = (best_std**2 * m * const.c**2) / (lambda_0**2 * k_B)
-#     estimated_v = (best_lambda - lambda_0) * const.c_km_pr_s / lambda_0
+    # estimated_T = (best_std**2 * m * const.c**2) / (lambda_0**2 * k_B)
+    estimated_v = (best_lambda - lambda_0) * const.c_km_pr_s / lambda_0
 
-#     ## Plotting results ##
-#     plot_slice_of_flux_around_spectralline(lambda_0=lambda_0)
-#     print(f"Best parameters: Std={best_std}, Lambda={best_lambda}")
+    ## Plotting results ##
+    plot_slice_of_flux_around_spectralline(lambda_0=lambda_0)
+    print(f"Best parameters: Std={best_std}, Lambda={best_lambda}")
 
-#     # plt.plot(wavelength_slice, flux_slice, label="Observed Data")
-#     plt.plot(
-#         wavelength_slice,
-#         best_model,
-#         label=f"Gaussian model (V={estimated_v:.2f}km/s, T={estimated_v:.2f}k)",
-#         color="orange",
-#     )
-#     plt.xlabel("Wavelength (nm)", fontsize=20)
-#     plt.ylabel("Flux (watt/m^2)", fontsize=20)
-#     plt.title(f"Observed flux around {lambda_0} nm", fontsize=20)
-#     plt.legend(fontsize=20)
+    # plt.plot(wavelength_slice, flux_slice, label="Observed Data")
+    plt.plot(
+        wavelength_slice,
+        best_model,
+        label=f"Gaussian model (V={estimated_v:.2f}km/s, T={estimated_v:.2f}k)",
+        color="orange",
+    )
+    plt.xlabel("Wavelength (nm)", fontsize=20)
+    plt.ylabel("Flux (watt/m^2)", fontsize=20)
+    plt.title(f"Observed flux around {lambda_0} nm", fontsize=20)
+    plt.legend(fontsize=20)
 
-#     plt.show()
+    plt.show()
 
 
 #################################################################
-# #              Visualizing atmosphere-density               # #
+# #             Modelling atmosphere                          # #
 #################################################################
 planet_mass = system.masses[1] * SM  # kg
 planet_radius = system.radii[1] * 1000  # radius in meters
@@ -340,7 +348,7 @@ P = system.rotational_periods[1] * (
 x = np.linspace(-500, 500, 1000)  # meters along surface
 y = np.linspace(1, 20000, 10000)  # meters above surface
 X, Y = np.meshgrid(x, y)
-density_field = rho0 * np.exp(-K * Y)
+density_field = rho0 * np.exp(-K * Y)  # calulating density field (kg/m^3)
 
 # Contour plot of atmospheric density
 plt.contourf(X, Y, density_field, cmap="viridis", levels=20)

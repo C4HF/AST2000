@@ -68,7 +68,7 @@ falcon_engine = Engine(
 
 
 #################################################################
-# #              Simulating landing                           # #
+# #                     Simulating landing                    # #
 #################################################################
 
 
@@ -260,7 +260,7 @@ def landing_trajectory(
     touchdown_angle,
     absolute_v,
 ) = landing_trajectory(
-    2.53 * sec_per_year, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-3
+    2.53 * sec_per_year, (1.0687e07, 0, 0), (0, 4944.39 * 0.5, 0), 10000, 10e-4
 )
 
 
