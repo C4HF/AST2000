@@ -192,7 +192,7 @@ def landing_trajectory(
         wind = wind_magnitude * np.dot(
             rotation_matrix, r_lander[:, :, i] / np.linalg.norm(r_lander[:, :, i])
         )  # calulating atmospheric wind (m/s)
-        if rho > 1:
+        if rho > 0.1:
             v_terminal[i] = np.sqrt(
                 G
                 * (2 * lander_mass * planet_mass)
@@ -343,7 +343,7 @@ mission.verify_manual_orientation(
 def actual_lander_trajectory(time_step: float = 0.1) -> tuple:
     """Function to run landing commands and store data of lander.
     Returns arrays used for plotting."""
-    ######## Here we are using a shortcut #########
+    ######## Here we are using a shortcut to stable orbit #########
     time_of_least_distance2 = 2.53
     code_stable_orbit = 75980
     shortcut = SpaceMissionShortcuts(mission, [code_stable_orbit])
@@ -356,7 +356,7 @@ def actual_lander_trajectory(time_step: float = 0.1) -> tuple:
     orient = land.orient()  # fetching current velcotiy and position
     pos = orient[1]
     vel = orient[2]
-    land.launch_lander(-0.5 * vel)
+
     # Empty lists to be filled with data
     time = []
     x_pos_list = []
@@ -387,6 +387,7 @@ def actual_lander_trajectory(time_step: float = 0.1) -> tuple:
     deployed = False  # boolean value to keep track of if parachute is deployed
     real_deploy_indx = 0  # to be updated with index of parachute deployment
     i = 0  # keeping track of index
+    land.launch_lander(-0.5 * vel)
     while altitude > 0:  # while lander is above surface
         i += 1
         t += time_step
